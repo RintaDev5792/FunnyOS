@@ -951,6 +951,10 @@ end
 
 function updateCardCursor()
     if contentWarningState == 0 or cardAnimating then
+        gfx.setImageDrawMode(gfx.kDrawModeCopy)
+        gfx.setColor(gfx.kColorWhite)
+        gfx.setDitherPattern(0.5)
+        gfx.fillRect(0,0,400,218)
         cardImg:drawCentered(200,120)
         
     elseif contentWarningState == 1 then
