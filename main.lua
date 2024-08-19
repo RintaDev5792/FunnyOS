@@ -387,6 +387,9 @@ function placeIcons()
                 end
             end
             if not found then
+                while indexFromPos(v["x"],v["y"]) > #gameGrid-1 do
+                    table.insert(gameGrid,#gameGrid-1,".empty")
+                end
                 table.insert(gameGrid,indexFromPos(v["x"],v["y"]),v["name"])
             end
         end
