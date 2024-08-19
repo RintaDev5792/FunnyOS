@@ -58,7 +58,7 @@ selectedBadgeImage = nil
 reloadIconsNextFrame = false
 iconPlacements = nil
 
-drawIconBorders = nil
+drawIconBorders = true
 
 selectedBadgeOriginX = 0
 selectedBadgeOriginY = 0
@@ -86,14 +86,43 @@ contentWarningState = 0
 
 local bgdither = 0
 local bgditherimg = nil
+local invertborders = false
+local invertlabels = false
+local invertcursor = false
+local invertblanks = false
 
+local emptydither = 0.75
+
+local invertedColors = {[true] = gfx.kColorWhite, [false] = gfx.kColorBlack}
+local invertedDrawModes = {[true] = gfx.kDrawModeFillBlack, [false] = gfx.kDrawModeFillWhite}
 Opts = Options(
     {
         { 
             header="Customization", options = {
                 {
                     name = "Icon Borders",
-                    key = "iconborders"
+                    key = "iconborders",
+                    default = true
+                },
+                {
+                    name = "Invert Borders",
+                    key = "invertborders",
+                    default = false
+                },
+                {
+                    name = "Invert Cursor",
+                    key = "invertcursor",
+                    default = false
+                },
+                {
+                    name = "Invert Labels",
+                    key = "invertlabels",
+                    default = false
+                },
+                {
+                    name = "Invert Blanks",
+                    key = "invertblanks",
+                    default = false
                 },
                 {
                     name = "Background Dither",
@@ -104,7 +133,7 @@ Opts = Options(
                     default = 0
                 },
                 {
-                    name = "Empty Space Dither",
+                    name = "Blank Space Dither",
                     key = "emptydither",
                     style = Options.SLIDER,
                     min = 0,
@@ -117,43 +146,72 @@ Opts = Options(
     true,
     "Funny OS/pdoptions",
     function() 
-        local i = Opts:read("bgdither", true, true)
-        i = 1- 0.25*i
-        changeBgDither(i)
-        local i = Opts:read("emptydither", true, true)
-        i = 1- 0.25*i
-        setEmptyIcon(i)
-        if Opts:read("iconborders", true, true) ~= drawIconBorders then
-            drawIconBorders = Opts:read("iconborders", true, true) 
-            for k,v in pairs(gameInfo) do
-                if not (v["group"] == "System") then
-                    loadIcon(k)
-                end
-            end
-            reloadIconsNextFrame = true
-        end
+        loadOptions()
     end
 )
 
+function loadOptions(initial)
+    if drawIconBorders == nil then drawIconBorders = true Opts:write("iconborders", 2) end
+
+    local i = Opts:read("bgdither", true, true)
+    i = 1- 0.25*i
+    if i ~= bgdither or initial == true then
+        changeBgDither(i)
+    end
+    i = Opts:read("emptydither", true, true)
+    i = 1- 0.25*i
+    if i ~= emptydither or initial == true then
+        setEmptyIcon(i)
+    end
+    if Opts:read("iconborders", true, true) ~= drawIconBorders or Opts:read("invertlabels", true, true) ~= invertlabels 
+    or Opts:read("invertborders", true, true) ~= invertborders or Opts:read("invertcursor", true, true) ~= invertcursor 
+    or Opts:read("invertblanks", true, true) ~= invertblanks then
+        invertborders = Opts:read("invertborders", true, true) 
+        invertlabels = Opts:read("invertlabels", true, true) 
+        invertcursor = Opts:read("invertcursor", true, true) 
+        invertblanks = Opts:read("invertblanks", true, true) 
+        drawIconBorders = Opts:read("iconborders", true, true) 
+        i = Opts:read("emptydither", true, true)
+        i = 1- 0.25*i
+        setEmptyIcon(i)
+        for k,v in pairs(gameInfo) do
+            if not (v["group"] == "System") then
+                loadIcon(k)
+            end
+        end
+        reloadIconsNextFrame = true
+    end
+end
+
 function setEmptyIcon(n)
+    emptydither = n
+    
+    gfx.setImageDrawMode(gfx.kDrawModeCopy)
+    gfx.setColor(invertedColors[invertblanks])
     blankImg = gfx.image.new(66,66)
     gfx.lockFocus(blankImg)
     gfx.setDitherPattern(n,gfx.image.kDitherTypeScreen)
     gfx.fillRoundRect(0,0,66,66,8)
     gfx.unlockFocus()
-    reloadIconsNextFrame = true
+    loadOptions()
+    drawIcons()
 end
 
 function changeBgDither(n)
     bgdither = n
+    
+    gfx.setImageDrawMode(gfx.kDrawModeCopy)
+    gfx.setColor(gfx.kColorBlack)
     print(n)
     local img = gfx.image.new(400,240)
     gfx.lockFocus(img)
-    gfx.setDitherPattern(bgdither)
+    gfx.setDitherPattern(n)
     gfx.fillRect(0,0,400,240)
     gfx.unlockFocus()
     bgditherimg = img
     reloadIconsNextFrame = true
+    loadOptions()
+    drawIcons()
 end
 
 function cleanUpIconPlacements()
@@ -364,6 +422,8 @@ function drawIcons()
     gfx.clear()
     if bgditherimg then
         bgditherimg:draw(0,0)
+    else
+        print("NO")
     end
     for i,v in ipairs(gameGrid) do
         if not (cardShowing and contentWarningState > 0) then
@@ -379,13 +439,13 @@ function drawIcons()
                     if indexFromPos(v2["x"],1) == i and not found then
                         found = true
                         currentLabelIndex = j   
-                        gfx.setColor(gfx.kColorBlack)
+                        gfx.setColor(invertedColors[invertlabels])
                         gfx.fillRect(drawx-3 - paddingAmount + 9,0,paddingAmount-10,240)
                         local t = "*"..labels[j]["name"].."*"
                         local w,h = gfx.getTextSize(t)
                         local img = gfx.image.new(w,h)
                         gfx.lockFocus(img)
-                        gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+                        gfx.setImageDrawMode(invertedDrawModes[invertlabels])
                         gfx.drawText(t, 0, 0)
                         gfx.setImageDrawMode(gfx.kDrawModeCopy)
                         gfx.lockFocus(drawIconsImg)
@@ -403,6 +463,7 @@ function drawIcons()
                     end
                     img:drawCentered(drawx + w/2 -back,drawy + h/2 -back)
                 elseif v == ".empty" or v == ".tempblank" then
+                    
                     blankImg:draw(drawx-1,drawy)
                 else
                     if not gameInfo[v]["icon"]then
@@ -492,6 +553,8 @@ function reloadBadges()
             if img then
                 local w,h = img:getSize()
                 if w <= 68 then size = 64 else size = 72 end
+                print(v["name"])
+                print(size)
                 img = img:scaledImage(1/(w/size))
                 badgeIcons[v["name"]] = img    
                 table.insert(newIconPlacements, v)
@@ -540,9 +603,7 @@ function main()
     setupGameInfo()
     badgeSetup()
     placeIcons()
-    local i = Opts:read("bgdither", true, true)
-    i = 1- 0.25*i
-    changeBgDither(i)
+    loadOptions(true)
     drawIcons()
     while gameGrid[#gameGrid] == ".empty" do
         table.remove(gameGrid,#gameGrid)
@@ -646,7 +707,7 @@ function loadIcon(bundleid)
     end
     if drawIconBorders then
         gfx.setLineWidth(4)
-        gfx.setColor(gfx.kColorBlack)
+        gfx.setColor(invertedColors[invertborders])
         gfx.drawRoundRect(1,1,64,64,8)
     end
     gfx.unlockFocus()
@@ -658,7 +719,9 @@ function setupGameInfo()
     gameInfo = {}
     columns = 2
     loopy = -1
-    setEmptyIcon(0.75)
+    local i = Opts:read("emptydither", true, true)
+    i = 1- 0.25*i
+    setEmptyIcon(i)
     groups = playdate.system.getInstalledGameList()
     for i,v in ipairs(groups) do
         for j,v2 in ipairs(v) do
@@ -885,10 +948,10 @@ end
 
 function updateCursor()
     gfx.setLineWidth(6)
-    gfx.setColor(gfx.kColorBlack)
+    gfx.setColor(invertedColors[invertcursor])
     gfx.drawRoundRect(cursordrawx*72-49, cursordrawy*72-55 - iconOffsetY,64,64,8)
     if iconsImage:sample(cursordrawx*72-45, cursordrawy*72-51 - iconOffsetY) == gfx.kColorBlack then
-        gfx.setColor(gfx.kColorWhite)
+        gfx.setColor(invertedColors[ not invertcursor])
         gfx.setLineWidth(1)
         gfx.drawRoundRect(cursordrawx*72-48, cursordrawy*72-54 - iconOffsetY,62,62,6)
     end
