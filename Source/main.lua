@@ -288,6 +288,43 @@ function getOffset(x)
     return displayOffsetX
 end
 
+function drawCard()
+    if contentWarningState == 0 then
+        cardImg:drawCentered(200,110) 
+    elseif contentWarningState == 1 then 
+        gfx.drawTextInRect("*"..gameInfo[cardLaunchGame]["contentwarning"].."*", 20, 50, 360, 75, 2, "\226\128\166", kTextAlignment.center)
+    elseif contentWarningState == 2 then
+        gfx.drawTextInRect("*"..gameInfo[cardLaunchGame]["contentwarning2"].."*", 20, 50, 360, 75, 2, "\226\128\166", kTextAlignment.center)
+    end
+end
+
+function drawCursor()
+    gfx.setLineWidth(6)
+    gfx.setColor(gfx.kColorBlack)
+    gfx.drawRoundRect(cursordrawx*72-49, cursordrawy*72-55 - iconOffsetY,64,64,8)
+    if iconsImage:sample(cursordrawx*72-45, cursordrawy*72-51 - iconOffsetY) == gfx.kColorBlack then
+        gfx.setColor(gfx.kColorWhite)
+        gfx.setLineWidth(1)
+        gfx.drawRoundRect(cursordrawx*72-48, cursordrawy*72-54 - iconOffsetY,62,62,6)
+    end
+    if organizeMode and selectedBadge ~= nil then
+        if selectedBadgeImage then
+            local drawx = ((cursordrawx*72)-57)
+            local drawy = ((cursordrawy*72)-63) - iconOffsetY
+            local w,h = selectedBadgeImage:getSize()
+            local img = gfx.image.new(w,h,gfx.kColorClear)
+            gfx.lockFocus(img)
+            gfx.setLineWidth(2)
+            gfx.setPattern({0,255,0,255,0,255,0,255,255,0,255,0,255,0,255,0})
+            gfx.fillRoundRect(0,0,w,h,8)
+            gfx.unlockFocus()
+            img:drawCentered(drawx + 4+ w/2,drawy+4 + h/2)
+            
+            selectedBadgeImage:drawCentered(drawx + w/2,drawy + h/2)
+        end
+    end
+end
+
 function drawIcons()
     local paddingAmount = 30
     gfx.clear()
@@ -384,6 +421,11 @@ function drawIcons()
     gfx.setImageDrawMode(gfx.kDrawModeCopy)
 
     iconsImage = gfx.getWorkingImage()
+
+    drawCursor()
+    if cardShowing then
+        drawCard()
+    end
 end
 
 function reloadBadges()
@@ -641,16 +683,6 @@ end
 main()
 
 function updateCardCursor()
-    if contentWarningState == 0 then
-        cardImg:drawCentered(200,110)
-        
-    elseif contentWarningState == 1 then
-        
-        gfx.drawTextInRect("*"..gameInfo[cardLaunchGame]["contentwarning"].."*", 20, 50, 360, 75, 2, "\226\128\166", kTextAlignment.center)
-    elseif contentWarningState == 2 then
-        
-        gfx.drawTextInRect("*"..gameInfo[cardLaunchGame]["contentwarning2"].."*", 20, 50, 360, 75, 2, "\226\128\166", kTextAlignment.center)
-    end
     if playdate.buttonJustPressed("b") then
         cardShowing = false
         appearSound = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
@@ -687,13 +719,10 @@ function updateCardCursor()
 end
 
 function playdate.update()
-    gfx.clear()
     playdate.timer.updateTimers()
     if reloadIconsNextFrame then
         drawIcons()
         reloadIconsNextFrame = false
-    else
-        iconsImage:draw(0,0)
     end
     if inputDelay > 0 then inputDelay -= 1 end
     if not playdate.keyboard.isVisible() and not cardShowing then
@@ -709,12 +738,12 @@ end
 function playdate.keyboard.keyboardWillHideCallback(pressedOK)
     if not pressedOK and editingLabel ~= 0 then
         table.remove(labels,editingLabel)
-        drawIcons()
+        reloadIconsNextFrame = true
         appearSound = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
         appearSound:play()
     elseif pressedOK and editingLabel ~= 0 then
         sortLabels()
-        drawIcons()
+        reloadIconsNextFrame = true
         saveConfig()
         appearSound = playdate.sound.fileplayer.new("systemsfx/03-action-trimmed")
         appearSound:play()
@@ -724,7 +753,7 @@ end
 function playdate.keyboard.textChangedCallback()
     if editingLabel ~= 0 then
         labels[editingLabel]["name"] = playdate.keyboard.text
-        drawIcons()
+        reloadIconsNextFrame = true
     end
 end
 
@@ -788,34 +817,10 @@ function toggleLabel(x)
         moveUp()
     end
     saveConfig()
-    drawIcons()
+    reloadIconsNextFrame = true
 end
 
 function updateCursor()
-    gfx.setLineWidth(6)
-    gfx.setColor(gfx.kColorBlack)
-    gfx.drawRoundRect(cursordrawx*72-49, cursordrawy*72-55 - iconOffsetY,64,64,8)
-    if iconsImage:sample(cursordrawx*72-45, cursordrawy*72-51 - iconOffsetY) == gfx.kColorBlack then
-        gfx.setColor(gfx.kColorWhite)
-        gfx.setLineWidth(1)
-        gfx.drawRoundRect(cursordrawx*72-48, cursordrawy*72-54 - iconOffsetY,62,62,6)
-    end
-    if organizeMode and selectedBadge ~= nil then
-        if selectedBadgeImage then
-            local drawx = ((cursordrawx*72)-57)
-            local drawy = ((cursordrawy*72)-63) - iconOffsetY
-            local w,h = selectedBadgeImage:getSize()
-            local img = gfx.image.new(w,h,gfx.kColorClear)
-            gfx.lockFocus(img)
-            gfx.setLineWidth(2)
-            gfx.setPattern({0,255,0,255,0,255,0,255,255,0,255,0,255,0,255,0})
-            gfx.fillRoundRect(0,0,w,h,8)
-            gfx.unlockFocus(img)
-            img:drawCentered(drawx + 4+ w/2,drawy+4 + h/2)
-            
-            selectedBadgeImage:drawCentered(drawx + w/2,drawy + h/2)
-        end
-    end
     if playdate.buttonJustPressed("left") and not playdate.buttonIsPressed("b") then 
         removeKeyTimer()
         local timerCallback = function()
@@ -824,7 +829,7 @@ function updateCursor()
             appearSound:play()
         end
         keyTimer = playdate.timer.keyRepeatTimerWithDelay(initialDelay, repeatDelay, timerCallback)
-        drawIcons()
+        reloadIconsNextFrame = true
     end
     if playdate.buttonJustReleased("left") then
         removeKeyTimer()
@@ -1114,7 +1119,7 @@ function moveUp(fast)
         
     end
     if not fast then
-        drawIcons()
+        reloadIconsNextFrame = true
         doLabelExpansionStuff()
     end
 end
@@ -1132,7 +1137,7 @@ function moveDown(fast)
         
     end
     if not fast then
-        drawIcons()
+        reloadIconsNextFrame = true
         doLabelExpansionStuff()
     end
 end
@@ -1149,7 +1154,7 @@ function moveRight(fast)
         
     end
     if not fast then
-        drawIcons()
+        reloadIconsNextFrame = true
         doLabelExpansionStuff()
     end
 end
@@ -1170,7 +1175,7 @@ function moveLeft(fast)
         
     end
     if not fast then
-        drawIcons()
+        reloadIconsNextFrame = true
         doLabelExpansionStuff()
     end
 end

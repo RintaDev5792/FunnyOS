@@ -3,8 +3,15 @@
     "tasks": [
         {
             "type": "pdc",
-            "problemMatcher": ["$pdc-lua", "$pdc-external"],
-            "label": "Playdate: Build"
+            "problemMatcher": [
+                "$pdc-lua",
+                "$pdc-external"
+            ],
+            "label": "Playdate: Build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }
