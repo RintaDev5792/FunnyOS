@@ -93,6 +93,21 @@ local invertblanks = false
 
 local emptydither = 0.75
 
+local cardAnimationLoops = 0
+local cardAnimationFrame = 0
+local cardAnimationProps = {}
+local cardAnimationState = "off" --off, highlighted, launch
+local cardAnimationDoneIntro = false
+local cardAnimationStayFrames = 0
+local cardAnimationLaunch = true
+
+local iconAnimationLoops = 0
+local iconAnimationFrame = 0
+local iconAnimationProps = {}
+local iconAnimationState = "highlighted" --off, highlighted
+local iconAnimationDoneIntro = false
+local iconAnimationStayFrames = 0
+
 local invertedColors = {[true] = gfx.kColorWhite, [false] = gfx.kColorBlack}
 local invertedDrawModes = {[true] = gfx.kDrawModeFillBlack, [false] = gfx.kDrawModeFillWhite}
 Opts = Options(
@@ -190,7 +205,7 @@ function setEmptyIcon(n)
     gfx.setColor(invertedColors[invertblanks])
     blankImg = gfx.image.new(66,66)
     gfx.lockFocus(blankImg)
-    gfx.setDitherPattern(n,gfx.image.kDitherTypeScreen)
+    gfx.setDitherPattern(n,gfx.image.kDitherTypeBayer4x4)
     gfx.fillRoundRect(0,0,66,66,8)
     gfx.unlockFocus()
     reloadIconsNextFrame = true
@@ -202,11 +217,10 @@ function changeBgDither(n)
     
     gfx.setImageDrawMode(gfx.kDrawModeCopy)
     gfx.setColor(gfx.kColorBlack)
-    print(n)
-    local img = gfx.image.new(400,240)
+    local img = gfx.image.new(402,240)
     gfx.lockFocus(img)
     gfx.setDitherPattern(n)
-    gfx.fillRect(0,0,400,240)
+    gfx.fillRect(0,0,402,240)
     gfx.unlockFocus()
     bgditherimg = img
     reloadIconsNextFrame = true
@@ -320,29 +334,6 @@ function listCopy(orig)
     return copy
 end
 
-function processPdxinfoLines(lines)
-    local pdxInfoProperties = {}
-    for i,v in ipairs(lines) do
-        local propertyName = ""
-        local propertyValue = ""
-        local hasFoundEqual = false
-        for i = 1, #v do
-            local c = v:sub(i,i)
-            if hasFoundEqual then
-                propertyValue = propertyValue..c
-            else
-                if c == "=" then
-                    hasFoundEqual = true
-                else
-                    propertyName = propertyName..c
-                end
-            end
-        end
-        pdxInfoProperties[string.lower(propertyName)] = propertyValue
-    end
-    return pdxInfoProperties
-end
-
 function sortGameGrid()
     local newGameGrid = {}
     for i,v in ipairs(gameGrid) do
@@ -418,6 +409,7 @@ function getOffset(x)
     end
     return displayOffsetX
 end
+local actualIconOffsetX = 0
 
 function drawIcons()
     local paddingAmount = 30
@@ -427,14 +419,15 @@ function drawIcons()
     else
         print("NO")
     end
+
     for i,v in ipairs(gameGrid) do
         if not (cardShowing and contentWarningState > 0) then
             local found = false
             gridx,gridy = posFromIndex(i)
-            local drawx = ((gridx*72)-52)-iconOffsetX*72  + 2 - getOffset(cursorx)*paddingAmount
+            local drawx = ((gridx*72)-52)-actualIconOffsetX*72  + 2 - getOffset(cursorx)*paddingAmount
             local drawy = ((gridy*72)-56)-iconOffsetY
             drawx,drawy = math.floor(drawx),math.floor(drawy)
-            if (drawx < 400 and drawx > -160) then
+            if (drawx < 400 and drawx > -300) then
     
                 drawx+=getOffset(gridx)*paddingAmount
                 for j,v2 in ipairs(labels) do
@@ -465,8 +458,11 @@ function drawIcons()
                     end
                     img:drawCentered(drawx + w/2 -back,drawy + h/2 -back)
                 elseif v == ".empty" or v == ".tempblank" then
-                    
-                    blankImg:draw(drawx-1,drawy)
+                    local xoff = 0
+                    if drawx%2 == 0 then
+                        xoff =  1
+                    end
+                    blankImg:draw(drawx-xoff,drawy)
                 elseif gameInfo[v] then
                     if not gameInfo[v]["icon"] then
                         loadIcon(v)
@@ -600,7 +596,7 @@ function badgeSetup()
 end
 
 function main()
-    playdate.display.setRefreshRate(50)
+    playdate.display.setRefreshRate(40)
     gfx.clear()
     loadConfig()
     setupGameInfo()
@@ -625,28 +621,27 @@ function main()
    
 end
 
-function loadCard(bundleid)
+function loadCard(bundleid , i)
+    local imageName = i
+    if imageName == nil then imageName = "card" end
     local icon = gfx.image.new(352, 157,gfx.kColorClear)
     gfx.lockFocus(icon)
     gfx.setColor(gfx.kColorBlack)
     gfx.fillRoundRect(2,2,348,153,8)
     local drawletter = false
     local look_for_icon = true
-    --for i,v2 in ipairs(season_1) do
-    --    if string.lower(v2) == string.lower(bundleid) then
-    --        local gameicon = gfx.image.new("s1_icons/"..v2..".pdi")
-    --        if gameicon then
-    --            gameicon:drawScaled(1,1,2)
-    --            look_for_icon = false
-    --        break
-    --        end
-    --    end 
-    --end
     if gameInfo[bundleid]["imagepath"] and look_for_icon then
-        local gameicon = gfx.image.new(gameInfo[bundleid]["path"] .."/"..gameInfo[bundleid]["imagepath"].."/card")
+        local gameicon = gfx.image.new(gameInfo[bundleid]["path"] .."/"..gameInfo[bundleid]["imagepath"].."/"..imageName)
         if gameicon then
             gameicon:draw(1,1)
-        else drawletter = true end
+        else
+            gameicon = gfx.image.new(gameInfo[bundleid]["path"] .."/"..gameInfo[bundleid]["imagepath"].."/card")
+            if gameicon then
+                gameicon:draw(1,1)
+            else
+                drawletter = true
+            end
+        end
     elseif not look_for_icon then
         
         drawletter = true
@@ -670,51 +665,63 @@ function loadCard(bundleid)
 end
 
 
-function loadIcon(bundleid)
-    local icon = gfx.image.new(66, 66, gfx.kColorClear)
-    gfx.lockFocus(icon)
-    gfx.setColor(gfx.kColorWhite)
-    gfx.fillRoundRect(2,2,62,62,8)
-    local drawletter = false
-    local look_for_icon = true
-    for i,v2 in ipairs(season_1) do
-        if string.lower(v2) == string.lower(bundleid) then
-            local gameicon = gfx.image.new("s1_icons/"..v2..".pdi")
+function loadIcon(bundleid , i)
+    if gameInfo[bundleid] then
+        local imageName = i
+        if imageName == nil then imageName = "icon" end
+        local icon = gfx.image.new(66, 66, gfx.kColorClear)
+        gfx.lockFocus(icon)
+        gfx.setColor(gfx.kColorWhite)
+        gfx.fillRoundRect(2,2,62,62,8)
+        local drawletter = false
+        local look_for_icon = true
+        for i,v2 in ipairs(season_1) do
+            if string.lower(v2) == string.lower(bundleid) then
+                local gameicon = gfx.image.new("s1_icons/"..v2..".pdi")
+                if gameicon then
+                    gameicon:drawScaled(1,1,2)
+                    look_for_icon = false
+                break
+                end
+            end 
+        end
+        if gameInfo[bundleid]["imagepath"] and look_for_icon then
+            local gameicon = gfx.image.new(gameInfo[bundleid]["path"] .."/"..gameInfo[bundleid]["imagepath"].."/"..imageName)
             if gameicon then
                 gameicon:drawScaled(1,1,2)
-                look_for_icon = false
-            break
+            else
+                gameicon = gfx.image.new(gameInfo[bundleid]["path"] .."/"..gameInfo[bundleid]["imagepath"].."/icon")
+                print("failed to load custom icon at "..gameInfo[bundleid]["path"] .."/"..gameInfo[bundleid]["imagepath"].."/"..imageName)
+                if gameicon then
+                    gameicon:drawScaled(1,1,2)
+                else
+                    drawletter = true
+                end
             end
-        end 
-    end
-    if gameInfo[bundleid]["imagepath"] and look_for_icon then
-        local gameicon = gfx.image.new(gameInfo[bundleid]["path"] .."/"..gameInfo[bundleid]["imagepath"].."/icon")
-        if gameicon then
-            gameicon:drawScaled(1,1,2)
-        else drawletter = true end
-    else
-        
-        drawletter = true
-    end
-    if drawletter and look_for_icon then
-        local drawstring = gameInfo[bundleid]["name"]
-        while #drawstring < 21 do
-            drawstring = drawstring.." "
+        else
+            
+            drawletter = true
         end
-        local letter = gfx.image.new(16, 16, gfx.kColorClear)
-        gfx.lockFocus(letter)
-        gfx.drawTextAligned("*"..string.upper(gameInfo[bundleid]["name"]:sub(1,1)).."*",8,0,kTextAlignment.center)
+        if drawletter and look_for_icon then
+            local drawstring = gameInfo[bundleid]["name"]
+            while #drawstring < 21 do
+                drawstring = drawstring.." "
+            end
+            local letter = gfx.image.new(16, 16, gfx.kColorClear)
+            gfx.lockFocus(letter)
+            gfx.drawTextAligned("*"..string.upper(gameInfo[bundleid]["name"]:sub(1,1)).."*",8,0,kTextAlignment.center)
+            gfx.unlockFocus()
+            gfx.lockFocus(icon)
+            letter:drawScaled(0,1,4)
+        end
+        if drawIconBorders then
+            gfx.setLineWidth(4)
+            gfx.setColor(invertedColors[invertborders])
+            gfx.drawRoundRect(1,1,64,64,8)
+        end
         gfx.unlockFocus()
-        gfx.lockFocus(icon)
-        letter:drawScaled(0,1,4)
+        gameInfo[bundleid]["icon"] = icon
     end
-    if drawIconBorders then
-        gfx.setLineWidth(4)
-        gfx.setColor(invertedColors[invertborders])
-        gfx.drawRoundRect(1,1,64,64,8)
-    end
-    gfx.unlockFocus()
-    gameInfo[bundleid]["icon"] = icon
 end
 
 function setupGameInfo()
@@ -777,10 +784,174 @@ function setupGameInfo()
 end
 
 main()
+--THIS FUNCTION IS SCRATCH'S
+function parseAnimFile(animFile)
+	if nil == animFile then
+		return {loop = 0}
+	end
+	local info = {}
+	local line = animFile:readline()
+	local frames = {}
+	local introFrames
+	local addFramesToTable = function(frameTable, frameValues)
+		for word in string.gmatch(frameValues, "%s*([^,]+)") do
+			local r = 1
+			local frame = tonumber(word)
+			if nil == frame then
+				frame, r = string.match(word, "(%d+) -x -(%d+)")
+				if nil ~= frame then
+					frame = tonumber(frame)
+				end
+				if nil ~= r then
+					r = tonumber(r)
+				end
+			end
+			if nil ~= frame and frame > 0 and nil ~= r and r > 0 then
+				for i = 1, r do
+					table.insert(frameTable, frame)
+				end
+			end
+		end
+	end
+	while nil ~= line do
+		local key, value = string.match(line, "%s*(.-)%s*=%s*(.+)")
+		if nil ~= key and nil ~= value then
+			key = key:lower()
+			if "frames" == key then
+				addFramesToTable(frames, value)
+			elseif "introframes" == key then
+				introFrames = {}
+				addFramesToTable(introFrames, value)
+			elseif "loopcount" == key then
+				local count = tonumber(value)
+				if nil ~= count and count > 0 then
+					info.loop = count
+				end
+			end
+			line = animFile:readline()
+		end
+	end
+	if #frames > 0 then
+		info.frames = frames
+		info.introFrames = introFrames
+	end
+	info.loop = info.loop or 0
+	return info
+end
+
+function startCardAnimation()
+    cardAnimationState = "highlighted"
+    cardAnimationFrame = 0
+    cardAnimationLoops = 0
+    cardAnimationStayFrames = 2
+    cardAnimationDoneIntro = false
+    c = fle.open(gameInfo[cardLaunchGame]["path"] .. "/"..gameInfo[cardLaunchGame]["imagepath"].."/card-highlighted/animation.txt")
+    if c then
+    cardAnimationProps = parseAnimFile(c)
+    c:close()
+    else
+        local files = fle.listFiles(gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["path"] .. "/"..gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["imagepath"].."/card-highlighted/")
+        if files and #files > 0 then
+            cardAnimationProps = {}
+            cardAnimationProps["loop"] = 1
+            local frames = {}
+            for i,v in ipairs(files) do
+                if v:sub(#v-3,#v) == ".pdi" then
+                    local t = tonumber(v:sub(1,#v-4))
+                    if #frames == 0 then
+                        table.insert(frames,t)
+                    else
+                        local found = falee
+                        for i,v in ipairs(frames) do
+                            if v < t then
+                                found = true
+                                table.insert(frames,i,t)
+                                break
+                            end
+                        end
+                        if not found then
+                            table.insert(frames,t)
+                        end
+                    end
+                end
+            end
+            cardAnimationProps["frames"] = frames
+        else
+            iconAnimationProps = nil
+        end
+    end
+end
+
+function startIconAnimation()
+    iconAnimationState = "highlighted"
+    iconAnimationFrame = 0
+    iconAnimationLoops = 0
+    iconAnimationStayFrames = 2
+    iconAnimationDoneIntro = false
+    if gameInfo[gameGrid[indexFromPos(cursorx,cursory)]] and gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["imagepath"] then
+    c = fle.open(gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["path"] .. "/"..gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["imagepath"].."/icon-highlighted/animation.txt")
+    if c then
+        iconAnimationProps = parseAnimFile(c)
+        c:close()
+        else
+            local files = fle.listFiles(gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["path"] .. "/"..gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["imagepath"].."/icon-highlighted/")
+            if files and #files > 0 then
+                iconAnimationProps = {}
+                iconAnimationProps["loop"] = 1
+                local frames = {}
+                for i,v in ipairs(files) do
+                    if v:sub(#v-3,#v) == ".pdi" then
+                        local t = tonumber(v:sub(1,#v-4))
+                        if #frames == 0 then
+                            table.insert(frames,t)
+                        else
+                            local found = falee
+                            for i,v in ipairs(frames) do
+                                if v < t then
+                                    found = true
+                                    table.insert(frames,i,t)
+                                    break
+                                end
+                            end
+                            if not found then
+                                table.insert(frames,t)
+                            end
+                        end
+                    end
+                end
+                iconAnimationProps["frames"] = frames
+            else
+                iconAnimationProps = nil
+            end
+        end
+    else
+        iconAnimationState = "off"
+    end
+end
+
+function startCardLaunchAnimation()
+    cardAnimationState = "launch"
+    cardAnimationFrame = 0
+    playdate.display.setRefreshRate(20)
+    cardAnimationLaunch = fle.isdir(gameInfo[cardLaunchGame]["path"] .. "/"..gameInfo[cardLaunchGame]["imagepath"].."/launchImages")
+    if gameInfo[cardLaunchGame]["launchsoundpath"] then
+        local launchSound = playdate.sound.fileplayer.new(gameInfo[cardLaunchGame]["path"] .. "/"..gameInfo[cardLaunchGame]["launchsoundpath"]..".pda")
+        if launchSound then
+            launchSound:play()
+        else
+            appearSound = playdate.sound.fileplayer.new("systemsfx/03-action-trimmed")
+            appearSound:play()
+        end
+    else
+        appearSound = playdate.sound.fileplayer.new("systemsfx/03-action-trimmed")
+        appearSound:play()
+    end
+end
+
 
 function updateCardCursor()
-    if contentWarningState == 0 then
-        cardImg:drawCentered(200,110)
+    if contentWarningState == 0 or cardAnimating then
+        cardImg:drawCentered(200,120)
         
     elseif contentWarningState == 1 then
         
@@ -789,37 +960,97 @@ function updateCardCursor()
         
         gfx.drawTextInRect("*"..gameInfo[cardLaunchGame]["contentwarning2"].."*", 20, 50, 360, 75, 2, "\226\128\166", kTextAlignment.center)
     end
-    if playdate.buttonJustPressed("b") then
-        cardShowing = false
-        appearSound = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
-        appearSound:play()
-        reloadIconsNextFrame = true
-    end
-    if playdate.buttonJustPressed("a") then
-        reloadIconsNextFrame = true
-        appearSound = playdate.sound.fileplayer.new("systemsfx/03-action-trimmed")
-        appearSound:play()
-        if contentWarningState == 0 then
-            saveConfig()
+    if cardAnimationState ~= "launch" then
+        if playdate.buttonJustPressed("b") then
+            cardShowing = false
+            appearSound = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
+            appearSound:play()
+            reloadIconsNextFrame = true
         end
-        local cw = gameInfo[cardLaunchGame]["contentwarning"]
-        local cw2 = gameInfo[cardLaunchGame]["contentwarning2"]
-        if not cw then
-            playdate.system.switchToGame(gameInfo[cardLaunchGame]["path"])
-        elseif not cw2 then
+        if playdate.buttonJustPressed("a") then
+            loadCard(cardLaunchGame,"card-pressed")
+            cardImg = gameInfo[cardLaunchGame]["card"]
+            reloadIconsNextFrame = true
             if contentWarningState == 0 then
-                contentWarningState = 1
+                saveConfig()
+            end
+            local cw = gameInfo[cardLaunchGame]["contentwarning"]
+            local cw2 = gameInfo[cardLaunchGame]["contentwarning2"]
+            if not cw then
+                startCardLaunchAnimation()
+            elseif not cw2 then
+                if contentWarningState == 0 then
+                    contentWarningState = 1
+                else
+                    startCardLaunchAnimation()
+                end
             else
+                if contentWarningState == 0 then
+                    contentWarningState = 1
+                elseif contentWarningState == 1 then
+                    contentWarningState = 2
+                else
+                    startCardLaunchAnimation()
+                end
+            end
+        end
+    end
+    if cardAnimationState == "highlighted" then
+        if cardAnimationProps then
+            if (not cardAnimationDoneIntro and cardAnimationProps["introFrames"]) then
+                if cardAnimationStayFrames >= 1 then
+                    cardAnimationFrame+=1
+                    cardAnimationStayFrames = 0
+                else
+                    cardAnimationStayFrames += 1
+                end
+                if cardAnimationFrame <= #cardAnimationProps["introFrames"] then
+                    loadCard(cardLaunchGame,"card-highlighted/"..cardAnimationProps["introFrames"][cardAnimationFrame])
+                    cardImg = gameInfo[cardLaunchGame]["card"]
+                else
+                    cardAnimationFrame = 0
+                    cardAnimationDoneIntro = true
+                    cardAnimationStayFrames = 2
+                end
+            elseif cardAnimationProps["frames"] then
+                local loops = cardAnimationProps["loop"]
+                if loops == nil then loops = 1 end
+                if cardAnimationStayFrames >= 1 then
+                    cardAnimationFrame+=1
+                    cardAnimationStayFrames = 0
+                else
+                    cardAnimationStayFrames += 1
+                end
+                if cardAnimationFrame <= #cardAnimationProps["frames"] then
+                    loadCard(cardLaunchGame,"card-highlighted/"..cardAnimationProps["frames"][cardAnimationFrame])
+                    cardImg = gameInfo[cardLaunchGame]["card"]
+                else
+                    if cardAnimationLoops >= loops -1 then
+                        cardAnimationState = "off"
+                    else
+                        cardAnimationFrame = 0
+                        cardAnimationLoops += 1
+                        cardAnimationStayFrames = 2
+                    end
+                end
+            end
+        end
+    elseif cardAnimationState == "launch" then
+        if cardAnimationLaunch then
+            cardAnimationFrame+=1
+            local img = gfx.image.new(gameInfo[cardLaunchGame]["path"] .. "/"..gameInfo[cardLaunchGame]["imagepath"].."/launchImages/"..tostring(cardAnimationFrame)..".pdi")
+            if img then
+                img:draw(0,0)
+            else
+                local img = gfx.image.new(gameInfo[cardLaunchGame]["path"] .. "/"..gameInfo[cardLaunchGame]["imagepath"].."/launchImage.pdi")
+                if img then img:draw(0,0) else
+                gfx.setColor(gfx.kColorBlack)
+                gfx.fillRect(0,0,400,240)
+                end
                 playdate.system.switchToGame(gameInfo[cardLaunchGame]["path"])
             end
         else
-            if contentWarningState == 0 then
-                contentWarningState = 1
-            elseif contentWarningState == 1 then
-                contentWarningState = 2
-            else
-                playdate.system.switchToGame(gameInfo[cardLaunchGame]["path"])
-            end
+            playdate.system.switchToGame(gameInfo[cardLaunchGame]["path"])
         end
     end
 end
@@ -831,6 +1062,16 @@ function playdate.update()
         gfx.sprite.update()
     end
     playdate.timer.updateTimers()
+    if actualIconOffsetX < iconOffsetX then
+        actualIconOffsetX+=(iconOffsetX-actualIconOffsetX)*0.2
+        reloadIconsNextFrame = true
+    elseif actualIconOffsetX > iconOffsetX then
+        actualIconOffsetX-=(actualIconOffsetX-iconOffsetX)*0.2
+        reloadIconsNextFrame = true
+    end
+    if math.abs(actualIconOffsetX-iconOffsetX) < 0.02 then
+        actualIconOffsetX = iconOffsetX
+    end
     if reloadIconsNextFrame then
         drawIcons()
         reloadIconsNextFrame = false
@@ -864,23 +1105,23 @@ end
 function playdate.keyboard.keyboardWillHideCallback(pressedOK)
     if not pressedOK and editingLabel ~= 0 then
         table.remove(labels,editingLabel)
-        drawIcons()
         appearSound = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
         appearSound:play()
     elseif pressedOK and editingLabel ~= 0 then
         sortLabels()
-        drawIcons()
         saveConfig()
         appearSound = playdate.sound.fileplayer.new("systemsfx/03-action-trimmed")
         appearSound:play()
     end
+    reloadIconsNextFrame = true
 end
 
 function playdate.keyboard.textChangedCallback()
     if editingLabel ~= 0 then
         labels[editingLabel]["name"] = playdate.keyboard.text
-        drawIcons()
+
     end
+    reloadIconsNextFrame = true
 end
 
 function toggleLabel(x)
@@ -924,16 +1165,6 @@ function toggleLabel(x)
             table.insert(newLabels,v)
         end
     end
-    if #newLabels < #labels then
-        local deleted = 0
-        for i=1,#gameGrid,1 do
-            if gameGrid[i] == ".empty" and deleted < (#labels-#newLabels)*2 then
-                deleted+=1
-                table.remove(gameGrid,i)
-                i-=1
-            end
-        end
-    end
     labels = newLabels
     while cursorx > math.ceil(#gameGrid/rows) do
         moveLeft()
@@ -942,7 +1173,7 @@ function toggleLabel(x)
         moveUp()
     end
     saveConfig()
-    drawIcons()
+    reloadIconsNextFrame = true
 end
 
 function updateCursor()
@@ -953,6 +1184,51 @@ function updateCursor()
         gfx.setColor(invertedColors[ not invertcursor])
         gfx.setLineWidth(1)
         gfx.drawRoundRect(cursordrawx*72-48, cursordrawy*72-54 - iconOffsetY,62,62,6)
+    end
+    if iconAnimationState == "highlighted" then
+        reloadIconsNextFrame = true
+        if iconAnimationProps then
+            if (not iconAnimationDoneIntro and iconAnimationProps["introFrames"]) then
+                if iconAnimationStayFrames >= 1 then
+                    iconAnimationFrame+=1
+                    iconAnimationStayFrames = 0
+                else
+                    iconAnimationStayFrames += 1
+                end
+                if iconAnimationFrame <= #iconAnimationProps["introFrames"] then
+                    loadIcon(gameGrid[indexFromPos(cursorx,cursory)],"icon-highlighted/"..iconAnimationProps["introFrames"][iconAnimationFrame])
+                else
+                    iconAnimationFrame = 0
+                    iconAnimationDoneIntro = true
+                    iconAnimationStayFrames = 2
+                end
+            elseif iconAnimationProps["frames"] then
+                local loops = iconAnimationProps["loop"]
+                if loops == nil then loops = 1 end
+                if iconAnimationStayFrames >= 1 then
+                    iconAnimationFrame+=1
+                    iconAnimationStayFrames = 0
+                else
+                    iconAnimationStayFrames += 1
+                end
+                if iconAnimationFrame <= #iconAnimationProps["frames"] then
+                    loadIcon(gameGrid[indexFromPos(cursorx,cursory)],"icon-highlighted/"..iconAnimationProps["frames"][iconAnimationFrame])
+                    reloadIconsNextFrame = true
+                else
+                    if iconAnimationLoops >= loops -1 then
+                        
+                        loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
+                        iconAnimationState = "off"
+                    else
+                        iconAnimationFrame = 0
+                        iconAnimationLoops += 1
+                        iconAnimationStayFrames = 2
+                    end
+                end
+            end
+        else
+            iconAnimationState = "off"
+        end
     end
     if organizeMode and selectedBadge ~= nil then
         if selectedBadgeImage then
@@ -978,7 +1254,6 @@ function updateCursor()
             appearSound:play()
         end
         keyTimer = playdate.timer.keyRepeatTimerWithDelay(initialDelay, repeatDelay, timerCallback)
-        drawIcons()
     end
     if playdate.buttonJustReleased("left") then
         removeKeyTimer()
@@ -1026,13 +1301,14 @@ function updateCursor()
             local game = gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]
             if game then
                 cardLaunchGame = gameGrid[indexFromPos(cursorx,cursory)]
-                loadCard(cardLaunchGame)
+                loadCard(cardLaunchGame,"card-pressed")
                 cardImg = game["card"]
                 appearSound = playdate.sound.fileplayer.new("systemsfx/03-action-trimmed")
                 appearSound:play()
                 reloadIconsNextFrame = true
                 cardShowing = true
                 contentWarningState = 0
+                startCardAnimation()
             else
 
                 appearSound = playdate.sound.fileplayer.new("systemsfx/04-denial-trimmed")
@@ -1236,7 +1512,7 @@ function doLabelExpansionStuff()
             table.insert(gameGrid,indexFromPos(cursorx+1,1),".empty")
             local newLabels = {}
             for i,v in ipairs(labels) do
-                if v["x"] < cursorx then
+                if v["x"] <= cursorx then
                     table.insert(newLabels,v)
                 else
                     local newLabel = {["name"] = v["name"], ["x"] = v["x"]+1}
@@ -1257,6 +1533,7 @@ function doLabelExpansionStuff()
 end
 
 function moveUp(fast) 
+    loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
     if gameGrid[indexFromPos(cursorx,cursory-1)] and cursory > 1 then
         cursory -= 1
         cursordrawy -= 1
@@ -1267,13 +1544,16 @@ function moveUp(fast)
         if cursordrawy > 1 then recentCursorDown = 1 else recentCursorDown = 0 end
         
     end
+    iconAnimationState = "highlighted"
     if not fast then
-        drawIcons()
+        startIconAnimation()
         doLabelExpansionStuff()
     end
+    reloadIconsNextFrame = true
 end
 
 function moveDown(fast)
+    loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
     if gameGrid[indexFromPos(cursorx,cursory+1)] and cursory < rows then
         cursory += 1
         cursordrawy += 1
@@ -1285,13 +1565,16 @@ function moveDown(fast)
         if cursordrawy > 1 then recentCursorDown = 1 else recentCursorDown = 0 end
         
     end
+    iconAnimationState = "highlighted"
     if not fast then
-        drawIcons()
+        startIconAnimation()
         doLabelExpansionStuff()
     end
+    reloadIconsNextFrame = true
 end
 
 function moveRight(fast)
+    loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
     if gameGrid[indexFromPos(cursorx+1,cursory)] then
         cursorx += 1
         if cursordrawx < 5 then
@@ -1302,14 +1585,16 @@ function moveRight(fast)
         if cursordrawx > 3 then recentCursorRight = 1 end
         
     end
+    iconAnimationState = "highlighted"
     if not fast then
-        drawIcons()
+        startIconAnimation()
         doLabelExpansionStuff()
     end
+    reloadIconsNextFrame = true
 end
 
 function moveLeft(fast)
-
+    loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
     cursorx -= 1    
     if cursordrawx > 1 then
         
@@ -1323,8 +1608,10 @@ function moveLeft(fast)
         if cursordrawx < 3 then recentCursorRight = 0 end
         
     end
+    iconAnimationState = "highlighted"
     if not fast then
-        drawIcons()
+        startIconAnimation()
         doLabelExpansionStuff()
     end
+    reloadIconsNextFrame = true
 end
