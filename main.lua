@@ -193,8 +193,8 @@ function setEmptyIcon(n)
     gfx.setDitherPattern(n,gfx.image.kDitherTypeScreen)
     gfx.fillRoundRect(0,0,66,66,8)
     gfx.unlockFocus()
+    reloadIconsNextFrame = true
     loadOptions()
-    drawIcons()
 end
 
 function changeBgDither(n)
@@ -211,7 +211,6 @@ function changeBgDither(n)
     bgditherimg = img
     reloadIconsNextFrame = true
     loadOptions()
-    drawIcons()
 end
 
 function cleanUpIconPlacements()
@@ -465,11 +464,14 @@ function drawIcons()
                 elseif v == ".empty" or v == ".tempblank" then
                     
                     blankImg:draw(drawx-1,drawy)
-                else
-                    if not gameInfo[v]["icon"]then
+                elseif gameInfo[v] then
+                    if not gameInfo[v]["icon"] then
                         loadIcon(v)
                     end
                     gameInfo[v]["icon"]:draw(drawx,drawy)
+                else
+                    print("-----------------")
+                    print(v)
                 end
             end
         end
@@ -553,8 +555,6 @@ function reloadBadges()
             if img then
                 local w,h = img:getSize()
                 if w <= 68 then size = 64 else size = 72 end
-                print(v["name"])
-                print(size)
                 img = img:scaledImage(1/(w/size))
                 badgeIcons[v["name"]] = img    
                 table.insert(newIconPlacements, v)
@@ -749,7 +749,6 @@ function setupGameInfo()
             end
         end
     end
-    print("finished 1")
     local i = -1
     gameGrid = {}
     for k,v in pairs(gameInfo) do
@@ -761,7 +760,6 @@ function setupGameInfo()
             table.insert(gameGrid,k)
         end
     end
-    print("finished 2")
     sortGameGrid()
     if first_load then
         table.insert(gameGrid,".empty")
@@ -772,7 +770,6 @@ function setupGameInfo()
             table.insert(gameGrid,".empty")
         end
     end
-    print("finished 3")
     return true
 end
 
@@ -930,7 +927,6 @@ function toggleLabel(x)
             if gameGrid[i] == ".empty" and deleted < (#labels-#newLabels)*2 then
                 deleted+=1
                 table.remove(gameGrid,i)
-                print("BAMM")
                 i-=1
             end
         end
