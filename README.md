@@ -54,7 +54,7 @@ A: Everything is square. If something isn't exactly 64x64 or 72x72, it will be s
 
 > Q: how do I add badges?
 
-A: just put any .pdi file (compiled with pdc from the Playdate SDK) into the "/Shared/FunnyOSBadges" folder on your playdate (accessible from data disk mode when connected to a computer). Other image formats will not work, so don't try to use .pngs or .jpegs or (ew) .webps.
+A: just put any .pdi file (compiled with pdc from the Playdate SDK) into the "/Shared/FunnyOS/Badges" folder on your playdate (accessible from data disk mode when connected to a computer). Other image formats will not work, so don't try to use .pngs or .jpegs or (ew) .webps.
 
 > Q: what happens when I add a new game or badge to my system?  
 
@@ -62,7 +62,7 @@ A: it is placed at the end of your grid all the way to the right. I would recomm
 
 > Q: I hate those borders on the icons! These were designed for list view, not to be confined! Please remove them!
 
-A: toggle them off in the system menu
+A: toggle them off in the options menu (playdate menu --> options)
 
 > Q: how do I move stuff around?
 
@@ -90,7 +90,7 @@ A: this was made for playdate OS version 2.5.0, and has to be updated for every 
 
 > Q: my playdate is bootlooping/repeatedly crashing
 
-A: hold A+B+MENU+LOCK then release A and B when told to hold MENU and LOCK. This resets your playdate to the stock launcher, but you will need to do a system update afterwards from settings.
+A: hold A+B+MENU+LOCK then release A and B when told to hold MENU and LOCK. This resets your playdate to the stock launcher, but you will need to do a system update afterwards from settings. Submit an issue detailing how the playdate crashed.
 
 ##Credits
 IndexOS Installer and FunnyOS Installer - scratchminer
