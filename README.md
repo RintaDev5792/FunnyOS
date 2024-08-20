@@ -39,7 +39,7 @@ You can move them in organize mode just like other icons.
 ### Music  
 In order to load background music into FunnyOS, put an audio file called `bgm.pda` inside `/Shared/FunnyOS/`.  
 This audio must be compiled with `pdc` from the playdate SDK, and must be a .pda file.  
-The default background music is available [Here](https://github.com/RintaDev5792/FunnyOS/blob/main/Config/bgm.pda).  
+The default background music is available [Here](https://github.com/RintaDev5792/FunnyOS/blob/main/Config/bgm.pda), as compiling it into the installer takes up a lot of space.
 Music provided by Chris Mandra and Drunk With Honey. Huge shoutout to them, they make some good music!  
 
 ### Background Image  
