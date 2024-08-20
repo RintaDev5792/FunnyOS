@@ -189,6 +189,8 @@ Opts = Options(
 local stockLauncherImg = gfx.image.new("images/stocklauncher")
 
 function loadOptions(initial)
+    gfx.sprite.update()
+    reloadIconsNextFrame = true
     if drawIconBorders == nil then drawIconBorders = true Opts:write("iconborders", 2) end
     if musicOn == nil then drawIconBorders = true Opts:write("musicon", 2) loadMusic() end
 
@@ -693,7 +695,8 @@ function loadMusic()
 end
 
 function main()
-    playdate.display.setRefreshRate(40)
+    printTable(playdate.system)
+    playdate.display.setRefreshRate(20)
     gfx.clear()
     dirSetup()
     loadConfig()
@@ -879,7 +882,9 @@ function setupGameInfo()
                     end
 
                     props["group"] = v.name
+                    props["suppresscontentwarning"] = v2:getSuppressContentWarning()
                     gameInfo[gme.getBundleID(v2)] = props
+                    printTable(props)
                 end
             else
                 print("INVALID GAME")
@@ -969,6 +974,7 @@ function parseAnimFile(animFile)
 end
 
 function startCardAnimation()
+    playdate.display.setRefreshRate(20)
     cardAnimationState = "highlighted"
     cardAnimationFrame = 0
     cardAnimationLoops = 0
@@ -1016,6 +1022,7 @@ function startCardAnimation()
 end
 
 function startIconAnimation()
+    playdate.display.setRefreshRate(20)
     iconAnimationState = "highlighted"
     iconAnimationFrame = 0
     iconAnimationLoops = 0
@@ -1099,10 +1106,12 @@ function updateCardCursor()
         cardImg:drawCentered(200,120)
         
     elseif contentWarningState == 1 then
-        
+        gfx.setColor(gfx.kColorWhite)
+        gfx.fillRect(0,0,400,218)
         gfx.drawTextInRect("*"..gameInfo[cardLaunchGame]["contentwarning"].."*", 20, 50, 360, 75, 2, "\226\128\166", kTextAlignment.center)
     elseif contentWarningState == 2 then
-        
+        gfx.setColor(gfx.kColorWhite)
+        gfx.fillRect(0,0,400,218)
         gfx.drawTextInRect("*"..gameInfo[cardLaunchGame]["contentwarning2"].."*", 20, 50, 360, 75, 2, "\226\128\166", kTextAlignment.center)
     end
     if cardAnimationState ~= "launch" then
@@ -1121,12 +1130,32 @@ function updateCardCursor()
             end
             local cw = gameInfo[cardLaunchGame]["contentwarning"]
             local cw2 = gameInfo[cardLaunchGame]["contentwarning2"]
-            if not cw then
+            local game = nil
+            if cw or cw2 then
+                for i,v in ipairs(groups) do
+                    if v.name == gameInfo[cardLaunchGame]["group"] then
+                        for j,v2 in ipairs(v) do
+                            if v2:getBundleID() == gameInfo[cardLaunchGame]["bundleid"] then
+                                game = v2
+                            end
+                        end
+                        break
+                    end
+                end
+            end
+            local launchImmediately =false
+            if game then 
+                if game:getSuppressContentWarning() == true then 
+                    launchImmediately = true
+                end
+            end
+            if not cw or launchImmediately then
                 startCardLaunchAnimation()
             elseif not cw2 then
                 if contentWarningState == 0 then
                     contentWarningState = 1
                 else
+                    game:setSuppressContentWarning(true)
                     startCardLaunchAnimation()
                 end
             else
@@ -1135,6 +1164,7 @@ function updateCardCursor()
                 elseif contentWarningState == 1 then
                     contentWarningState = 2
                 else
+                    game:setSuppressContentWarning(true)
                     startCardLaunchAnimation()
                 end
             end
@@ -1143,12 +1173,8 @@ function updateCardCursor()
     if cardAnimationState == "highlighted" then
         if cardAnimationProps then
             if (not cardAnimationDoneIntro and cardAnimationProps["introFrames"]) then
-                if cardAnimationStayFrames >= 1 then
-                    cardAnimationFrame+=1
-                    cardAnimationStayFrames = 0
-                else
-                    cardAnimationStayFrames += 1
-                end
+                
+                cardAnimationFrame+=1
                 if cardAnimationFrame <= #cardAnimationProps["introFrames"] then
                     loadCard(cardLaunchGame,"card-highlighted/"..cardAnimationProps["introFrames"][cardAnimationFrame])
                     cardImg = gameInfo[cardLaunchGame]["card"]
@@ -1158,24 +1184,26 @@ function updateCardCursor()
                     cardAnimationStayFrames = 2
                 end
             elseif cardAnimationProps["frames"] then
+                printTable(cardAnimationProps["frames"])
                 local loops = cardAnimationProps["loop"]
-                if loops == nil then loops = 1 end
-                if cardAnimationStayFrames >= 1 then
-                    cardAnimationFrame+=1
-                    cardAnimationStayFrames = 0
-                else
-                    cardAnimationStayFrames += 1
-                end
-                if cardAnimationFrame <= #cardAnimationProps["frames"] then
+                if loops == nil then loops = -1 end
+                
+                cardAnimationFrame+=1
+                if cardAnimationFrame <= #cardAnimationProps["frames"] and cardAnimationProps["frames"][cardAnimationFrame] ~= nil then
+                    print("---")
+                    print(cardLaunchGame)
+                    print(cardAnimationProps["frames"][cardAnimationFrame])
                     loadCard(cardLaunchGame,"card-highlighted/"..cardAnimationProps["frames"][cardAnimationFrame])
                     cardImg = gameInfo[cardLaunchGame]["card"]
                 else
-                    if cardAnimationLoops >= loops -1 then
+                    if (cardAnimationLoops >= loops -1) and not (loops < 1) then
                         cardAnimationState = "off"
+                        print(loops)
                     else
                         cardAnimationFrame = 0
                         cardAnimationLoops += 1
                         cardAnimationStayFrames = 2
+                        print("looped")
                     end
                 end
             end
@@ -1208,16 +1236,16 @@ end
 
 function playdate.update()
     if noToggleLabelFrames > 0 then noToggleLabelFrames -= 1 end
-    gfx.clear()
+    --gfx.clear()
     if not Opts:isVisible() then
-        gfx.sprite.update()
+        --gfx.sprite.update()
     end
     playdate.timer.updateTimers()
     if actualIconOffsetX < iconOffsetX then
-        actualIconOffsetX+=(iconOffsetX-actualIconOffsetX)*0.2
+        actualIconOffsetX+=(iconOffsetX-actualIconOffsetX)*0.2*(40/playdate.display.getRefreshRate())
         reloadIconsNextFrame = true
     elseif actualIconOffsetX > iconOffsetX then
-        actualIconOffsetX-=(actualIconOffsetX-iconOffsetX)*0.2
+        actualIconOffsetX-=(actualIconOffsetX-iconOffsetX)*0.2*(40/playdate.display.getRefreshRate())
         reloadIconsNextFrame = true
     end
     if math.abs(actualIconOffsetX-iconOffsetX) < 0.02 then
@@ -1227,7 +1255,7 @@ function playdate.update()
         drawIcons()
         reloadIconsNextFrame = false
     else
-        iconsImage:draw(0,0)
+        --iconsImage:draw(0,0)
     end
     if inputDelay > 0 then inputDelay -= 1 end
     if not Opts:isVisible() then
@@ -1340,12 +1368,7 @@ function updateCursor()
         reloadIconsNextFrame = true
         if iconAnimationProps then
             if (not iconAnimationDoneIntro and iconAnimationProps["introFrames"]) then
-                if iconAnimationStayFrames >= 1 then
-                    iconAnimationFrame+=1
-                    iconAnimationStayFrames = 0
-                else
-                    iconAnimationStayFrames += 1
-                end
+                iconAnimationFrame+=1
                 if iconAnimationFrame <= #iconAnimationProps["introFrames"] then
                     loadIcon(gameGrid[indexFromPos(cursorx,cursory)],"icon-highlighted/"..iconAnimationProps["introFrames"][iconAnimationFrame])
                 else
@@ -1355,20 +1378,19 @@ function updateCursor()
                 end
             elseif iconAnimationProps["frames"] then
                 local loops = iconAnimationProps["loop"]
-                if loops == nil then loops = 1 end
-                if iconAnimationStayFrames >= 1 then
-                    iconAnimationFrame+=1
-                    iconAnimationStayFrames = 0
-                else
-                    iconAnimationStayFrames += 1
-                end
+                if loops == nil then loops = -1 end
+                
+                iconAnimationFrame+=1
                 if iconAnimationFrame <= #iconAnimationProps["frames"] then
                     loadIcon(gameGrid[indexFromPos(cursorx,cursory)],"icon-highlighted/"..iconAnimationProps["frames"][iconAnimationFrame])
                     reloadIconsNextFrame = true
                 else
-                    if iconAnimationLoops >= loops -1 then
+                    print("-")
+                    print(iconAnimationLoops)
+                    print(loops)
+                    if (iconAnimationLoops >= loops -1) and not (loops < 1) then
                         
-                        loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
+                        --loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
                         iconAnimationState = "off"
                     else
                         iconAnimationFrame = 0
@@ -1376,6 +1398,36 @@ function updateCursor()
                         iconAnimationStayFrames = 2
                     end
                 end
+            elseif gameGrid[indexFromPos(cursorx,cursory)] then
+                if gameInfo[gameGrid[indexFromPos(cursorx,cursory)]] then
+                    local loops = iconAnimationProps["loop"]
+                    if loops == nil then loops = -1 end
+                    if iconAnimationStayFrames >= 1 then
+                        iconAnimationFrame+=1
+                        iconAnimationStayFrames = 0
+                    else
+                        iconAnimationStayFrames += 1
+                    end
+                    local img = gfx.image.new(gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["path"] .. "/"..gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["imagepath"].."/icon-highlighted/"..tostring(iconAnimationFrame)..".pdi")
+                    if img then
+                        loadIcon(gameGrid[indexFromPos(cursorx,cursory)],"icon-highlighted/"..tostring(iconAnimationFrame))
+                        reloadIconsNextFrame = true
+                    else
+                        if (iconAnimationLoops >= loops -1) and not (loops < 1) then
+                            
+                            --loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
+                            iconAnimationState = "off"
+                        else
+                            iconAnimationFrame = 0
+                            iconAnimationLoops += 1
+                            iconAnimationStayFrames = 2
+                        end
+                    end
+                else
+                    iconAnimationState = "off"
+                end
+            else
+                iconAnimationState = "off"
             end
         else
             iconAnimationState = "off"
