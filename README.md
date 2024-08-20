@@ -47,6 +47,13 @@ In order to load a background image into FunnyOS, put an image file called `bg.p
 This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
 The image will be automatically scaled to 400x240 and used as the background behind the dither pattern in the launcher.
 
+### Custom Icons  
+In order to load a custom icon into FunnyOS, put an image file called `icon.pdi` inside `/Shared/FunnyOS/Icons/<bundleid>` where `<bundleid>` is the name of a game you want to replace the icon of (like the `com.whoever.whatever`).  
+This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
+The image will be automatically scaled to 64x64 and used as the icon for that game in the launcher.  
+You can add animations for the icon by making a folder called `icon-highlighted` inside of `/Shared/FunnyOS/Icons/<bundleid>`, and putting an `animation.txt` file and your numbered frame pdi files in it (`1.pdi`, `2.pdi`, etc).   
+See [here](https://sdk.play.date/2.5.0/Inside%20Playdate.html#pdxinfo) for instructions on `animation.txt`
+
 ## FAQ
 > Q: how does FunnyOS import badges that aren't perfectly square or 64x64?
 
