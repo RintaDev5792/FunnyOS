@@ -35,12 +35,16 @@ Some pre-made badges in pdi form are available [Here](https://github.com/RintaDe
 As soon as you load up the launcher with .pdi files in `/Shared/FunnyOS/Badges`, they are placed on the far right of the grid.  
 You can move them in organize mode just like other icons.
   
-### Background Music  
+### Music  
 In order to load background music into FunnyOS, put an audio file called `bgm.pda` inside `/Shared/FunnyOS/`.  
 This audio must be compiled with `pdc` from the playdate SDK, and must be a .pda file.  
 The default background music is available [Here](https://github.com/RintaDev5792/FunnyOS/blob/main/Config/bgm.pda).  
 Music provided by Chris Mandra and Drunk With Honey. Huge shoutout to them, they make some good music!  
 
+### Background Image  
+In order to load a background image into FunnyOS, put an image file called `bg.pdi` inside `/Shared/FunnyOS/`.  
+This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
+The image will be automatically scaled to 400x240 and used as the background behind the dither pattern in the launcher.
 
 ### Compiling the installer
 *TODO*
