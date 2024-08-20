@@ -19,7 +19,7 @@ Made for playdateOS 2.5.0
 1. watch the cool animation rae made for indexos that I forgot to remove (it looks sick asf tho)
 
 ### Installing on Simulator
-1. Compile the launcher with `pdc Source Launcher`
+1. Compile the launcher with `pdc . Launcher`
 1. Navigate to wherever you installed the Playdate SDK, then go to `<SDK path>/Disk/System`
 1. Rename the existing application `Launcher.pdx` to somthing else, like `StockLauncher.pdx`
 1. Drag the `Launcher.pdx` you created in step 1 into the `System` folder
@@ -46,9 +46,6 @@ Music provided by Chris Mandra and Drunk With Honey. Huge shoutout to them, they
 In order to load a background image into FunnyOS, put an image file called `bg.pdi` inside `/Shared/FunnyOS/`.  
 This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
 The image will be automatically scaled to 400x240 and used as the background behind the dither pattern in the launcher.
-
-### Compiling the installer
-*TODO*
 
 ## FAQ
 > Q: how does FunnyOS import badges that aren't perfectly square or 64x64?
