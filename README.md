@@ -31,7 +31,8 @@ Before any of these actions can be completed, run the launcher on-device after i
 ### Badges  
 In order to load badges into FunnyOS, put any .pdi image file called `<name>.pdi` inside `/Shared/FunnyOS/Badges`. 
 This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
-Some pre-made badges in pdi form are available [Here](https://github.com/RintaDev5792/FunnyOS/tree/main/Config/Badges).  (Thanks to Palette in the Playdate Squad discord server for making OpenFunnyBadges, a badge pack to get you started!)
+Some pre-made badges in pdi form are available [Here](https://github.com/RintaDev5792/FunnyOS/tree/main/Config/Badges).  
+(Thanks to Palette in the Playdate Squad discord server for making OpenFunnyBadges, a badge pack to get you started!)  
 As soon as you load up the launcher with .pdi files in `/Shared/FunnyOS/Badges`, they are placed on the far right of the grid.  
 You can move them in organize mode just like other icons.
   
