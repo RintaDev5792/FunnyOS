@@ -99,8 +99,8 @@ A: this was made for playdate OS version 2.5.0, and has to be updated for every 
 
 A: hold A+B+MENU+LOCK then release A and B when told to hold MENU and LOCK. This resets your playdate to the stock launcher, but you will need to do a system update afterwards from settings. Submit an issue detailing how the playdate crashed.
 
-##Credits
-IndexOS Installer and FunnyOS Installer - scratchminer
-Cool install video with the rocket + IndexOS dev - Rae
-FunnyOS programming - RintaDev 
-Music - Chris Mandra / Drunk With Honey
+## Credits
+* IndexOS Installer and FunnyOS Installer - scratchminer
+* Cool install video with the rocket + IndexOS dev - Rae
+* FunnyOS programming - RintaDev 
+* Music - Chris Mandra / Drunk With Honey
