@@ -60,6 +60,8 @@ iconPlacements = nil
 
 drawIconBorders = true
 
+local bottomBar = true
+
 local useCustomIconAnimation = false
 
 selectedBadgeOriginX = 0
@@ -75,6 +77,7 @@ editingLabel = 0
 firstEdit = true
 
 keyTimer = nil
+local canLaunch = true
 local initialDelay = 300
 local repeatDelay = 40
 
@@ -115,6 +118,7 @@ local iconAnimationDoneIntro = false
 local iconAnimationStayFrames = 0
 
 local noToggleLabelFrames = 3
+local unwrapAnimating = false
 
 local music = nil
 local musicOn = true
@@ -206,10 +210,20 @@ Opts = Options(
         noToggleLabelFrames = 3
     end
 )
+local unwrapx = 0
+local unwrapy = 0
+local unwrapxvel = 0
+local unwrapyvel = 0
+local unwrapmaxvel = 25
 
 local stockLauncherImg = gfx.image.new("images/stocklauncher")
 local batteryImg = gfx.image.new("images/battery")
 local wrappedImg = gfx.image.new("images/wrapped")
+local newGame = gfx.image.new("images/newgame")
+local newGameMask = gfx.image.new("images/newgame_mask")
+
+local crankChange = 0
+local crankIncrement = 45
 
 function loadOptions(initial)
     gfx.sprite.update()
@@ -362,8 +376,13 @@ function saveConfig()
     local datastore = {}
     datastore["iconPlacements"] = iconPlacements
     datastore["labels"] = labels
+    datastore["cursorx"] = cursorx
+    datastore["cursory"] = cursory
     playdate.datastore.write(datastore,"/Shared/FunnyOS/funnyConfig")
 end
+
+targetcx = 1
+targetcy = 1
 
 function loadConfig()
     local datastore = playdate.datastore.read("/Shared/FunnyOS/funnyConfig")
@@ -376,12 +395,16 @@ function loadConfig()
     if datastore then
         iconPlacements = datastore["iconPlacements"]
         labels = datastore["labels"]
+        targetcx = datastore["cursorx"]
+        targetcy = datastore["cursory"]
 
     else
         print("no data")
         first_load = true
     end
     if not iconPlacements then iconPlacements = {} end
+    if not targetcx then targetcx = 1 end
+    if not targetcy then targetcy = 1 end
     if not labels or labels == {} then labels = {{["name"] = "Home", ["x"] = 1}} end
     if #labels < 1 then
         table.insert(labels, {["name"] = "Home", ["x"] = 1})
@@ -732,6 +755,90 @@ function loadMusic()
     end
 end
 
+function moveUp(fast) 
+    loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
+    if gameGrid[indexFromPos(cursorx,cursory-1)] and cursory > 1 then
+        cursory -= 1
+        cursordrawy -= 1
+        if cursory < 1 then
+            cursory = 1
+            cursordrawy = 1
+        end
+        if cursordrawy > 1 then recentCursorDown = 1 else recentCursorDown = 0 end
+        
+    end
+    iconAnimationState = "highlighted"
+    if not fast then
+        startIconAnimation()
+        doLabelExpansionStuff()
+    end
+    reloadIconsNextFrame = true
+end
+
+function moveDown(fast)
+    loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
+    if gameGrid[indexFromPos(cursorx,cursory+1)] and cursory < rows then
+        cursory += 1
+        cursordrawy += 1
+        
+        if cursory > rows then
+            cursory = rows
+            cursordrawy = rows
+        end
+        if cursordrawy > 1 then recentCursorDown = 1 else recentCursorDown = 0 end
+        
+    end
+    iconAnimationState = "highlighted"
+    if not fast then
+        startIconAnimation()
+        doLabelExpansionStuff()
+    end
+    reloadIconsNextFrame = true
+end
+
+function moveRight(fast)
+    loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
+    if gameGrid[indexFromPos(cursorx+1,cursory)] then
+        cursorx += 1
+        if cursordrawx < 5 then
+            cursordrawx += 1
+        else
+            iconOffsetX += 1
+        end
+        if cursordrawx > 3 then recentCursorRight = 1 end
+        
+    end
+    iconAnimationState = "highlighted"
+    if not fast then
+        startIconAnimation()
+        doLabelExpansionStuff()
+    end
+    reloadIconsNextFrame = true
+end
+
+function moveLeft(fast)
+    loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
+    cursorx -= 1    
+    if cursordrawx > 1 then
+        
+        cursordrawx -= 1
+    elseif cursorx >= 1 then
+        iconOffsetX -= 1
+    end
+    if cursorx < 1 then
+        cursorx = 1
+    else 
+        if cursordrawx < 3 then recentCursorRight = 0 end
+        
+    end
+    iconAnimationState = "highlighted"
+    if not fast then
+        startIconAnimation()
+        doLabelExpansionStuff()
+    end
+    reloadIconsNextFrame = true
+end
+
 function main()
     playdate.display.setRefreshRate(20)
     gfx.clear()
@@ -740,6 +847,11 @@ function main()
     setupGameInfo()
     badgeSetup()
     placeIcons()
+    if indexFromPos(cursorx,cursory) > #gameGrid then
+        cursorx,cursory = 1,1
+        iconOffsetX = 0
+        cursordrawx,cursordrawy = 1,1
+    end
     loadOptions(true)
     drawIcons()
     while gameGrid[#gameGrid] == ".empty" do
@@ -761,7 +873,39 @@ function main()
         drawerOpen = false 
         collapseEmptyExpansions()
     end)
-   
+    local x,y = targetcx,targetcy
+    while cursorx < x do
+        moveRight(true)
+    end
+    while cursorx > x do
+        moveLeft(true)
+    end
+    while cursory > y do
+        moveUp(true)
+    end
+    while cursory < y do
+        moveDown(true)
+    end
+end
+
+function wrapPatternForGame(game)
+	local pattern
+	if nil ~= game then
+		local info = gameInfo[game:getBundleID()]
+		if nil ~= info["imagepath"] then
+			local imagepath = info.imagepath .. "/wrapping-pattern.pdi"
+            if info.imagepath:sub(#info.imagepath,#info.imagepath) == "/" then
+			imagepath = info.imagepath .. "wrapping-pattern.pdi"
+            end
+            print(imagepath)
+			pattern = gfx.image.new(info["path"].."/"..imagepath)
+            print(pattern)
+		end
+	end
+	if nil == pattern then
+		pattern = gfx.image.new("images/default_pattern")
+	end
+	return pattern
 end
 
 function loadCard(bundleid , i)
@@ -769,6 +913,30 @@ function loadCard(bundleid , i)
     if imageName == nil then imageName = "card" end
     local icon = gfx.image.new(358, 163,gfx.kColorClear)
     gfx.lockFocus(icon)
+    for i,v in ipairs(groups) do
+        if v.name == gameInfo[bundleid]["group"] then
+            for j,v2 in ipairs(v) do
+                if v2:getBundleID() == bundleid then
+                    game = v2
+                end
+            end
+            break
+        end
+    end
+    if game and gameInfo[bundleid] then
+        if game:getInstalledState() == kPDGameStateFreshlyInstalled then
+            local pattern = wrapPatternForGame(game)
+            local wrappingPattern = gfx.image.new(400, 240, gfx.kColorClear)
+            gfx.lockFocus(wrappingPattern)
+            newGame:draw(0, 0)
+            gfx.setStencilImage(newGameMask)
+            pattern:draw(0, 0)
+            gfx.lockFocus(icon)
+            gameInfo[bundleid]["wrap"] = wrappingPattern
+        else
+            gameInfo[bundleid]["wrap"] = nil
+        end
+    end
     local drawletter = false
     local look_for_icon = true
     if gameInfo[bundleid]["imagepath"] and look_for_icon then
@@ -1199,7 +1367,7 @@ function startCardLaunchAnimation()
         playdate.system.switchToGame(gameInfo[cardLaunchGame]["path"])
     end
 end
-
+function lerp(a,b,t) return a * (1-t) + b * t end
 
 function updateCardCursor()
     if cardYpos > -10 then
@@ -1217,6 +1385,17 @@ function updateCardCursor()
         gfx.setPattern({255,0,255,0,255,0,255,0})
         gfx.fillRoundRect(0,0,400,250,10)
         cardImg:drawCentered(200,120)
+        if  gameInfo[cardLaunchGame]["wrap"] then
+            if unwrapAnimating then
+                unwrapx+=unwrapxvel
+                unwrapy+=unwrapyvel
+                unwrapxvel = lerp(unwrapxvel,0,0.1)
+                unwrapyvel = lerp(unwrapyvel,unwrapmaxvel,0.2)
+            end
+            gameInfo[cardLaunchGame]["wrap"]:draw(unwrapx,unwrapy)
+        end
+
+
         
     elseif contentWarningState == 1 then
         gfx.setColor(gfx.kColorWhite)
@@ -1228,56 +1407,98 @@ function updateCardCursor()
         gfx.drawTextInRect("*"..gameInfo[cardLaunchGame]["contentwarning2"].."*", 20, 50, 360, 75, 2, "\226\128\166", kTextAlignment.center)
     end
     if cardAnimationState ~= "launch" then
-        if playdate.buttonJustPressed("b") then
+        if playdate.buttonJustPressed("b") and canLaunch then
             cardShowing = false
             appearSound = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
             appearSound:play()
             reloadIconsNextFrame = true
         end
-        if playdate.buttonJustPressed("a") then
+        if playdate.buttonJustPressed("a") and canLaunch then
             loadCard(cardLaunchGame,"card-pressed")
             cardImg = gameInfo[cardLaunchGame]["card"]
-            if contentWarningState == 0 then
-                saveConfig()
-            end
-            local cw = gameInfo[cardLaunchGame]["contentwarning"]
-            local cw2 = gameInfo[cardLaunchGame]["contentwarning2"]
-            local game = nil
-            if cw or cw2 then
-                for i,v in ipairs(groups) do
-                    if v.name == gameInfo[cardLaunchGame]["group"] then
-                        for j,v2 in ipairs(v) do
-                            if v2:getBundleID() == gameInfo[cardLaunchGame]["bundleid"] then
-                                game = v2
+            local unwrapped = false
+            local game = gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]
+            for i,v in ipairs(groups) do
+                if v.name == game["group"] then
+                    for j,v2 in ipairs(v) do
+                        if v2:getBundleID() == game["bundleid"] then
+                            if v2:getInstalledState() == kPDGameStateFreshlyInstalled then
+                                canLaunch = false
+                                local unwrapSound = playdate.sound.fileplayer.new("systemsfx/unwrap")
+                                unwrapSound:setOffset(2)
+                                --appearSound:setOffset(2)
+                                playdate.timer.performAfterDelay(1000, function()                                 
+                                    v2:setInstalledState(kPDGameStateInstalled)
+                                    loadCard(game["bundleid"]) 
+                                    reloadIconsNextFrame = true
+                                    end) 
+                                unwrapAnimating = true
+                                --appearSound:setFinishCallback(
+                                playdate.timer.performAfterDelay(3500,function()                                 
+                                    playdate.system.updateGameList()
+                                    canLaunch = true
+                                    reloadIconsNextFrame = true
+                                    unwrapAnimating = false
+                                    unwrapx = 0
+                                    unwrapy = 0
+                                    end) 
+                                unwrapSound:play()
+                                unwrapx = 0
+                                unwrapy = 0
+                                unwrapxvel = -10
+                                unwrapyvel = -25
+                                reloadIconsNextFrame = true
+                                unwrapped = true
+                                break
                             end
+                            
                         end
-                        break
                     end
                 end
             end
-            local launchImmediately =false
-            if game then 
-                if game:getSuppressContentWarning() == true then 
-                    launchImmediately = true
-                end
-            end
-            if not cw or launchImmediately then
-                startCardLaunchAnimation()
-            elseif not cw2 then
+            if not unwrapped then
                 if contentWarningState == 0 then
-                    contentWarningState = 1
-                else
-                    game:setSuppressContentWarning(true)
-                    startCardLaunchAnimation()
+                    saveConfig()
                 end
-            else
-                if contentWarningState == 0 then
-                    contentWarningState = 1
-                elseif contentWarningState == 1 then
-                    contentWarningState = 2
-                else
-                    game:setSuppressContentWarning(true)
+                local cw = gameInfo[cardLaunchGame]["contentwarning"]
+                local cw2 = gameInfo[cardLaunchGame]["contentwarning2"]
+                local game = nil
+                if cw or cw2 then
+                    for i,v in ipairs(groups) do
+                        if v.name == gameInfo[cardLaunchGame]["group"] then
+                            for j,v2 in ipairs(v) do
+                                if v2:getBundleID() == gameInfo[cardLaunchGame]["bundleid"] then
+                                    game = v2
+                                end
+                            end
+                            break
+                        end
+                    end
+                end
+                local launchImmediately =false
+                if game then 
+                    if game:getSuppressContentWarning() == true then 
+                        launchImmediately = true
+                    end
+                end
+                if not cw or launchImmediately then
                     startCardLaunchAnimation()
+                elseif not cw2 then
+                    if contentWarningState == 0 then
+                        contentWarningState = 1
+                    else
+                        game:setSuppressContentWarning(true)
+                        startCardLaunchAnimation()
+                    end
+                else
+                    if contentWarningState == 0 then
+                        contentWarningState = 1
+                    elseif contentWarningState == 1 then
+                        contentWarningState = 2
+                    else
+                        game:setSuppressContentWarning(true)
+                        startCardLaunchAnimation()
+                    end
                 end
             end
         end
@@ -1293,7 +1514,6 @@ function updateCardCursor()
                 else
                     cardAnimationFrame = 0
                     cardAnimationDoneIntro = true
-                    cardAnimationStayFrames = 2
                 end
             elseif cardAnimationProps["frames"] then
                 local loops = cardAnimationProps["loop"]
@@ -1315,6 +1535,8 @@ function updateCardCursor()
             end
         end
     elseif cardAnimationState == "launch" then
+        bottomBar = false
+        cardYpos = 0
         if cardAnimationLaunch then
             cardAnimationFrame+=1
             if gameInfo[cardLaunchGame]["imagepath"] then
@@ -1324,25 +1546,32 @@ function updateCardCursor()
                 else
                     gfx.unlockFocus()
                     local img = gfx.image.new(gameInfo[cardLaunchGame]["path"] .. "/"..gameInfo[cardLaunchGame]["imagepath"].."/launchImage.pdi")
-                    if img then img:draw(0,0) else
+                    print("tried to load launchImage")
+                    if img then img:draw(0,0) print("drew launchimage") else
                     gfx.setColor(gfx.kColorBlack)
                     gfx.fillRect(0,0,400,240)
                     end
+                    cardCursorImg = nil
                     playdate.system.switchToGame(gameInfo[cardLaunchGame]["path"])
                 end
             else
                 gfx.unlockFocus()
                 gfx.setColor(gfx.kColorBlack)
                 gfx.fillRect(0,0,400,240)
+                cardCursorImg = nil
                 playdate.system.switchToGame(gameInfo[cardLaunchGame]["path"])
             end
         else
             gfx.unlockFocus()
+            gfx.setColor(gfx.kColorBlack)
+            gfx.fillRect(0,0,400,240)
+            cardCursorImg = nil
             playdate.system.switchToGame(gameInfo[cardLaunchGame]["path"])
         end
     end
 
     gfx.unlockFocus()
+    --testImg:draw(0,0)
 end
 
 function drawBottomBar()
@@ -1390,6 +1619,7 @@ function drawBottomBar()
     gfx.setImageDrawMode(gfx.kDrawModeCopy)
 end
 
+
 function playdate.update()
     if noToggleLabelFrames > 0 then noToggleLabelFrames -= 1 end
     --gfx.clear()
@@ -1431,7 +1661,9 @@ function playdate.update()
             end
         end
     end
-    drawBottomBar()
+    if bottomBar then
+        drawBottomBar()
+    end
     if Opts:isVisible() then
         local img = gfx.getWorkingImage()
         local spr = gfx.sprite.new()
@@ -1580,7 +1812,12 @@ function updateCursor()
                     else
                         iconAnimationStayFrames += 1
                     end
-                    local img = gfx.image.new(gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["path"] .. "/"..gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["imagepath"].."/icon-highlighted/"..tostring(iconAnimationFrame)..".pdi")
+                    local img = nil
+                    if gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["imagepath"] then
+                        img = gfx.image.new(gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["path"] .. "/"..gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]["imagepath"].."/icon-highlighted/"..tostring(iconAnimationFrame)..".pdi")
+                    else
+                        img = nil
+                    end
                     if img then
                         loadIcon(gameGrid[indexFromPos(cursorx,cursory)],"icon-highlighted/"..tostring(iconAnimationFrame))
                         reloadIconsNextFrame = true
@@ -1685,29 +1922,6 @@ function updateCursor()
             local game = gameInfo[gameGrid[indexFromPos(cursorx,cursory)]]
             if game then
                 local unwrapped = false
-                for i,v in ipairs(groups) do
-                    if v.name == game["group"] then
-                        for j,v2 in ipairs(v) do
-                            if v2:getBundleID() == game["bundleid"] then
-                                if v2:getInstalledState() == kPDGameStateFreshlyInstalled then
-                                    appearSound = playdate.sound.fileplayer.new("systemsfx/unwrap")
-                                    appearSound:setOffset(2)
-                                    playdate.timer.performAfterDelay(1000, function()                                 
-                                        v2:setInstalledState(kPDGameStateInstalled)
-                                        playdate.system.updateGameList()
-                                        loadIcon(game["bundleid"]) 
-                                        reloadIconsNextFrame = true
-                                        end) 
-                                    appearSound:play()
-                                    reloadIconsNextFrame = true
-                                    unwrapped = true
-                                    break
-                                end
-                                
-                            end
-                        end
-                    end
-                end
                 if not unwrapped then
                     cardYPos = 218
                     cardLaunchGame = gameGrid[indexFromPos(cursorx,cursory)]
@@ -1837,10 +2051,14 @@ function updateCursor()
     if playdate.buttonIsPressed("b") then
         if playdate.buttonJustPressed("left") then
             moveLabels(-1)
+            appearSound = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
+            appearSound:play()
             movedLabels = true
         end
         if playdate.buttonJustPressed("right") then
             moveLabels(1)
+            appearSound = playdate.sound.fileplayer.new("systemsfx/02-selection-reverse-trimmed")
+            appearSound:play()
             movedLabels = true
         end
     end
@@ -1862,6 +2080,28 @@ function updateCursor()
                 toggleLabel(cursorx)
             end
         end
+    end
+    crankChange+=playdate.getCrankChange()
+    local fast = false
+    while crankChange < -crankIncrement do
+        moveLeft(fast)
+        fast = true
+        crankChange+=crankIncrement
+    end
+    if fast then
+        
+        appearSound = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
+        appearSound:play()
+    end
+    fast = false
+    while crankChange > crankIncrement do
+        moveRight(fast)
+        fast = true
+        crankChange-=crankIncrement
+    end
+    if fast then 
+        appearSound = playdate.sound.fileplayer.new("systemsfx/02-selection-reverse-trimmed")
+        appearSound:play()
     end
     setCurrentLabel()
 end
@@ -1972,88 +2212,4 @@ function doLabelExpansionStuff()
             reloadIconsNextFrame = true
         end
     end
-end
-
-function moveUp(fast) 
-    loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
-    if gameGrid[indexFromPos(cursorx,cursory-1)] and cursory > 1 then
-        cursory -= 1
-        cursordrawy -= 1
-        if cursory < 1 then
-            cursory = 1
-            cursordrawy = 1
-        end
-        if cursordrawy > 1 then recentCursorDown = 1 else recentCursorDown = 0 end
-        
-    end
-    iconAnimationState = "highlighted"
-    if not fast then
-        startIconAnimation()
-        doLabelExpansionStuff()
-    end
-    reloadIconsNextFrame = true
-end
-
-function moveDown(fast)
-    loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
-    if gameGrid[indexFromPos(cursorx,cursory+1)] and cursory < rows then
-        cursory += 1
-        cursordrawy += 1
-        
-        if cursory > rows then
-            cursory = rows
-            cursordrawy = rows
-        end
-        if cursordrawy > 1 then recentCursorDown = 1 else recentCursorDown = 0 end
-        
-    end
-    iconAnimationState = "highlighted"
-    if not fast then
-        startIconAnimation()
-        doLabelExpansionStuff()
-    end
-    reloadIconsNextFrame = true
-end
-
-function moveRight(fast)
-    loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
-    if gameGrid[indexFromPos(cursorx+1,cursory)] then
-        cursorx += 1
-        if cursordrawx < 5 then
-            cursordrawx += 1
-        else
-            iconOffsetX += 1
-        end
-        if cursordrawx > 3 then recentCursorRight = 1 end
-        
-    end
-    iconAnimationState = "highlighted"
-    if not fast then
-        startIconAnimation()
-        doLabelExpansionStuff()
-    end
-    reloadIconsNextFrame = true
-end
-
-function moveLeft(fast)
-    loadIcon(gameGrid[indexFromPos(cursorx,cursory)])
-    cursorx -= 1    
-    if cursordrawx > 1 then
-        
-        cursordrawx -= 1
-    elseif cursorx >= 1 then
-        iconOffsetX -= 1
-    end
-    if cursorx < 1 then
-        cursorx = 1
-    else 
-        if cursordrawx < 3 then recentCursorRight = 0 end
-        
-    end
-    iconAnimationState = "highlighted"
-    if not fast then
-        startIconAnimation()
-        doLabelExpansionStuff()
-    end
-    reloadIconsNextFrame = true
 end
