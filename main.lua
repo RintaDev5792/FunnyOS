@@ -76,12 +76,16 @@ paddingOffset = 0
 editingLabel = 0
 firstEdit = true
 
+local showBatteryPercent = false
+
 keyTimer = nil
 local canLaunch = true
 local initialDelay = 300
 local repeatDelay = 40
 
 local cardYpos = 218
+local cardYposTarget = -10
+local cardInfoShowing = false
 
 blankImg = nil
 
@@ -92,6 +96,8 @@ local cardImg = nil
 cardShowing = false
 
 contentWarningState = 0
+
+local noCrankFrames = 5
 
 local bgdither = 0
 local bgditherimg = nil
@@ -157,6 +163,11 @@ Opts = Options(
                 {
                     name = "Show Battery",
                     key = "showbattery",
+                    default = false
+                },
+                {
+                    name = "Battery Percent",
+                    key = "batterypercent",
                     default = false
                 },
                 {
@@ -230,10 +241,12 @@ function loadOptions(initial)
     reloadIconsNextFrame = true
     if drawIconBorders == nil then drawIconBorders = true Opts:write("iconborders", 2) end
     if showBattery == nil then showBattery = false Opts:write("showbattery", 1) end
+    if showBatteryPercent == nil then showBatteryPercent = false Opts:write("batterypercent", 1) end
     if skipCard == nil then skipCard = false Opts:write("skipcard", 1) end
     if musicOn == nil then drawIconBorders = true Opts:write("musicon", 2) loadMusic() end
     skipCard = Opts:read("skipcard", true, true)
     showBattery = Opts:read("showbattery", true, true)
+    showBatteryPercent = Opts:read("batterypercent", true, true)
     if (musicOn ~= Opts:read("musicon", true, true) or initial) and Opts:read("musicon", true, true) == true then
         loadMusic()
     end
@@ -280,7 +293,6 @@ function collapseEmptyExpansions()
         local currentx = v["x"]
         if gameGrid[indexFromPos(currentx-1,1)] == ".empty" and gameGrid[indexFromPos(currentx-1,2)] == ".empty" and gameGrid[indexFromPos(currentx-1,3)] == ".empty" then
             collapse = true
-            print("found one")
         end
         if collapse then
             table.remove(gameGrid,indexFromPos(currentx-1,1))
@@ -399,7 +411,6 @@ function loadConfig()
         targetcy = datastore["cursory"]
 
     else
-        print("no data")
         first_load = true
     end
     if not iconPlacements then iconPlacements = {} end
@@ -539,8 +550,6 @@ function drawIcons()
     end
     if bgditherimg then
         bgditherimg:draw(0,0)
-    else
-        print("NO")
     end
 
     for i,v in ipairs(gameGrid) do
@@ -749,9 +758,7 @@ function loadMusic()
     music = playdate.sound.fileplayer.new("/Shared/FunnyOS/bgm")
     if music ~= nil then
         music:play()
-        music:setFinishCallback(function() playdate.timer.performAfterDelay(10000, function() if musicOn then music:play() end end ) end)
-    else
-        print("music is nil??")
+        music:setFinishCallback(function() playdate.timer.performAfterDelay(10000, function() if musicOn then loadMusic() end end ) end)
     end
 end
 
@@ -847,6 +854,7 @@ function main()
     setupGameInfo()
     badgeSetup()
     placeIcons()
+    noCrankFrames = 5
     if indexFromPos(cursorx,cursory) > #gameGrid then
         cursorx,cursory = 1,1
         iconOffsetX = 0
@@ -897,9 +905,7 @@ function wrapPatternForGame(game)
             if info.imagepath:sub(#info.imagepath,#info.imagepath) == "/" then
 			imagepath = info.imagepath .. "wrapping-pattern.pdi"
             end
-            print(imagepath)
 			pattern = gfx.image.new(info["path"].."/"..imagepath)
-            print(pattern)
 		end
 	end
 	if nil == pattern then
@@ -1115,7 +1121,6 @@ function setupGameInfo()
                     gameInfo[gme.getBundleID(v2)] = props
                 end
             else
-                print("INVALID GAME")
                 return false
             end
         end
@@ -1368,22 +1373,63 @@ function startCardLaunchAnimation()
     end
 end
 function lerp(a,b,t) return a * (1-t) + b * t end
+function lerpFloored(a,b,t) return math.floor(a * (1-t) + b * t) end
+
+function playdate.deviceWillLock()
+    if selectedBadge == nil then
+        iconsImage = nil
+        cardImg = nil
+        cardCursorImg = nil
+        music = nil
+        reloadIconsNextFrame = true
+        collectgarbage("collect")
+        saveConfig()
+    end
+end
+
+function playdate.deviceWillUnlock()
+    if selectedBadge == nil then
+        reloadIconsNextFrame = true
+        main()
+    end
+end
 
 function updateCardCursor()
-    if cardYpos > -10 then
-        cardYpos-=(cardYpos+10)*0.2*(40/playdate.display.getRefreshRate())
+    if cardYpos ~= cardYposTarget then
+        cardYpos=lerpFloored(cardYpos,cardYposTarget,0.2*(40/playdate.display.getRefreshRate()))
         reloadIconsNextFrame = true
     end
-    if cardYpos < -5 then cardYpos = -10 end
-    cardCursorImg = gfx.image.new(400,250,gfx.kColorClear)
+    if math.abs(math.abs(cardYpos)-math.abs(cardYposTarget)) < 2 then cardYpos = cardYposTarget end
+    cardCursorImg = gfx.image.new(400,470,gfx.kColorClear)
     gfx.lockFocus(cardCursorImg)
     if contentWarningState == 0 or cardAnimating then
         gfx.setImageDrawMode(gfx.kDrawModeCopy)
-        gfx.setColor(gfx.kColorWhite)
-        gfx.fillRoundRect(0,0,400,250,10)
         gfx.setColor(gfx.kColorBlack)
         gfx.setPattern({255,0,255,0,255,0,255,0})
-        gfx.fillRoundRect(0,0,400,250,10)
+        if cardYpos > -10 then
+            gfx.fillRoundRect(0,0,400,240 ,10)
+        else
+            gfx.fillRoundRect(0,-cardYpos-240,400,480 ,10)
+        end
+        gfx.setColor(gfx.kColorWhite)
+        gfx.fillRoundRect(25,270,350,240 ,10)
+        local f = gfx.getLargeUIFont()
+        local t = gameInfo[cardLaunchGame]["name"]
+        gfx.drawTextInRect(t, 35,280,330, 50, 0, "\226\128\166", kTextAlignment.center, f)
+        local f = gfx.getUIFont()
+        local t = gameInfo[cardLaunchGame]["description"]
+        if t then
+            gfx.setColor(gfx.kColorBlack)
+            gfx.drawTextInRect(t, 30,320,340, 100, 0, "\226\128\166", kTextAlignment.center, f)
+        end
+        local t = gameInfo[cardLaunchGame]["version"]
+        if t then
+            f:drawText(t, 30,445)
+        end
+        local t = gameInfo[cardLaunchGame]["author"]
+        if t then
+            f:drawTextAligned(t, 370,445,kTextAlignment.right)
+        end
         cardImg:drawCentered(200,120)
         if  gameInfo[cardLaunchGame]["wrap"] then
             if unwrapAnimating then
@@ -1395,7 +1441,6 @@ function updateCardCursor()
             gameInfo[cardLaunchGame]["wrap"]:draw(unwrapx,unwrapy)
         end
 
-
         
     elseif contentWarningState == 1 then
         gfx.setColor(gfx.kColorWhite)
@@ -1406,14 +1451,28 @@ function updateCardCursor()
         gfx.fillRect(0,0,400,218)
         gfx.drawTextInRect("*"..gameInfo[cardLaunchGame]["contentwarning2"].."*", 20, 50, 360, 75, 2, "\226\128\166", kTextAlignment.center)
     end
+    if playdate.buttonJustPressed("down") and not cardInfoShowing then
+        cardYposTarget = -250
+        cardInfoShowing = true
+        appearSound = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
+        appearSound:play()
+    end
+    if playdate.buttonJustPressed("up") and cardInfoShowing then
+        cardYposTarget = -10
+        cardInfoShowing = false
+        appearSound = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
+        appearSound:play()
+    end
     if cardAnimationState ~= "launch" then
         if playdate.buttonJustPressed("b") and canLaunch then
             cardShowing = false
             appearSound = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
             appearSound:play()
             reloadIconsNextFrame = true
+            cardYposTarget = -10
+            cardInfoShowing = false
         end
-        if playdate.buttonJustPressed("a") and canLaunch then
+        if playdate.buttonJustPressed("a") and canLaunch and not cardInfoShowing then
             loadCard(cardLaunchGame,"card-pressed")
             cardImg = gameInfo[cardLaunchGame]["card"]
             local unwrapped = false
@@ -1429,6 +1488,7 @@ function updateCardCursor()
                                 --appearSound:setOffset(2)
                                 playdate.timer.performAfterDelay(1000, function()                                 
                                     v2:setInstalledState(kPDGameStateInstalled)
+                                    loadIcon(game["bundleid"])
                                     loadCard(game["bundleid"]) 
                                     reloadIconsNextFrame = true
                                     end) 
@@ -1546,8 +1606,7 @@ function updateCardCursor()
                 else
                     gfx.unlockFocus()
                     local img = gfx.image.new(gameInfo[cardLaunchGame]["path"] .. "/"..gameInfo[cardLaunchGame]["imagepath"].."/launchImage.pdi")
-                    print("tried to load launchImage")
-                    if img then img:draw(0,0) print("drew launchimage") else
+                    if img then img:draw(0,0) else
                     gfx.setColor(gfx.kColorBlack)
                     gfx.fillRect(0,0,400,240)
                     end
@@ -1594,8 +1653,13 @@ function drawBottomBar()
         gfx.drawTextAligned("*"..t.."*", 395, 220, kTextAlignment.right)
     else
         batteryImg:draw(5,220)
-        gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
-        gfx.drawTextAligned("*"..tostring(math.floor(playdate.getBatteryPercentage())).."*",22,221, kTextAlignment.center)
+        if showBatteryPercent then
+            --print("drawin bp")
+            gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
+            gfx.drawTextAligned("*"..tostring(math.floor(playdate.getBatteryPercentage())).."*",22,221, kTextAlignment.center)
+        end
+
+        --print(showBatteryPercent)
         gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
         local t = playdate.getTime()
         local min = tostring(t["minute"])
@@ -1608,7 +1672,8 @@ function drawBottomBar()
                 hour = tostring(t["hour"]-12)
                 min = min .. " PM"
             else
-                hour = tostring(t["hour"]) .. " AM"
+                hour = tostring(t["hour"])
+                min = min ..  " AM"
             end
         end
         local text = "*"..hour..":"..min.."*"
@@ -1659,6 +1724,7 @@ function playdate.update()
             if cardYpos > 218 then
                 cardCursorImg = nil
             end
+
         end
     end
     if bottomBar then
@@ -2084,7 +2150,9 @@ function updateCursor()
     crankChange+=playdate.getCrankChange()
     local fast = false
     while crankChange < -crankIncrement do
-        moveLeft(fast)
+        if noCrankFrames < 1 then
+            moveLeft(fast)
+        end
         fast = true
         crankChange+=crankIncrement
     end
@@ -2095,13 +2163,19 @@ function updateCursor()
     end
     fast = false
     while crankChange > crankIncrement do
-        moveRight(fast)
+        if noCrankFrames < 1 then
+            moveRight(fast)
+        end
         fast = true
         crankChange-=crankIncrement
     end
     if fast then 
         appearSound = playdate.sound.fileplayer.new("systemsfx/02-selection-reverse-trimmed")
         appearSound:play()
+    end
+    if not (noCrankFrames < 1) then
+        noCrankFrames -= 1
+        crankChange = 0
     end
     setCurrentLabel()
 end
