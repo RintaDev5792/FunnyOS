@@ -229,6 +229,7 @@ local unwrapmaxvel = 25
 
 local stockLauncherImg = gfx.image.new("images/stocklauncher")
 local batteryImg = gfx.image.new("images/battery")
+local batteryImgs = gfx.imagetable.new("images/battery-bars")
 local wrappedImg = gfx.image.new("images/wrapped")
 local newGame = gfx.image.new("images/newgame")
 local newGameMask = gfx.image.new("images/newgame_mask")
@@ -1652,11 +1653,13 @@ function drawBottomBar()
         local t = currentLabel
         gfx.drawTextAligned("*"..t.."*", 395, 220, kTextAlignment.right)
     else
-        batteryImg:draw(5,220)
         if showBatteryPercent then
+            batteryImg:draw(5,220)
             --print("drawin bp")
             gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
             gfx.drawTextAligned("*"..tostring(math.floor(playdate.getBatteryPercentage())).."*",22,221, kTextAlignment.center)
+        else
+            batteryImgs:getImage(math.ceil(playdate.getBatteryPercentage()/25)+1):draw(5,220)
         end
 
         --print(showBatteryPercent)
