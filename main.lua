@@ -582,7 +582,7 @@ function drawIcons()
             local drawy = ((gridy*72)-56)-iconOffsetY
             drawx,drawy = math.floor(drawx),math.floor(drawy)
             drawx+=getOffset(gridx)*paddingAmount
-            if (drawx < 400 and drawx > -100) then
+            if (drawx < 500 and drawx > -100) then
                 for j,v2 in ipairs(labels) do
                     if indexFromPos(v2["x"],1) == i and not found then
                         found = true
@@ -1662,65 +1662,67 @@ end
 
 
 function playdate.update()
-    if noToggleLabelFrames > 0 then noToggleLabelFrames -= 1 end
-    --gfx.clear()
-    if not Opts:isVisible() then
-        --gfx.sprite.update()
-    end
-    playdate.timer.updateTimers()
-    if actualIconOffsetX < iconOffsetX then
-        actualIconOffsetX+=(iconOffsetX-actualIconOffsetX)*0.2*(40/playdate.display.getRefreshRate())
-        reloadIconsNextFrame = true
-    elseif actualIconOffsetX > iconOffsetX then
-        actualIconOffsetX-=(actualIconOffsetX-iconOffsetX)*0.2*(40/playdate.display.getRefreshRate())
-        reloadIconsNextFrame = true
-    end
-    if math.abs(actualIconOffsetX-iconOffsetX) < 0.02 then
-        actualIconOffsetX = iconOffsetX
-    end
-    if reloadIconsNextFrame then
-        drawIcons()
-        reloadIconsNextFrame = false
-    else
-        --iconsImage:draw(0,0)
-    end
-    if inputDelay > 0 then inputDelay -= 1 end
-    if not Opts:isVisible() then
-        if not playdate.keyboard.isVisible() and not cardShowing then
-            updateCursor()
-        elseif cardShowing then
-            updateCardCursor()
+    if gameInfo ~= nil and gameInfo ~= {} and gameGrid ~= nil and gameGrid ~= {} then
+        if noToggleLabelFrames > 0 then noToggleLabelFrames -= 1 end
+        --gfx.clear()
+        if not Opts:isVisible() then
+            --gfx.sprite.update()
         end
-    end
-    if cardCursorImg then
-        cardCursorImg:drawAnchored(200,cardYpos,0.5,0)
-        if cardYpos < 230 and not cardShowing then
-            cardYpos+=(230-cardYpos)*0.2*(40/playdate.display.getRefreshRate())
+        playdate.timer.updateTimers()
+        if actualIconOffsetX < iconOffsetX then
+            actualIconOffsetX+=(iconOffsetX-actualIconOffsetX)*0.2*(40/playdate.display.getRefreshRate())
             reloadIconsNextFrame = true
-            if cardYpos > 218 then
-                cardCursorImg = nil
-            end
-
+        elseif actualIconOffsetX > iconOffsetX then
+            actualIconOffsetX-=(actualIconOffsetX-iconOffsetX)*0.2*(40/playdate.display.getRefreshRate())
+            reloadIconsNextFrame = true
         end
+        if math.abs(actualIconOffsetX-iconOffsetX) < 0.02 then
+            actualIconOffsetX = iconOffsetX
+        end
+        if reloadIconsNextFrame then
+            drawIcons()
+            reloadIconsNextFrame = false
+        else
+            --iconsImage:draw(0,0)
+        end
+        if inputDelay > 0 then inputDelay -= 1 end
+        if not Opts:isVisible() then
+            if not playdate.keyboard.isVisible() and not cardShowing then
+                updateCursor()
+            elseif cardShowing then
+                updateCardCursor()
+            end
+        end
+        if cardCursorImg then
+            cardCursorImg:drawAnchored(200,cardYpos,0.5,0)
+            if cardYpos < 230 and not cardShowing then
+                cardYpos+=(230-cardYpos)*0.2*(40/playdate.display.getRefreshRate())
+                reloadIconsNextFrame = true
+                if cardYpos > 218 then
+                    cardCursorImg = nil
+                end
+
+            end
+        end
+        if bottomBar then
+            drawBottomBar()
+        end
+        if Opts:isVisible() then
+            local img = iconsImage
+            gfx.lockFocus(img)
+            if cardCursorImg then cardCursorImg:drawAnchored(200,cardYpos,0.5,0) end
+            drawBottomBar()
+            gfx.unlockFocus()
+            local spr = gfx.sprite.new()
+            spr:add()
+            spr:moveTo(200,120)
+            spr:setImage(img)
+            gfx.sprite.update()
+            spr:remove()
+        end
+        --img:draw(0,0)
+        --playdate.drawFPS(0,0)
     end
-    if bottomBar then
-        drawBottomBar()
-    end
-    if Opts:isVisible() then
-        local img = iconsImage
-        gfx.lockFocus(img)
-        if cardCursorImg then cardCursorImg:drawAnchored(200,cardYpos,0.5,0) end
-        drawBottomBar()
-        gfx.unlockFocus()
-        local spr = gfx.sprite.new()
-        spr:add()
-        spr:moveTo(200,120)
-        spr:setImage(img)
-        gfx.sprite.update()
-        spr:remove()
-    end
-    --img:draw(0,0)
-    --playdate.drawFPS(0,0)
 end
 
 function playdate.keyboard.keyboardAnimatingCallback()
