@@ -564,7 +564,6 @@ function getOffset(x)
     return displayOffsetX
 end
 local actualIconOffsetX = 0
-
 function drawIcons()
     local paddingAmount = 30
     gfx.clear()
@@ -582,9 +581,8 @@ function drawIcons()
             local drawx = ((gridx*72)-52)-actualIconOffsetX*72  + 2 - getOffset(cursorx)*paddingAmount
             local drawy = ((gridy*72)-56)-iconOffsetY
             drawx,drawy = math.floor(drawx),math.floor(drawy)
-            if (drawx < 400 and drawx > -300) then
-    
-                drawx+=getOffset(gridx)*paddingAmount
+            drawx+=getOffset(gridx)*paddingAmount
+            if (drawx < 400 and drawx > -100) then
                 for j,v2 in ipairs(labels) do
                     if indexFromPos(v2["x"],1) == i and not found then
                         found = true
@@ -869,64 +867,6 @@ function moveLeft(fast)
     reloadIconsNextFrame = true
 end
 
-function  main()
-    loadingImg:draw(0,0)
-    playdate.display.flush()
-    playdate.display.setRefreshRate(20)
-    gfx.clear()
-    dirSetup()
-    loadConfig()
-    setupGameInfo()
-    loadOptions(true)
-    badgeSetup()
-    placeIcons()
-    noCrankFrames = 5
-    if indexFromPos(cursorx,cursory) > #gameGrid then
-        cursorx,cursory = 1,1
-        iconOffsetX = 0
-        cursordrawx,cursordrawy = 1,1
-    end
-    drawIcons()
-    while gameGrid[#gameGrid] == ".empty" do
-        table.remove(gameGrid,#gameGrid)
-    end
-    local menu = playdate.getSystemMenu()
-    menu:removeAllMenuItems()
-    menu:addMenuItem('options', function(value)
-        -- Check current state of options sprite to determine whether to open or close the menu.
-        if Opts:isVisible(true) then
-            Opts:hide()
-        else
-            Opts:show()
-        end
-    end)    
-    menu:addCheckmarkMenuItem("organize", organizeMode, function(bool) 
-        organizeMode = bool 
-        reloadIconsNextFrame = true 
-        drawerOpen = false 
-        collapseEmptyExpansions()
-    end)
-    local x,y = targetcx,targetcy
-    while cursorx < x do
-        moveRight(true)
-    end
-    while cursorx > x do
-        moveLeft(true)
-    end
-    while cursory > y do
-        moveUp(true)
-    end
-    while cursory < y do
-        moveDown(true)
-    end
-
-    if reduceStuttering then
-        for i,v in ipairs(gameGrid) do
-            loadIcon(v)
-        end
-    end
-end
-
 function wrapPatternForGame(game)
 	local pattern
 	if nil ~= game then
@@ -1179,9 +1119,9 @@ function setupGameInfo()
         end
     end
     saveConfig()
-    return true end
+    return true 
+end
 
-main()
 --THIS FUNCTION IS SCRATCH'S
 function parseAnimFile(animFile)
 	if nil == animFile then
@@ -1872,10 +1812,12 @@ function updateCursor()
     gfx.setLineWidth(6)
     gfx.setColor(invertedColors[invertcursor])
     gfx.drawRoundRect(cursordrawx*72-49, cursordrawy*72-55 - iconOffsetY,64,64,8)
-    if iconsImage:sample(cursordrawx*72-45, cursordrawy*72-51 - iconOffsetY) == gfx.kColorBlack then
-        gfx.setColor(invertedColors[ not invertcursor])
-        gfx.setLineWidth(1)
-        gfx.drawRoundRect(cursordrawx*72-48, cursordrawy*72-54 - iconOffsetY,62,62,6)
+    if iconsImage then
+        if iconsImage:sample(cursordrawx*72-45, cursordrawy*72-51 - iconOffsetY) == gfx.kColorBlack and iconsImage:sample(cursordrawx*72-45, cursordrawy*72-50 - iconOffsetY) == gfx.kColorBlack and iconsImage:sample(cursordrawx*72-44, cursordrawy*72-51 - iconOffsetY+1) == gfx.kColorBlack then
+            gfx.setColor(invertedColors[ not invertcursor])
+            gfx.setLineWidth(1)
+            gfx.drawRoundRect(cursordrawx*72-48, cursordrawy*72-54 - iconOffsetY,62,62,6)
+        end
     end
     if iconAnimationState == "highlighted" then
         reloadIconsNextFrame = true
@@ -2223,16 +2165,20 @@ end
 function setCurrentLabel()
     local currentcurrentLabel = currentLabel
     currentLabel = nil
-    for i,v in ipairs(labels) do
-        if indexFromPos(v["x"],1) <= indexFromPos(cursorx,cursory) then
-            currentLabel = v["name"]
+    if #labels > 0 then
+        for i,v in ipairs(labels) do
+            if indexFromPos(v["x"],1) <= indexFromPos(cursorx,cursory) then
+                currentLabel = v["name"]
+            end
         end
-    end
-    if not currentLabel then
-        currentLabel = labels[#labels]["name"]
-    end
-    if currentcurrentLabel ~= currentLabel then
-        reloadIconsNextFrame = true
+        if not currentLabel then
+            currentLabel = labels[#labels]["name"]
+        end
+        if currentcurrentLabel ~= currentLabel then
+            reloadIconsNextFrame = true
+        end
+    else
+        currentLabel= ""
     end
 end
 
@@ -2327,3 +2273,64 @@ function doLabelExpansionStuff()
         end
     end
 end
+
+function  main()
+    loadingImg:draw(0,0)
+    playdate.display.setRefreshRate(20)
+    playdate.display.flush()
+    gfx.clear()
+    dirSetup()
+    loadConfig()
+    setupGameInfo()
+    loadOptions(true)
+    badgeSetup()
+    placeIcons()
+    noCrankFrames = 5
+    if indexFromPos(cursorx,cursory) > #gameGrid then
+        cursorx,cursory = 1,1
+        iconOffsetX = 0
+        cursordrawx,cursordrawy = 1,1
+    end
+    drawIcons()
+    while gameGrid[#gameGrid] == ".empty" do
+        table.remove(gameGrid,#gameGrid)
+    end
+    local menu = playdate.getSystemMenu()
+    menu:removeAllMenuItems()
+    menu:addMenuItem('options', function(value)
+        -- Check current state of options sprite to determine whether to open or close the menu.
+        if Opts:isVisible(true) then
+            Opts:hide()
+        else
+            Opts:show()
+        end
+    end)    
+    menu:addCheckmarkMenuItem("organize", organizeMode, function(bool) 
+        organizeMode = bool 
+        reloadIconsNextFrame = true 
+        drawerOpen = false 
+        collapseEmptyExpansions()
+    end)
+    local x,y = targetcx,targetcy
+    while cursorx < x do
+        moveRight(true)
+    end
+    while cursorx > x do
+        moveLeft(true)
+    end
+    while cursory > y do
+        moveUp(true)
+    end
+    while cursory < y do
+        moveDown(true)
+    end
+
+    if reduceStuttering then
+        for i,v in ipairs(gameGrid) do
+            loadIcon(v)
+        end
+    end
+end
+
+
+main()
