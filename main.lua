@@ -151,53 +151,69 @@ Opts = Options(
         { 
             header="Customization", options = {
                 {
+                    name = "Reduce stuttering",
+                    key = "reducestuttering",
+                    default = false,
+                    tooltip = "If enabled, icons are processed when the launcher starts instead of as you scroll. Longer load times, less stuttering. Open and close a game for this to take effect."
+                },
+                {
                     name = "Music",
                     key = "musicon",
-                    default = true
+                    default = true,
+                    tooltip = "Whether your music placed in /Shared/FunnyOS will play."
                 },
                 {
                     name = "Skip Card",
                     key = "skipcard",
-                    default = false
+                    default = false,
+                    tooltip = "When you click on an icon, launch the game without going to the card menu."
                 },
                 {
                     name = "Show Battery",
                     key = "showbattery",
-                    default = false
+                    default = false,
+                    tooltip = "Switch out the bottom bar for battery and time instead of controls."
                 },
                 {
                     name = "Battery Percent",
                     key = "batterypercent",
-                    default = false
+                    default = false,
+                    tooltip = "If show battery is selected, this changes the battery icon to show exact percents."
                 },
                 {
                     name = "Icon Borders",
                     key = "iconborders",
-                    default = true
+                    default = true,
+                    tooltip = "Show borders around list view icons."
                 },
                 {
                     name = "Invert Borders",
                     key = "invertborders",
-                    default = false
+                    default = false,
+                    tooltip = "Make list view icons borders white."
                 },
                 {
                     name = "Invert Cursor",
                     key = "invertcursor",
-                    default = false
+                    default = false,
+                    tooltip = "Make the cursor white."
                 },
                 {
                     name = "Invert Labels",
                     key = "invertlabels",
-                    default = false
+                    default = false,
+                    tooltip = "Make labels white."
                 },
                 {
                     name = "Invert Blanks",
                     key = "invertblanks",
-                    default = false
+                    default = false,
+                    tooltip = "Make blanks dither white instead of black (good for dark backgrounds)."
                 },
                 {
                     name = "Background Dither",
                     key = "bgdither",
+                    tooltip = "Controls dithering strength applied to background.",
                     style = Options.SLIDER,
                     min = 0,
                     max = 4,
@@ -206,6 +222,7 @@ Opts = Options(
                 {
                     name = "Blank Space Dither",
                     key = "emptydither",
+                    tooltip = "Controls dithering strength on spaces without an icon.",
                     style = Options.SLIDER,
                     min = 0,
                     max = 4,
@@ -228,6 +245,7 @@ local unwrapyvel = 0
 local unwrapmaxvel = 25
 
 local stockLauncherImg = gfx.image.new("images/stocklauncher")
+local loadingImg = gfx.image.new("images/loading")
 local batteryImg = gfx.image.new("images/battery")
 local batteryImgs = gfx.imagetable.new("images/battery-bars")
 local wrappedImg = gfx.image.new("images/wrapped")
@@ -237,16 +255,20 @@ local newGameMask = gfx.image.new("images/newgame_mask")
 local crankChange = 0
 local crankIncrement = 45
 
+local reduceStuttering = false
+
 function loadOptions(initial)
     gfx.sprite.update()
     reloadIconsNextFrame = true
     if drawIconBorders == nil then drawIconBorders = true Opts:write("iconborders", 2) end
     if showBattery == nil then showBattery = false Opts:write("showbattery", 1) end
+    if reduceStuttering == nil then reduceStuttering = false Opts:write("reducestuttering", 1) end
     if showBatteryPercent == nil then showBatteryPercent = false Opts:write("batterypercent", 1) end
     if skipCard == nil then skipCard = false Opts:write("skipcard", 1) end
     if musicOn == nil then drawIconBorders = true Opts:write("musicon", 2) loadMusic() end
     skipCard = Opts:read("skipcard", true, true)
     showBattery = Opts:read("showbattery", true, true)
+    reduceStuttering = Opts:read("reducestuttering", true, true)
     showBatteryPercent = Opts:read("batterypercent", true, true)
     if (musicOn ~= Opts:read("musicon", true, true) or initial) and Opts:read("musicon", true, true) == true then
         loadMusic()
@@ -847,12 +869,15 @@ function moveLeft(fast)
     reloadIconsNextFrame = true
 end
 
-function main()
+function  main()
+    loadingImg:draw(0,0)
+    playdate.display.flush()
     playdate.display.setRefreshRate(20)
     gfx.clear()
     dirSetup()
     loadConfig()
     setupGameInfo()
+    loadOptions(true)
     badgeSetup()
     placeIcons()
     noCrankFrames = 5
@@ -861,7 +886,6 @@ function main()
         iconOffsetX = 0
         cursordrawx,cursordrawy = 1,1
     end
-    loadOptions(true)
     drawIcons()
     while gameGrid[#gameGrid] == ".empty" do
         table.remove(gameGrid,#gameGrid)
@@ -894,6 +918,12 @@ function main()
     end
     while cursory < y do
         moveDown(true)
+    end
+
+    if reduceStuttering then
+        for i,v in ipairs(gameGrid) do
+            loadIcon(v)
+        end
     end
 end
 
@@ -1608,8 +1638,11 @@ function updateCardCursor()
                     gfx.unlockFocus()
                     local img = gfx.image.new(gameInfo[cardLaunchGame]["path"] .. "/"..gameInfo[cardLaunchGame]["imagepath"].."/launchImage.pdi")
                     if img then img:draw(0,0) else
+                    img = gfx.image.new(gameInfo[cardLaunchGame]["path"] .. "/"..gameInfo[cardLaunchGame]["imagepath"].."/launchImages/"..tostring(cardAnimationFrame-1)..".pdi")
+                    if img then img:draw(0,0) else
                     gfx.setColor(gfx.kColorBlack)
                     gfx.fillRect(0,0,400,240)
+                    end
                     end
                     cardCursorImg = nil
                     playdate.system.switchToGame(gameInfo[cardLaunchGame]["path"])
@@ -1734,7 +1767,11 @@ function playdate.update()
         drawBottomBar()
     end
     if Opts:isVisible() then
-        local img = gfx.getWorkingImage()
+        local img = iconsImage
+        gfx.lockFocus(img)
+        if cardCursorImg then cardCursorImg:drawAnchored(200,cardYpos,0.5,0) end
+        drawBottomBar()
+        gfx.unlockFocus()
         local spr = gfx.sprite.new()
         spr:add()
         spr:moveTo(200,120)
