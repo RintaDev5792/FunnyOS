@@ -54,6 +54,14 @@ The image will be automatically scaled to 64x64 and used as the icon for that ga
 You can add animations for the icon by making a folder called `icon-highlighted` inside of `/Shared/FunnyOS/Icons/<bundleid>`, and putting an `animation.txt` file and your numbered frame pdi files in it (`1.pdi`, `2.pdi`, etc).   
 See [here](https://sdk.play.date/2.5.0/Inside%20Playdate.html#pdxinfo) for instructions on `animation.txt`
 
+### Custom Cursors  
+In order to load a custom cursor into FunnyOS, put any .pdi image file called `cursor.pdi` inside `/Shared/FunnyOS`. 
+This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
+In order to load an animated custom cursor into FunnyOS, put any .pdt file called `cursor.pdt` inside `/Shared/FunnyOS`.  
+This image must be compiled with `pdc` from the playdate SDK, and must be a .pdt file. pdt files are usually made by compiling a .gif with `pdc`.  
+Animated cursors will animate at a constant 5 fps, so plan your gifs around that.
+Some pre-made cursors in pdi and pdt form are available [Here](https://github.com/RintaDev5792/FunnyOS/tree/main/Config/Cursors), and are based on the 3ds cursor.  
+
 ## FAQ
 > Q: how does FunnyOS import badges that aren't perfectly square or 64x64?
 
