@@ -76,6 +76,11 @@ paddingOffset = 0
 editingLabel = 0
 firstEdit = true
 
+local cursorImg = nil
+local cursorGif = nil
+local cursorGifFrame = 1
+local cursorGifNextFrameCounter = 0
+
 local showBatteryPercent = false
 
 keyTimer = nil
@@ -766,12 +771,21 @@ function dirSetup()
         end
         playdate.file.delete("/Shared/FunnyOSBadges", true)
     end
-    local img = gfx.image.new("/Shared/FunnyOS/bg.pdi")
     fle.mkdir("/Shared/FunnyOS/Icons")
+    local img = gfx.image.new("/Shared/FunnyOS/bg.pdi")
     if img then
         local w,h = img:getSize()
         img = img:scaledImage(1/(w/400))
         bgImg = img
+    end
+    img = gfx.imagetable.new("/Shared/FunnyOS/cursor.pdt")
+    if img then 
+        cursorGif = img
+    else
+        img = gfx.image.new("/Shared/FunnyOS/cursor.pdi")
+        if img then
+            cursorImg = img
+        end
     end
 end
 
@@ -1547,7 +1561,7 @@ function updateCardCursor()
                     cardAnimationDoneIntro = true
                 end
             elseif cardAnimationProps["frames"] then
-                local loops = cardAnimationProps["loop"]
+                local loops = cardAnimationProps["loopCount"]
                 if loops == nil then loops = -1 end
                 
                 cardAnimationFrame+=1
@@ -1596,8 +1610,11 @@ function updateCardCursor()
             end
         else
             gfx.unlockFocus()
+            local img = gfx.image.new(gameInfo[cardLaunchGame]["path"] .. "/"..gameInfo[cardLaunchGame]["imagepath"].."/launchImage.pdi")
+            if img then img:draw(0,0) else
             gfx.setColor(gfx.kColorBlack)
             gfx.fillRect(0,0,400,240)
+            end
             cardCursorImg = nil
             playdate.system.switchToGame(gameInfo[cardLaunchGame]["path"])
         end
@@ -1628,14 +1645,12 @@ function drawBottomBar()
     else
         if showBatteryPercent then
             batteryImg:draw(5,220)
-            --print("drawin bp")
             gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
             gfx.drawTextAligned("*"..tostring(math.floor(playdate.getBatteryPercentage())).."*",22,221, kTextAlignment.center)
         else
             batteryImgs:getImage(math.ceil(playdate.getBatteryPercentage()/25)+1):draw(5,220)
         end
 
-        --print(showBatteryPercent)
         gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
         local t = playdate.getTime()
         local min = tostring(t["minute"])
@@ -1811,15 +1826,24 @@ function toggleLabel(x)
 end
 
 function updateCursor()
-    gfx.setLineWidth(6)
-    gfx.setColor(invertedColors[invertcursor])
-    gfx.drawRoundRect(cursordrawx*72-49, cursordrawy*72-55 - iconOffsetY,64,64,8)
-    if iconsImage then
-        if iconsImage:sample(cursordrawx*72-45, cursordrawy*72-51 - iconOffsetY) == gfx.kColorBlack and iconsImage:sample(cursordrawx*72-45, cursordrawy*72-50 - iconOffsetY) == gfx.kColorBlack and iconsImage:sample(cursordrawx*72-44, cursordrawy*72-51 - iconOffsetY+1) == gfx.kColorBlack then
-            gfx.setColor(invertedColors[ not invertcursor])
-            gfx.setLineWidth(1)
-            gfx.drawRoundRect(cursordrawx*72-48, cursordrawy*72-54 - iconOffsetY,62,62,6)
+    if cursorGif then
+        cursorGif:getImage(cursorGifFrame):drawCentered(cursordrawx*72-17, cursordrawy*72 - iconOffsetY - 23)
+        cursorGifNextFrameCounter+=1
+        if cursorGifNextFrameCounter > 3 then
+            cursorGifNextFrameCounter = 0
+            if cursorGifFrame < cursorGif:getLength() then
+                cursorGifFrame += 1
+            else
+                cursorGifFrame = 1
+            end
+            reloadIconsNextFrame = true
         end
+    elseif cursorImg then
+        cursorImg:drawCentered(cursordrawx*72-17, cursordrawy*72 - iconOffsetY - 23)
+    else
+        gfx.setLineWidth(6)
+        gfx.setColor(invertedColors[invertcursor])
+        gfx.drawRoundRect(cursordrawx*72-49, cursordrawy*72-55 - iconOffsetY,64,64,8)
     end
     if iconAnimationState == "highlighted" then
         reloadIconsNextFrame = true
@@ -1834,7 +1858,7 @@ function updateCursor()
                     iconAnimationStayFrames = 2
                 end
             elseif iconAnimationProps["frames"] then
-                local loops = iconAnimationProps["loop"]
+                local loops = iconAnimationProps["loopCount"]
                 if loops == nil then loops = -1 end
                 
                 iconAnimationFrame+=1
@@ -1854,7 +1878,7 @@ function updateCursor()
                 end
             elseif gameGrid[indexFromPos(cursorx,cursory)] then
                 if gameInfo[gameGrid[indexFromPos(cursorx,cursory)]] then
-                    local loops = iconAnimationProps["loop"]
+                    local loops = iconAnimationProps["loopCount"]
                     if loops == nil then loops = -1 end
                     if iconAnimationStayFrames >= 1 then
                         iconAnimationFrame+=1
@@ -1920,7 +1944,6 @@ function updateCursor()
     end
     if playdate.buttonJustReleased("left") then
         removeKeyTimer()
-        startIconAnimation()
     end
     if  playdate.buttonJustPressed("right") and not playdate.buttonIsPressed("b") then 
 
@@ -1936,7 +1959,6 @@ function updateCursor()
     end
     if playdate.buttonJustReleased("right") then
         removeKeyTimer()
-        startIconAnimation()
     end
     if playdate.buttonJustPressed("down") and not playdate.buttonIsPressed("b") then 
         removeKeyTimer()
@@ -1950,7 +1972,6 @@ function updateCursor()
     end
     if playdate.buttonJustReleased("down") then
         removeKeyTimer()
-        startIconAnimation()
     end
     if playdate.buttonJustPressed("up") and not playdate.buttonIsPressed("b") then 
         removeKeyTimer()
@@ -1964,7 +1985,6 @@ function updateCursor()
     end
     if playdate.buttonJustReleased("up") then
         removeKeyTimer()
-        startIconAnimation()
     end
     if playdate.buttonJustPressed("a") then
         cardYpos = 218
