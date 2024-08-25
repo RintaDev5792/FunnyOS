@@ -338,6 +338,12 @@ function collapseEmptyExpansions()
             labels = newLabels
         end
     end
+    while gameGrid[#gameGrid] == ".empty" do
+        table.remove(gameGrid,#gameGrid)
+    end
+    while indexFromPos(cursorx,cursory) > #gameGrid do
+        moveLeft(true)
+    end
     reloadIconsNextFrame = true
     iconSaveNuclearOption()
 end
@@ -793,7 +799,7 @@ function loadMusic()
     music = playdate.sound.fileplayer.new("/Shared/FunnyOS/bgm")
     if music ~= nil then
         music:play()
-        music:setFinishCallback(function() playdate.timer.performAfterDelay(10000, function() if musicOn then loadMusic() end end ) end)
+        music:setFinishCallback(function()  if musicOn then loadMusic() end end)
     end
 end
 
@@ -811,6 +817,10 @@ function moveUp(fast)
     end
     iconAnimationState = "highlighted"
     if not fast then
+        if indexFromPos(cursorx,cursory) == #gameGrid and organizeMode then
+            table.insert(gameGrid,".empty")
+            reloadIconsNextFrame = true
+        end
         startIconAnimation()
         doLabelExpansionStuff()
     end
@@ -832,6 +842,10 @@ function moveDown(fast)
     end
     iconAnimationState = "highlighted"
     if not fast then
+        if indexFromPos(cursorx,cursory) == #gameGrid and organizeMode then
+            table.insert(gameGrid,".empty")
+            reloadIconsNextFrame = true
+        end
         startIconAnimation()
         doLabelExpansionStuff()
     end
@@ -852,6 +866,10 @@ function moveRight(fast)
     end
     iconAnimationState = "highlighted"
     if not fast then
+        if indexFromPos(cursorx,cursory) == #gameGrid and organizeMode then
+            table.insert(gameGrid,".empty")
+            reloadIconsNextFrame = true
+        end
         startIconAnimation()
         doLabelExpansionStuff()
     end
@@ -875,6 +893,10 @@ function moveLeft(fast)
     end
     iconAnimationState = "highlighted"
     if not fast then
+        if indexFromPos(cursorx,cursory) == #gameGrid and organizeMode then
+            table.insert(gameGrid,".empty")
+            reloadIconsNextFrame = true
+        end
         startIconAnimation()
         doLabelExpansionStuff()
     end
@@ -2293,6 +2315,7 @@ function doLabelExpansionStuff()
             iconSaveNuclearOption()
             reloadIconsNextFrame = true
         end
+
     end
 end
 
