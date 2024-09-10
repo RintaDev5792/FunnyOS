@@ -45,7 +45,12 @@ Music provided by Chris Mandra and Drunk With Honey. Huge shoutout to them, they
 ### Background Image  
 In order to load a background image into FunnyOS, put an image file called `bg.pdi` inside `/Shared/FunnyOS/`.  
 This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
-The image will be automatically scaled to 400x240 and used as the background behind the dither pattern in the launcher.
+The image will be automatically scaled to 400x240 and used as the background behind the dither pattern in the launcher.  
+
+### Loading Image  
+In order to load a loading image into FunnyOS, put an image file called `load.pdi` inside `/Shared/FunnyOS/`.  
+This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
+The image will be automatically scaled to 400x240 and used as the loading screen when you first enter the launcher.
 
 ### Custom Icons  
 In order to load a custom icon into FunnyOS, put an image file called `icon.pdi` inside `/Shared/FunnyOS/Icons/<bundleid>` where `<bundleid>` is the name of a game you want to replace the icon of (like the `com.whoever.whatever`).  
