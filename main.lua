@@ -81,6 +81,8 @@ local cursorGif = nil
 local cursorGifFrame = 1
 local cursorGifNextFrameCounter = 0
 
+local gameTimeList = nil
+
 local showBatteryPercent = false
 
 keyTimer = nil
@@ -602,6 +604,7 @@ function drawIcons()
                         gfx.fillRect(drawx-3 - paddingAmount + 9,0,paddingAmount-10,240)
                         local t = "*"..labels[j]["name"].."*"
                         local w,h = gfx.getTextSize(t)
+                        w = w * 1.2
                         local img = gfx.image.new(w,h)
                         gfx.lockFocus(img)
                         gfx.setImageDrawMode(invertedDrawModes[invertlabels])
@@ -784,6 +787,12 @@ function dirSetup()
         img = img:scaledImage(1/(w/400))
         bgImg = img
     end
+    img = gfx.image.new("/Shared/FunnyOS/load.pdi")
+    if img then
+        local w,h = img:getSize()
+        img = img:scaledImage(1/(w/400))
+        loadingImg = img
+    end
     img = gfx.imagetable.new("/Shared/FunnyOS/cursor.pdt")
     if img then 
         cursorGif = img
@@ -792,6 +801,15 @@ function dirSetup()
         if img then
             cursorImg = img
         end
+    end
+    if fle.exists("/System/Data/game_metrics.json") then
+        gameTimeList = playdate.datastore.read("/System/Data/game_metrics")
+        if gameTimeList == nil then
+            gameTimeList = {}
+        end
+    else
+        gameTimeList = {}
+        print("WOMP WOMP")
     end
 end
 
@@ -1492,6 +1510,7 @@ function updateCardCursor()
                                 canLaunch = false
                                 local unwrapSound = playdate.sound.fileplayer.new("systemsfx/unwrap")
                                 unwrapSound:setOffset(2)
+                                unwrapSound:play()
                                 --appearSound:setOffset(2)
                                 playdate.timer.performAfterDelay(1000, function()                                 
                                     v2:setInstalledState(kPDGameStateInstalled)
@@ -1509,7 +1528,6 @@ function updateCardCursor()
                                     unwrapx = 0
                                     unwrapy = 0
                                     end) 
-                                unwrapSound:play()
                                 unwrapx = 0
                                 unwrapy = 0
                                 unwrapxvel = -10
@@ -2028,12 +2046,35 @@ function updateCursor()
                         startCardAnimation()
                         removeKeyTimer()
                     else
-                        local img = gfx.image.new(gameInfo[cardLaunchGame]["path"] .. "/"..gameInfo[cardLaunchGame]["imagepath"].."/launchImage.pdi")
-                        if img then img:draw(0,0) else
-                        gfx.setColor(gfx.kColorBlack)
-                        gfx.fillRect(0,0,400,240)
+                        local found = false
+                        for i,v in ipairs(groups) do
+                            if v.name == game["group"] then
+                                for j,v2 in ipairs(v) do
+                                    if v2:getBundleID() == game["bundleid"] then
+                                        if v2:getInstalledState() == kPDGameStateFreshlyInstalled then                            
+                                            playdate.system.updateGameList()
+                                            local unwrapSound = playdate.sound.fileplayer.new("systemsfx/unwrap")
+                                            unwrapSound:setOffset(2)
+                                            unwrapSound:play()
+                                            reloadIconsNextFrame = true              
+                                            v2:setInstalledState(kPDGameStateInstalled)
+                                            loadIcon(game["bundleid"])
+                                            found = true
+                                            break
+                                        end
+                                        
+                                    end
+                                end
+                            end
                         end
-                        playdate.system.switchToGame(gameInfo[cardLaunchGame]["path"])
+                        if not found then 
+                            local img = gfx.image.new(gameInfo[cardLaunchGame]["path"] .. "/"..gameInfo[cardLaunchGame]["imagepath"].."/launchImage.pdi")
+                            if img then img:draw(0,0) else
+                            gfx.setColor(gfx.kColorBlack)
+                            gfx.fillRect(0,0,400,240)
+                            end
+                            playdate.system.switchToGame(gameInfo[cardLaunchGame]["path"])
+                        end
                     end
                 end
             elseif gameGrid[indexFromPos(cursorx,cursory)] == ".stockLauncher" then
@@ -2320,11 +2361,11 @@ function doLabelExpansionStuff()
 end
 
 function  main()
+    dirSetup()
     loadingImg:draw(0,0)
     playdate.display.setRefreshRate(20)
     playdate.display.flush()
     gfx.clear()
-    dirSetup()
     loadConfig()
     setupGameInfo()
     loadOptions(true)
