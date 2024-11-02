@@ -13,6 +13,9 @@ Made for playdateOS 2.6.0
 
 ## Instructions
 ### Installing on hardware
+
+Video tutorial available [here](https://www.youtube.com/watch?v=L6Q6Tsoksgg).
+  
 1. Download FunnyOS.pdx and os-download-x.x.x.py from the [releases](https://github.com/RintaDev5792/FunnyOS) page
 1. Run os-download and follow the instructions. After it is complete, you should have a .pdos and a .pdkey file in the same directory.
 1. Rename the PlaydateOS.pdos file to a .zip and unzip it
