@@ -1,7 +1,7 @@
 # FunnyOS
 Grid-based playdate custom launcher based on the 3ds menu (with badges!)
 
-Made for playdateOS 2.5.0  
+Made for playdateOS 2.6.0  
 ![](readme-images/showntell.gif)
 
 ## Features
@@ -13,13 +13,20 @@ Made for playdateOS 2.5.0
 
 ## Instructions
 ### Installing on hardware
-1. Download the installer from the [releases](https://github.com/RintaDev5792/FunnyOS) page
-1. Sideload the installer onto your playdate however you like
-1. Follow the instructions in the installer to install
-1. watch the cool animation rae made for indexos that I forgot to remove (it looks sick asf tho)
+1. Download FunnyOS.pdx and os-download-x.x.x.py from the [releases](https://github.com/RintaDev5792/FunnyOS) page
+1. Run os-download and follow the instructions. After it is complete, you should have a .pdos and a .pdkey file in the same directory.
+1. Rename the PlaydateOS.pdos file to a .zip and unzip it
+1. Go into the new folderc /System, and rename Launcher.pdx to StockLauncher.pdx.
+1. Copy your FunnyOS.pdx file into the System folder and rename it to Launcher.pdx
+1. Re-zip the PlaydateOS folder, if on macos open a terminal in the folder (not in System, in the root) and run "zip -r ../PlaydateOS-Patched.zip ."
+1. Rename your NEW zip to a .pdos
+1. Download [Playdate Utility](https://download-cdn.panic.com/playdate_utility/)
+1. Open Playdate Utility, and plug in your Playdate to your computer
+1. Click "Upgrade Firmware" and select your .pdos and .pdkey file in that order, wait while your playdate "installs system update"
+1. Done! Wow, so easy TvT
 
 ### Installing on Simulator
-1. Compile the launcher with `pdc . Launcher`
+1. Download FunnyOS.pdx from releases and rename it "Launcher.pdx"
 1. Navigate to wherever you installed the Playdate SDK, then go to `<SDK path>/Disk/System`
 1. Rename the existing application `Launcher.pdx` to somthing else, like `StockLauncher.pdx`
 1. Drag the `Launcher.pdx` you created in step 1 into the `System` folder
