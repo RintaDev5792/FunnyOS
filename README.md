@@ -16,7 +16,7 @@ Made for playdateOS 2.6.0
 1. Download FunnyOS.pdx and os-download-x.x.x.py from the [releases](https://github.com/RintaDev5792/FunnyOS) page
 1. Run os-download and follow the instructions. After it is complete, you should have a .pdos and a .pdkey file in the same directory.
 1. Rename the PlaydateOS.pdos file to a .zip and unzip it
-1. Go into the new folderc /System, and rename Launcher.pdx to StockLauncher.pdx.
+1. Go into the new folder and then /System, and rename Launcher.pdx to StockLauncher.pdx.
 1. Copy your FunnyOS.pdx file into the System folder and rename it to Launcher.pdx
 1. Re-zip the PlaydateOS folder, if on macos open a terminal in the folder (not in System, in the root) and run "zip -r ../PlaydateOS-Patched.zip ."
 1. Rename your NEW zip to a .pdos
