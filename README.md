@@ -28,6 +28,8 @@ Video tutorial available [here](https://www.youtube.com/watch?v=L6Q6Tsoksgg).
 1. Click "Upgrade Firmware" and select your .pdos and .pdkey file in that order, wait while your playdate "installs system update"
 1. Done! Wow, so easy TvT
 
+If this at any point freezes or errors out during installation, especially multiple times in a row, you can (as a last resort) hold A+B+MENU+LOCK to enter recovery mode and flash stock OS. FunnyOS installations will just about always work when installing from stock OS.
+
 ### Installing on Simulator
 1. Download FunnyOS.pdx from releases and rename it "Launcher.pdx"
 1. Navigate to wherever you installed the Playdate SDK, then go to `<SDK path>/Disk/System`
