@@ -1699,7 +1699,7 @@ function drawBottomBar()
         end
         local hour = tostring(t["hour"])
         if not playdate.shouldDisplay24HourTime() then
-            if t["hour"] > 12 then
+            if t["hour"] >= 12 then
                 hour = tostring(t["hour"]-12)
                 min = min .. " PM"
             else
