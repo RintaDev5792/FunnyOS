@@ -14,13 +14,24 @@ Made for playdateOS 2.6.0
 ## Instructions
 ### Installing on hardware
 
-Video tutorial available [here](https://www.youtube.com/watch?v=L6Q6Tsoksgg).
+Video tutorial available [here](https://www.youtube.com/watch?v=L6Q6Tsoksgg) for installations not utilising FunnyLoader.
   
 1. Download FunnyOS.pdx and os-download-x.x.x.py from the [releases](https://github.com/RintaDev5792/FunnyOS) page
-1. Run os-download and follow the instructions. After it is complete, you should have a .pdos and a .pdkey file in the same directory.
+1. Run os-download and follow the instructions. After it is complete, you should have a .pdos and a .pdkey file in the same directory
 1. Rename the PlaydateOS.pdos file to a .zip and unzip it
-1. Go into the new folder and then /System, and rename Launcher.pdx to StockLauncher.pdx.
+
+#### If installing only FunnyOS
+1. Go into the new folder and then /System, and rename Launcher.pdx to StockLauncher.pdx
 1. Copy your FunnyOS.pdx file into the System folder and rename it to Launcher.pdx
+
+### If utilising FunnyLauncher to have multiple launchers
+1. Go into the new folder and then /System, and create a folder named "Launchers" inside of it with that exact capitalisation
+1. Copy the default Launcher.pdx from /System to /System/Launchers
+1. Copy your FunnyLauncher.pdx (available from the releases page of [this](https://github.com/RintaDev5792/FunnyLauncher) repo) into /System (NOT /LAUNCHERS) and rename it to "Launcher.pdx"
+1. Copy your FunnyOS.pdx and the .pdx files of whichever other launchers you are using into /System/Launchers
+1. Name all of the .pdx files in /System/Launchers how you want them to show up in the FunnyLauncher list
+
+#### After organizing your PlaydateOS folder according to either of the previous sections
 1. Re-zip the PlaydateOS folder, if on macos open a terminal in the folder (not in System, in the root) and run "zip -r ../PlaydateOS-Patched.zip ."
 1. Rename your NEW zip to a .pdos
 1. Download [Playdate Utility](https://download-cdn.panic.com/playdate_utility/)
