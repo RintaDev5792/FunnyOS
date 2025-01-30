@@ -24,13 +24,13 @@ Video tutorial available [here](https://www.youtube.com/watch?v=L6Q6Tsoksgg) for
 1. Go into the new folder and then /System, and rename Launcher.pdx to StockLauncher.pdx
 1. Copy your FunnyOS.pdx file into the System folder and rename it to Launcher.pdx
 
-#### If utilising FunnyLauncher to have multiple launchers
+#### If utilising FunnyLoader to have multiple launchers
 1. Go into the new folder and then /System, and create a folder named "Launchers" inside of it with that exact capitalisation
 1. Copy the default Launcher.pdx from /System to /System/Launchers and rename it to whatever you want (usually "StockLauncher.pdx")
 1. Copy your FunnyLoader.pdx (available from the releases page of [this](https://github.com/RintaDev5792/FunnyLauncher) repo) into /System (NOT /LAUNCHERS) and rename it to "Launcher.pdx"
 1. Make another copy of FunnyLoader.pdx and put it in /System as StockLauncher.pdx. This will make the "Boot to stock launcher" button in FunnyOS instead redirect to the FunnyLoader UI.
 1. Copy your FunnyOS.pdx and the .pdx files of whichever other launchers you are using into /System/Launchers
-1. Name all of the .pdx files in /System/Launchers how you want them to show up in the FunnyLauncher list
+1. Name all of the .pdx files in /System/Launchers how you want them to show up in the FunnyLoader list
 
 #### After organizing your PlaydateOS folder according to either of the previous sections
 1. Re-zip the PlaydateOS folder, if on macos open a terminal in the folder (not in System, in the root) and run "zip -r ../PlaydateOS-Patched.zip ."
