@@ -1,7 +1,7 @@
 # FunnyOS
 Grid-based playdate custom launcher based on the 3ds menu (with badges!)
 
-Made for playdateOS 2.6.2
+Made for playdateOS 2.6.2+  
 ![](readme-images/showntell.gif)
 
 ## Features
