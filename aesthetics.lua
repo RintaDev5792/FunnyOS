@@ -4,6 +4,7 @@ import("CoreLibs/timer")
 import("CoreLibs/object")
 import("utils")
 import("system")
+
 --pd symbols
 --⬆️➡️⬇️⬅️🟨 ⊙ 🔒 🎣 ✛ Ⓐ Ⓑ
 --fishing rod is crank
@@ -435,15 +436,18 @@ function drawControlCenterMenu()
 	for i,v in ipairs(controlCenterMenuItems) do
 		gfx.drawText("*"..v.."*", 28, 236-controlCenterProgress + ccMenuSpacing*i)
 	end
-	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	gfx.setColor(gfx.kColorWhite)
-	gfx.fillCircleAtPoint(17, 236-controlCenterProgress+8+ccMenuSpacing*controlCenterMenuSelection, 4)
-	gfx.setImageDrawMode(gfx.kDrawModeCopy)	
+	if cursorState == cursorStates.CONTROL_CENTER_MENU then
+		gfx.setImageDrawMode(gfx.kDrawModeCopy)
+		gfx.setColor(gfx.kColorWhite)
+		gfx.fillCircleAtPoint(17, 236-controlCenterProgress+8+ccMenuSpacing*controlCenterMenuSelection, 4)
+	end
 	local controlCenterMenuItem = controlCenterMenuItems[controlCenterMenuSelection]
 	if controlCenterMenuItem == "Controls Help" then
 		drawHelp()
 	elseif controlCenterMenuItem == "System Info" then
 		drawSystemInfo()	
+	elseif controlCenterMenuItem == "FunnyOS Options" then
+		drawOptions()
 	else
 		drawComingSoon()	
 	end
@@ -494,4 +498,26 @@ function drawSystemInfo()
 	gfx.drawText("*FunnyOS: *\n*v"..funnyOSMetadata.version.."*", 320, 330-controlCenterProgress)
 	gfx.drawText("*PdOS: *\n*v"..playdate.systemInfo.sdk.."*", 320, 280-controlCenterProgress)
 	
+end
+
+function drawOptions()
+	gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+	local ccOptionsSpacing = 20
+	local controlCenterInfoScroll = 0
+	if controlCenterInfoSelection >= 9 then
+		controlCenterInfoScroll = controlCenterInfoSelection-8
+	end
+	for i,v in ipairs(configVarOptionsOrder) do
+		if configVarOptions[v] then
+			local y = 240-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
+			if y < 220 then
+				gfx.drawText("*"..configVarOptions[v].name.."*", 190, y)
+			end
+		end
+	end
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+	if cursorState == cursorStates.CONTROL_CENTER_CONTENT then
+		gfx.setColor(gfx.kColorWhite)
+		gfx.fillCircleAtPoint(179, 240-controlCenterProgress+8+ccOptionsSpacing*(controlCenterInfoSelection-controlCenterInfoScroll), 4)
+	end
 end

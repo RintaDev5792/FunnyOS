@@ -320,7 +320,8 @@ cursorStateInputHandlers = {
 		
 		AButtonUp = function()
 			if not didShortcut then
-				--go into that menu
+				changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
+				controlCenterInfoMaxSelection = controlCenterInfoMaxSelections[controlCenterMenuItems[controlCenterMenuSelection]]
 			end
 			delaySetNoShortcut()
 		end,
@@ -339,7 +340,7 @@ cursorStateInputHandlers = {
 			else
 				didShortcut = false
 				removeKeyTimer()
-				keyTimer = playdate.timer.keyRepeatTimerWithDelay(keyTimerInitialDelay,keyTimerRepeatDelay, controlCenterMenuMoveUp())
+				keyTimer = playdate.timer.keyRepeatTimerWithDelay(keyTimerInitialDelay,keyTimerRepeatDelay, controlCenterMenuMoveUp)
 			end
 		end,
 		upButtonUp = function() removeKeyTimer() end,
@@ -358,13 +359,58 @@ cursorStateInputHandlers = {
 			else
 				didShortcut = false
 				removeKeyTimer()
-				keyTimer = playdate.timer.keyRepeatTimerWithDelay(keyTimerInitialDelay,keyTimerRepeatDelay, controlCenterMenuMoveDown())
+				keyTimer = playdate.timer.keyRepeatTimerWithDelay(keyTimerInitialDelay,keyTimerRepeatDelay, controlCenterMenuMoveDown)
 			end
 		end,
 		downButtonUp = function() removeKeyTimer() end,
 		
 	},
 	[cursorStates.CONTROL_CENTER_CONTENT ] = {
+		
+		BButtonUp = function()
+			if not didShortcut then
+				changeCursorState(cursorStates.CONTROL_CENTER_MENU)
+			end
+			delaySetNoShortcut()
+		end,
+		
+		upButtonDown = function()
+			if playdate.buttonIsPressed("A") then
+				didShortcut = true
+				if playdate.buttonIsPressed("B") then
+					--changeCurrentLabelScale()
+				else
+					--move object, already moving object thought
+				end
+			elseif playdate.buttonIsPressed("B") then
+				didShortcut = true
+					--rename label
+			else
+				didShortcut = false
+				removeKeyTimer()
+				keyTimer = playdate.timer.keyRepeatTimerWithDelay(keyTimerInitialDelay,keyTimerRepeatDelay, controlCenterContentMoveUp)
+			end
+		end,
+		upButtonUp = function() removeKeyTimer() end,
+				
+		downButtonDown = function()
+			if playdate.buttonIsPressed("A") then
+				didShortcut = true
+				if playdate.buttonIsPressed("B") then
+					--EMPTY SLOT
+				else
+					toggleControlCenter()
+				end
+			elseif playdate.buttonIsPressed("B") then
+				
+				didShortcut = true
+			else
+				didShortcut = false
+				removeKeyTimer()
+				keyTimer = playdate.timer.keyRepeatTimerWithDelay(keyTimerInitialDelay,keyTimerRepeatDelay, controlCenterContentMoveDown)
+			end
+		end,
+		downButtonUp = function() removeKeyTimer() end,
 	
 	},
 	[cursorStates.INFO_POPUP ] = {
@@ -607,5 +653,19 @@ function controlCenterMenuMoveUp()
 	controlCenterMenuSelection-=1
 	if controlCenterMenuSelection < 1 then
 		controlCenterMenuSelection = 1
+	end
+end
+
+function controlCenterContentMoveDown()
+	controlCenterInfoSelection+=1
+	if controlCenterInfoSelection > controlCenterInfoMaxSelection then
+		controlCenterInfoSelection = controlCenterInfoMaxSelection
+	end
+end
+
+function controlCenterContentMoveUp()
+	controlCenterInfoSelection-=1
+	if controlCenterInfoSelection < 1 then
+		controlCenterInfoSelection = 1
 	end
 end
