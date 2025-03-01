@@ -10,13 +10,22 @@ local keyTimerInitialDelay = 300
 local keyTimerRepeatDelay = 40
 local didShortcut = false
 
+cursorStates = {
+	SELECT_LABEL = 1, 
+	SELECT_OBJECT = 2,
+	GAME_CARD = 3, 
+	GAME_INFO = 4, 
+	MOVE_OBJECT = 5,
+	ADD_LABEL = 6,
+	RENAME_LABEL = 7, 
+	CONTROL_CENTER_MENU = 8, 
+	CONTROL_CENTER_CONTENT = 9, 
+	INFO_POPUP = 10
+}
 
 -- A - SELECT, A+U - MOVE OBJECT, A+L/R - SWITCH LABELS, A+D - ADD EMPTY SPACE
 -- B - BACK, B+U - RENAME LABEL, B+L/R - MOVE LABEL， B+D - TOGGLE CC
 -- A+B+L - REMOVE LABEL, A+B+R - ADD LABEL A+B+U - change scale, A+B+D - remove empty item
-
-cursorStates = {["SELECT_LABEL"] = 1, ["SELECT_OBJECT"] = 2, ["GAME_CARD"] = 3, ["GAME_INFO"] = 4, ["MOVE_OBJECT"] = 5, ["ADD_LABEL"] = 6, ["RENAME_LABEL"] = 7, ["CONTROL_CENTER_MENU"] = 8, ["CONTROL_CENTER_CONTENT"] = 9, ["INFO_POPUP"] = 10}
-
 cursorStateInputHandlers = {
 	[cursorStates.SELECT_LABEL] = {
 		AButtonUp = function()
@@ -50,8 +59,9 @@ cursorStateInputHandlers = {
 				keyTimer = playdate.timer.keyRepeatTimerWithDelay(keyTimerInitialDelay,keyTimerRepeatDelay, labelSelectMoveRight)
 			end
 		end,
-		rightButtonUp = function() removeKeyTimer() end,
-				
+		rightButtonUp = function()
+			removeKeyTimer()
+		end,
 		leftButtonDown = function()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
@@ -69,8 +79,9 @@ cursorStateInputHandlers = {
 				keyTimer = playdate.timer.keyRepeatTimerWithDelay(keyTimerInitialDelay,keyTimerRepeatDelay, labelSelectMoveLeft)
 			end
 		end,
-		leftButtonUp = function() removeKeyTimer() end,
-				
+		leftButtonUp = function()
+			removeKeyTimer()
+		end,		
 		upButtonDown = function()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
@@ -87,8 +98,9 @@ cursorStateInputHandlers = {
 				didShortcut = false
 			end
 		end,
-		upButtonUp = function() removeKeyTimer() end,
-				
+		upButtonUp = function()
+			removeKeyTimer()
+		end,		
 		downButtonDown = function()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
@@ -543,8 +555,8 @@ function removeLabel(label)
 end
 
 function addLabel(afterLabel, name)
+	local newLabel = {["displayName"] = name, ["rows"] = 3, ["objects"] = {emptyObject}, ["collapsed"] = false}
 	
-	local newLabel = {["displayName"] = name, ["rows"] = 3, ["objects"] = {emptyObject}, ["collapsed"] = false} 
 	table.insert(labelOrder,  indexOf(labelOrder, currentLabel)+1, name)
 	currentLabel = name
 	labels[name] = newLabel
@@ -597,14 +609,14 @@ function removeKeyTimer()
 end
 
 function controlCenterMenuMoveDown()
-	controlCenterMenuSelection+=1
+	controlCenterMenuSelection = controlCenterMenuSelection + 1
 	if controlCenterMenuSelection > #controlCenterMenuItems then
 		controlCenterMenuSelection = #controlCenterMenuItems
 	end
 end
 
 function controlCenterMenuMoveUp()
-	controlCenterMenuSelection-=1
+	controlCenterMenuSelection = controlCenterMenuSelection - 1
 	if controlCenterMenuSelection < 1 then
 		controlCenterMenuSelection = 1
 	end
