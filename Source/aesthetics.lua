@@ -5,10 +5,10 @@ import("CoreLibs/object")
 import("utils")
 import("system")
 
---pd symbols
---⬆️➡️⬇️⬅️🟨 ⊙ 🔒 🎣 ✛ Ⓐ Ⓑ
---fishing rod is crank
-gfx = playdate.graphics 
+-- pd symbols:
+-- ⬆️➡️⬇️⬅️🟨 ⊙ 🔒 🎣 ✛ Ⓐ Ⓑ
+-- fishing rod is crank
+gfx = playdate.graphics
 
 redrawFrame = true
 
@@ -46,11 +46,11 @@ music = nil
 
 
 labelSpacing, labelYMargin, labelTextSize = 10, 4, 15
-bottomBarHeight = 10 --usually 22
+bottomBarHeight = 10 -- usually 22
 snappiness, defaultSnappiness = 0.45,0.45
 
 scrollX = 0
-controlCenterProgress, maxControlCenterProgress, controlCenterState = 0, 224, 0 --0 close 1 closing 2 opening 3 open
+controlCenterProgress, maxControlCenterProgress, controlCenterState = 0, 224, 0 -- 0 close 1 closing 2 opening 3 open
 
 cursorFrame = 1
 lastObjectCursorDrawX = 0
@@ -491,12 +491,14 @@ function drawSystemInfo()
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillRoundRect(180, 420-controlCenterProgress, math.floor((226-24)*storagePercent), 20, configVars.cornerradius)
 	gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+	
 	local filledGB = readableBytes(totalSpace-freeSpace, 2)
 	local totalGB = readableBytes(totalSpace, 2)
-	gfx.drawText("*"..filledGB.." of ".. totalGB.." full*", 180, 400-controlCenterProgress)
 	
-	gfx.drawText("*FunnyOS: *\n*v"..funnyOSMetadata.version.."*", 320, 330-controlCenterProgress)
-	gfx.drawText("*PdOS: *\n*v"..playdate.systemInfo.sdk.."*", 320, 280-controlCenterProgress)
+	gfx.drawText("*" ..filledGB.. " of " .. totalGB.. " full*", 180, 400-controlCenterProgress)
+	
+	gfx.drawText("*FunnyOS: *\n*v".. funnyOSMetadata.version .. "*", 320, 330-controlCenterProgress)
+	gfx.drawText("*PDOS: *\n*v".. playdate.systemInfo.sdk .. "*", 320, 280-controlCenterProgress)
 	
 end
 
