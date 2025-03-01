@@ -8,6 +8,7 @@ import("system")
 -- pd symbols:
 -- ⬆️➡️⬇️⬅️🟨 ⊙ 🔒 🎣 ✛ Ⓐ Ⓑ
 -- fishing rod is crank
+gfx = playdate.graphics
 
 redrawFrame = true
 
