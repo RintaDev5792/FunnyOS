@@ -669,14 +669,14 @@ function controlCenterMenuMoveUp()
 end
 
 function controlCenterContentMoveDown()
-	controlCenterInfoSelection+=1
+	controlCenterInfoSelection = controlCenterInfoSelection + 1
 	if controlCenterInfoSelection > controlCenterInfoMaxSelection then
 		controlCenterInfoSelection = controlCenterInfoMaxSelection
 	end
 end
 
 function controlCenterContentMoveUp()
-	controlCenterInfoSelection-=1
+	controlCenterInfoSelection = controlCenterInfoSelection - 1
 	if controlCenterInfoSelection < 1 then
 		controlCenterInfoSelection = 1
 	end
