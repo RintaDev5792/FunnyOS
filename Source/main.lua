@@ -45,14 +45,26 @@ cursorStates = {
 	INFO_POPUP = 10
 }
 
-controlCenterMenuItems = {
-	"Controls Help",
-	"Badges Menu",
-	"Screenshots",
-	"Launcher Select",
-	"Customization",
-	"System Info"
+configVarOptionsOrder = {
+	"musicon",
+	"skipcard",
+	"iconborders",
+	"invertborders",
+	"invertcursor",
+	"invertlabels",
+	"invertblanks",
+	"bgdither",
+	"blankdither",
+	"labeldither",
+	"cornerradius",
+	"drawblanks",
+	"autocollapselabels"
 }
+
+
+controlCenterMenuSelection = 0
+controlCenterInfoSelection = 0
+controlCenterInfoMaxSelection = 0
 
 installedLaunchers = {}
 -- launcher is {name, path}
@@ -94,18 +106,31 @@ configVarDefaults = {
 configVarOptions = {
 	--options
 	["musicon"] = {["name"] = "Enable Music", ["values"] = {true, false}},
-	["iconborders"] =  {["name"] = "Enable Icon Borders", ["values"] = {true, false}},
+	["iconborders"] =  {["name"] = "Enable Borders", ["values"] = {true, false}},
 	["skipcard"] =  {["name"] = "Skip Card View", ["values"] = {true, false}},
-	["invertborders"] =  {["name"] = "Invert Icon Borders", ["values"] = {true, false}},
+	["invertborders"] =  {["name"] = "Invert Borders", ["values"] = {true, false}},
 	["invertcursor"] =  {["name"] = "Invert Cursor", ["values"] = {true, false}},
 	["invertlabels"] =  {["name"] = "Invert Labels", ["values"] = {true, false}},
-	["invertblanks"] =  {["name"] = "Invert Blank Spaces", ["values"] = {true, false}},
-	["bgdither"] = {["name"] = "Background Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}},
-	["blankdither"] = {["name"] = "Blank Space Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}},
+	["invertblanks"] =  {["name"] = "Invert Blanks", ["values"] = {true, false}},
+	["bgdither"] = {["name"] = "BG Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}},
+	["blankdither"] = {["name"] = "Blank Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}},
 	["labeldither"] = {["name"] = "Label Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}},
 	["cornerradius"] = {["name"] = "Corner Radius", ["values"] = {0, 5, 10, 15, 20}},
 	["drawblanks"] =  {["name"] = "Draw Blank Spaces", ["values"] = {true, false}},
 	["autocollapselabels"] =  {["name"] = "Auto-Collapse Labels", ["values"] = {true, false}}
+}
+
+controlCenterMenuItems = {
+	"Controls Help",
+	"Badges Menu",
+	"Screenshots",
+	"Launcher Select",
+	"FunnyOS Options",
+	"System Info"
+}
+
+controlCenterInfoMaxSelections = {
+	["FunnyOS Options"] = #configVarOptionsOrder
 }
 
 configVars = configVarDefaults
