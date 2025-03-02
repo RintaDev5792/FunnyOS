@@ -249,7 +249,7 @@ function dirSetup()
 end
 
 function playdate.deviceWillLock()
-	collectgarbage("collect")
+	--collectgarbage("collect")
 end
 
 function playdate.deviceWillUnlock()
@@ -321,7 +321,7 @@ function loadMusic()
 	music = playdate.sound.fileplayer.new("/Shared/FunnyOS2/bgm")
 	if music ~= nil then
 		music:play()
-		music:setFinishCallback(function()  if musicOn then loadMusic() end end)
+		music:setFinishCallback(function()  if configVars.musicon then loadMusic() end end)
 	else
 		stopAllSounds()
 		sound04DenialTrimmed:play()
@@ -340,19 +340,18 @@ end
 
 function main()
 	loadConfig()
-	changeCursorState(cursorStates.SELECT_LABEL)
-	
-	makeBgDitherImg()
 	dirSetup()
+	loadingImg:draw(0,0)
+	playdate.display.setRefreshRate(25)
+	playdate.display.flush()
+	changeCursorState(cursorStates.SELECT_LABEL)
+	makeBgDitherImg()
 	if configVars.musicon then
 		loadMusic()
 	end
 	if configVars.bgon then
 		loadBgImg()
 	end
-	loadingImg:draw(0,0)
-	playdate.display.setRefreshRate(25)
-	playdate.display.flush()
 	
 	gfx.clear()
 	setupGameInfo()

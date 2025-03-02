@@ -162,6 +162,7 @@ function setupGameInfo()
 	for name, label in pairs(labels) do
 		if label.objects == {} then
 			labels[name] = nil	
+			fle.delete(savePath.."Labels/"..name..".json")
 		end
 	end
 	
@@ -174,7 +175,7 @@ function setupGameInfo()
 	end
 	labelOrder = newLabelOrder
 	
-	-- deduplicate games
+	-- deduplicate games and delete nonexistent ones
 	local alreadyFoundObjects = {}
 	for name, label in pairs(labels) do
 		local newObjects = {}
@@ -184,6 +185,8 @@ function setupGameInfo()
 				table.insert(alreadyFoundObjects, data.bundleid)
 			elseif data.bundleid == ".empty" then
 				table.insert(newObjects, data)	
+			else
+				table.insert(newObjects, emptyObject)	
 			end
 		end	
 		labels[name].objects = newObjects
