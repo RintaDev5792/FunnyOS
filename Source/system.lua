@@ -213,37 +213,31 @@ function setupGameInfo()
 	saveConfig()
 end
 
-function fillLabelEndWithEmpty(name, removeEmptyColumns)
-	local label = labels[name]
-	
-	if #label.objects == 0 then
-		return
-	end
-	
-	while #label.objects % label.rows ~= 0 do
-		table.insert(label.objects, emptyObject)	
-	end
-	
+
+--scratch whatever refactoring you did here broke it so i returned it to previous
+function fillLabelEndWithEmpty(label, removeEmptyColumns)
+	if #labels[label].objects == 0 then return end
+	while #labels[label].objects % labels[label].rows ~= 0 do
+		table.insert(labels[label].objects, #labels[label].objects+1, emptyObject)	
+	end	
 	if removeEmptyColumns then
 		local done = false
 		while not done do
 			done = false
-			for i = #label.objects, #label.objects - label.rows - 1, -1 do
-				if i > 0 then
-					if label.objects[i].bundleid ~= ".empty" then
+			for i=0, labels[label].rows-1 do
+				if i <= #labels[label].objects and #labels[label].objects - i > 0 then
+					if labels[label].objects[#labels[label].objects - i].bundleid ~= ".empty" then
 						done = true
 					end
 				end
-			end
-			
+			end	
 			if not done then 
-				for i = 1, label.rows do
-					table.remove(label.objects)	
-				end
+				for i=1, labels[label].rows do
+					table.remove(labels[label].objects,#labels[label].objects)	
+				end	
 			end
 		end
 	end
-	
 	while currentObject > #labels[currentLabel].objects do
 		currentObject -= labels[currentLabel].rows
 	end
@@ -303,11 +297,17 @@ function loadIcon(bundleID, labelName, imageName)
 	
 	gfx.pushContext(iconImg)
 	gfx.setColor(gfx.kColorWhite)
-	gfx.fillRect(rowsNumber, rowsNumber, objectSize - 3 * rowsNumber, objectSize - 3 * rowsNumber)
+	gfx.fillRoundRect(rowsNumber, rowsNumber, objectSize-2*rowsNumber, objectSize-2*rowsNumber, 7*rowsNumber)
 	gameIcon:drawScaled(rowsNumber, rowsNumber, rowsNumber)
-	gfx.setColor(gfx.kColorBlack)
-	gfx.setLineWidth(2 * rowsNumber)
-	gfx.drawRoundRect(rowsNumber, rowsNumber, objectSize - 2 * rowsNumber, objectSize - 2 * rowsNumber, 4 * rowsNumber)
+	if configVars.iconborders then
+		gfx.setColor(invertedColors[configVars.invertborders])
+		gfx.setLineWidth(3 * rowsNumber)
+		if rowsNumber == 2 then
+			gfx.drawRoundRect(3, 3, objectSize - 6, objectSize - 6, 8)
+		else
+			gfx.drawRoundRect(1, 1, objectSize - 2, objectSize - 2, 4)
+		end
+	end
 	gfx.popContext()
 	
 	if iconsCache[bundleID] == nil then

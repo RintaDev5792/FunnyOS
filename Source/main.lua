@@ -45,26 +45,16 @@ cursorStates = {
 	INFO_POPUP = 10
 }
 
-configVarOptionsOrder = {
-	"musicon",
-	"skipcard",
-	"iconborders",
-	"invertborders",
-	"invertcursor",
-	"invertlabels",
-	"invertblanks",
-	"bgdither",
-	"blankdither",
-	"labeldither",
-	"cornerradius",
-	"drawblanks",
-	"autocollapselabels"
-}
-
+music = nil
+sound01SelectionTrimmed = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
+sound02SelectionReverseTrimmed = playdate.sound.fileplayer.new("systemsfx/02-selection-reverse-trimmed")
+sound03ActionTrimmed = playdate.sound.fileplayer.new("systemsfx/03-action-trimmed")
+sound04DenialTrimmed = playdate.sound.fileplayer.new("systemsfx/04-denial-trimmed")
 
 controlCenterMenuSelection = 0
 controlCenterInfoSelection = 0
 controlCenterInfoMaxSelection = 0
+controlCenterInfoScroll = 0
 
 installedLaunchers = {}
 -- launcher is {name, path}
@@ -89,36 +79,71 @@ configVarDefaults = {
 	
 	--options
 	["musicon"] = true,
+	["bgon"] = true,
 	["skipcard"] = false,
 	["iconborders"] = true,
 	["invertborders"] = false,
+	["iconbgs"] = true,
+	["inverticonbgs"] = false,
 	["invertcursor"] = false,
 	["invertlabels"] = false,
-	["invertblanks"] = false,
+	["invertlabeltext"] = false,
+	["labeltextbgs"] = true,
 	["bgdither"] = 1,
-	["blankdither"] = 0.5,
+	["invertbgdither"] = false,
+	["ccdither"] = 0.25,
+	["invertcc"] = false,
 	["labeldither"] = 0.75,
 	["cornerradius"] = 20,
-	["drawblanks"] = false,
+	["linewidth"] = 3,
 	["autocollapselabels"] = false
 }
 
 configVarOptions = {
 	--options
-	["musicon"] = {["name"] = "Enable Music", ["values"] = {true, false}},
-	["iconborders"] =  {["name"] = "Enable Borders", ["values"] = {true, false}},
-	["skipcard"] =  {["name"] = "Skip Card View", ["values"] = {true, false}},
-	["invertborders"] =  {["name"] = "Invert Borders", ["values"] = {true, false}},
-	["invertcursor"] =  {["name"] = "Invert Cursor", ["values"] = {true, false}},
-	["invertlabels"] =  {["name"] = "Invert Labels", ["values"] = {true, false}},
-	["invertblanks"] =  {["name"] = "Invert Blanks", ["values"] = {true, false}},
-	["bgdither"] = {["name"] = "BG Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}},
-	["blankdither"] = {["name"] = "Blank Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}},
-	["labeldither"] = {["name"] = "Label Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}},
-	["cornerradius"] = {["name"] = "Corner Radius", ["values"] = {0, 5, 10, 15, 20}},
-	["drawblanks"] =  {["name"] = "Draw Blank Spaces", ["values"] = {true, false}},
-	["autocollapselabels"] =  {["name"] = "Auto-Collapse Labels", ["values"] = {true, false}}
+	["musicon"] = {["name"] = "Enable Music", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["bgon"] = {["name"] = "Enable BG Image", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["iconborders"] =  {["name"] = "Enable Icon Borders", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["iconbgs"] =  {["name"] = "Enable Icon BGs", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["skipcard"] =  {["name"] = "Skip Card View", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["invertborders"] =  {["name"] = "Invert Icon Borders", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["inverticonbgs"] =  {["name"] = "Invert Icon BGs", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["invertcursor"] =  {["name"] = "Invert Cursor", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["invertlabels"] =  {["name"] = "Invert Labels", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["invertlabeltext"] =  {["name"] = "Invert Label Text", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["labeltextbgs"] =  {["name"] = "Label Text BGs", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["bgdither"] = {["name"] = "BG Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}, ["type"] = "DITHER"},
+	["invertbgdither"] = {["name"] = "Invert BG Dither", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["ccdither"] = {["name"] = "CC Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}, ["type"] = "DITHER"},
+	["invertcc"] = {["name"] = "Invert CC", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["labeldither"] = {["name"] = "Label Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}, ["type"] = "DITHER"},
+	["cornerradius"] = {["name"] = "Corner Radius", ["values"] = {1, 5, 10, 15, 20, 25}, ["type"] = "PIXELS"},
+	["linewidth"] = {["name"] = "Outline Width", ["values"] = {2, 3, 4, 5, 6}, ["type"] = "PIXELS"},
+	["autocollapselabels"] =  {["name"] = "Auto-Close Labels", ["values"] = {true, false}, ["type"] = "BOOL"},
 }
+
+configVarOptionsOrder = {
+	"musicon",
+	"bgon",
+	"bgdither",
+	"labeldither",
+	"ccdither",
+	"iconborders",
+	"invertborders",
+	"iconbgs",
+	"inverticonbgs",
+	"invertcursor",
+	"invertlabels",
+	"invertlabeltext",
+	"labeltextbgs",
+	"invertbgdither",
+	"invertcc",
+	"cornerradius",
+	"linewidth",
+	"autocollapselabels",
+	"skipcard",
+}
+
 
 controlCenterMenuItems = {
 	"Controls Help",
@@ -134,6 +159,13 @@ controlCenterInfoMaxSelections = {
 }
 
 configVars = configVarDefaults
+
+function stopAllSounds()
+	sound01SelectionTrimmed:stop()
+	sound02SelectionReverseTrimmed:stop()
+	sound03ActionTrimmed:stop()	
+	sound04DenialTrimmed:stop()
+end
 
 function createInfoPopup(title, text, enableB, callbackA)
 	if cursorState ~= cursorStates.INFO_POPUP then  
@@ -238,6 +270,8 @@ function playdate.keyboard.keyboardWillHideCallback(pressedOK)
 	if cursorState == cursorStates.RENAME_LABEL then
 		if pressedOK then
 			if labels[key.text] then
+				stopAllSounds()
+				sound04DenialTrimmed:play()
 				createInfoPopup("Action Failed", "*A label cannot be created with the same name as an existing label.*", false)
 				return
 			end
@@ -273,25 +307,51 @@ function playdate.update()
 		return
 	end
 	
-	drawRoutine()
 	
 	playdate.timer.updateTimers()
 	playdate.frameTimer.updateTimers()
-	playdate.drawFPS(383,0)
 	
 	if #playdate.inputHandlers < 2 then
 		playdate.inputHandlers.push(cursorStateInputHandlers[cursorState])	  
+	end
+	drawRoutine()
+end
+
+function loadMusic()
+	music = playdate.sound.fileplayer.new("/Shared/FunnyOS2/bgm")
+	if music ~= nil then
+		music:play()
+		music:setFinishCallback(function()  if musicOn then loadMusic() end end)
+	else
+		stopAllSounds()
+		sound04DenialTrimmed:play()
+		createInfoPopup("Action Failed", "*FunnyOS does not come with music pre-installed. To have music, please place a .pda of the music you want at /Shared/FunnyOS2/bgm.pda. ", false, function() configVars.musicon = false; saveConfig() end)	
+	end
+end
+
+function loadBgImg()
+	bgImg = gfx.image.new("/Shared/FunnyOS2/bg")
+	if bgImg == nil then
+		stopAllSounds()
+		sound04DenialTrimmed:play()
+		createInfoPopup("Action Failed", "*FunnyOS does not come with a background pre-installed. To have one, please place a .pdi of the background you want at /Shared/FunnyOS2/bg.pdi. ", false, function() configVars.bgon = false; saveConfig() end)	
 	end
 end
 
 function main()
 	loadConfig()
+	changeCursorState(cursorStates.SELECT_LABEL)
 	
-	setupEmptySpaceImages()
+	makeBgDitherImg()
 	dirSetup()
-	
+	if configVars.musicon then
+		loadMusic()
+	end
+	if configVars.bgon then
+		loadBgImg()
+	end
 	loadingImg:draw(0,0)
-	playdate.display.setRefreshRate(50)
+	playdate.display.setRefreshRate(25)
 	playdate.display.flush()
 	
 	gfx.clear()
@@ -299,10 +359,8 @@ function main()
 	
 	local menu = playdate.getSystemMenu()
 	menu:removeAllMenuItems()
-	changeCursorState(cursorStates.SELECT_LABEL)
 	
 	playdate.timer.performAfterDelay(500, updateCursorFrame)
-	sys.pushNotification(100)
 	
 	if firstLaunch then
 		createInfoPopup("Welcome!", "*Hello, and thank you for using FunnyOS 2! FunnyOS 2 uses button combos, so you must know those to do most tasks. These combos can be found in the control center.*", false, function() createInfoPopup("Welcome!", "*In order to open the control center, press *"..buttons.A.."*+*"..buttons.DOWN.."*. The control center also houses other useful features, so be sure to look through it to get the most out of FunnyOS 2. Have fun!*", false, function()  end) end)

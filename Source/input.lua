@@ -30,6 +30,7 @@ cursorStateInputHandlers = {
 	[cursorStates.SELECT_LABEL] = {
 		AButtonUp = function()
 			if not didShortcut and #labels[currentLabel].objects > 0 then
+				sound03ActionTrimmed:play()
 				currentObject = 1
 				changeCursorState(cursorStates.SELECT_OBJECT)
 			end
@@ -37,12 +38,15 @@ cursorStateInputHandlers = {
 		end,
 		BButtonUp = function()
 			if not didShortcut then
+				sound03ActionTrimmed:play()
 
 			end
 			delaySetNoShortcut()
 		end,
 		
 		rightButtonDown = function()
+			
+			sound01SelectionTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -63,6 +67,8 @@ cursorStateInputHandlers = {
 			removeKeyTimer()
 		end,
 		leftButtonDown = function()
+			
+			sound02SelectionReverseTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -83,6 +89,7 @@ cursorStateInputHandlers = {
 			removeKeyTimer()
 		end,		
 		upButtonDown = function()
+			sound02SelectionReverseTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -102,6 +109,8 @@ cursorStateInputHandlers = {
 			removeKeyTimer()
 		end,		
 		downButtonDown = function()
+			
+			sound01SelectionTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -122,6 +131,7 @@ cursorStateInputHandlers = {
 	[cursorStates.SELECT_OBJECT] = {
 		BButtonUp = function()
 			if not didShortcut then
+				sound03ActionTrimmed:play()
 				changeCursorState(cursorStates.SELECT_LABEL)
 			end
 			delaySetNoShortcut()
@@ -129,6 +139,7 @@ cursorStateInputHandlers = {
 		
 		AButtonUp = function()
 			if not didShortcut then
+				sound03ActionTrimmed:play()
 				if labels[currentLabel].objects[currentObject].path then
 					if fle.isdir(labels[currentLabel].objects[currentObject].path) or fle.exists(labels[currentLabel].objects[currentObject].path) then
 						sys.switchToGame(labels[currentLabel].objects[currentObject].path)
@@ -139,6 +150,7 @@ cursorStateInputHandlers = {
 		end,
 				
 		rightButtonDown = function()
+			sound01SelectionTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -159,6 +171,7 @@ cursorStateInputHandlers = {
 		rightButtonUp = function() removeKeyTimer() end,
 				
 		leftButtonDown = function()
+			sound02SelectionReverseTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -179,6 +192,7 @@ cursorStateInputHandlers = {
 		leftButtonUp = function() removeKeyTimer() end,
 				
 		upButtonDown = function()
+			sound02SelectionReverseTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -198,6 +212,7 @@ cursorStateInputHandlers = {
 		upButtonUp = function() removeKeyTimer() end,
 				
 		downButtonDown = function()
+			sound01SelectionTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -219,6 +234,7 @@ cursorStateInputHandlers = {
 	[cursorStates.MOVE_OBJECT] = {
 		BButtonUp = function()
 			if not didShortcut then
+				sound03ActionTrimmed:play()
 				placeHeldObject(heldObjectOriginIndex, heldObjectOriginLabel, false)
 			end
 			delaySetNoShortcut()
@@ -226,12 +242,14 @@ cursorStateInputHandlers = {
 		
 		AButtonUp = function()
 			if not didShortcut then
+				sound03ActionTrimmed:play()
 				placeHeldObject(currentObject, currentLabel, true)
 			end
 			delaySetNoShortcut()
 		end,
 				
 		rightButtonDown = function()
+			sound01SelectionTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -252,6 +270,7 @@ cursorStateInputHandlers = {
 		rightButtonUp = function() removeKeyTimer() end,
 				
 		leftButtonDown = function()
+			sound02SelectionReverseTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -272,6 +291,7 @@ cursorStateInputHandlers = {
 		leftButtonUp = function() removeKeyTimer() end,
 				
 		upButtonDown = function()
+			sound02SelectionReverseTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -291,6 +311,7 @@ cursorStateInputHandlers = {
 		upButtonUp = function() removeKeyTimer() end,
 				
 		downButtonDown = function()
+			sound01SelectionTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -325,20 +346,28 @@ cursorStateInputHandlers = {
 	[cursorStates.CONTROL_CENTER_MENU] = {
 		BButtonUp = function()
 			if not didShortcut then
+				sound03ActionTrimmed:play()
 				toggleControlCenter()
 			end
 			delaySetNoShortcut()
 		end,
 		
 		AButtonUp = function()
-			if not didShortcut then
-				changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
-				controlCenterInfoMaxSelection = controlCenterInfoMaxSelections[controlCenterMenuItems[controlCenterMenuSelection]]
+			if not didShortcut then				
+				sound03ActionTrimmed:play()
+				local selected = controlCenterMenuItems[controlCenterMenuSelection]
+				if selected == "FunnyOS Options" then
+					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
+					controlCenterInfoScroll = 0
+					controlCenterInfoSelection = 1
+					controlCenterInfoMaxSelection = controlCenterInfoMaxSelections[controlCenterMenuItems[controlCenterMenuSelection]]
+				end
 			end
 			delaySetNoShortcut()
 		end,
 				
 		upButtonDown = function()
+			sound02SelectionReverseTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -358,6 +387,7 @@ cursorStateInputHandlers = {
 		upButtonUp = function() removeKeyTimer() end,
 				
 		downButtonDown = function()
+			sound01SelectionTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -381,12 +411,25 @@ cursorStateInputHandlers = {
 		
 		BButtonUp = function()
 			if not didShortcut then
+				sound03ActionTrimmed:play()
 				changeCursorState(cursorStates.CONTROL_CENTER_MENU)
 			end
 			delaySetNoShortcut()
 		end,
 		
+		AButtonUp = function()
+			if not didShortcut then
+				sound03ActionTrimmed:play()
+				local selected = controlCenterMenuItems[controlCenterMenuSelection]
+				if selected == "FunnyOS Options" then
+					incrementOptionsValue(controlCenterInfoSelection)
+				end
+			end
+			delaySetNoShortcut()
+		end,
+		
 		upButtonDown = function()
+			sound02SelectionReverseTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
@@ -406,12 +449,13 @@ cursorStateInputHandlers = {
 		upButtonUp = function() removeKeyTimer() end,
 				
 		downButtonDown = function()
+			sound01SelectionTrimmed:play()
 			if playdate.buttonIsPressed("A") then
 				didShortcut = true
 				if playdate.buttonIsPressed("B") then
 					--EMPTY SLOT
 				else
-					toggleControlCenter()
+					--nope
 				end
 			elseif playdate.buttonIsPressed("B") then
 				
@@ -427,6 +471,7 @@ cursorStateInputHandlers = {
 	},
 	[cursorStates.INFO_POPUP ] = {
 		AButtonUp = function()
+			sound03ActionTrimmed:play()
 			if not didShortcut then
 				changeCursorState(oldCursorState)
 				if infoPopupCallbackA then infoPopupCallbackA() end
@@ -434,6 +479,7 @@ cursorStateInputHandlers = {
 			delaySetNoShortcut()
 		end,
 		BButtonUp = function()
+			sound03ActionTrimmed:play()
 			if not didShortcut and infoPopupEnableB then
 				changeCursorState(oldCursorState)
 			end
@@ -462,10 +508,15 @@ function toggleControlCenter()
 		oldCursorState = cursorState
 		controlCenterInfoSelection = 1
 		controlCenterMenuSelection = 1
+		controlCenterInfoScroll = 0
+		redrawFrame = true
+		defaultRedrawFrame = false
+		saveFrame = true
 		changeCursorState(cursorStates.CONTROL_CENTER_MENU)
 	elseif controlCenterState == 3 or controlCenterState == 2 then
+		redrawFrame = true
+		defaultRedrawFrame = true
 		controlCenterState = 1
-		changeCursorState(oldCursorState)
 	end	
 end
 
@@ -581,6 +632,8 @@ function removeLabel(label)
 		end
 	end
 	if not continue then
+		stopAllSounds()
+		sound04DenialTrimmed:play()
 		createInfoPopup("Action Failed", "*A label with items in it cannot be removed without first removing those items.*", false)
 		return	
 	end
@@ -670,8 +723,10 @@ end
 
 function controlCenterContentMoveDown()
 	controlCenterInfoSelection = controlCenterInfoSelection + 1
-	if controlCenterInfoSelection > controlCenterInfoMaxSelection then
-		controlCenterInfoSelection = controlCenterInfoMaxSelection
+	if controlCenterInfoSelection and controlCenterInfoMaxSelection then
+		if controlCenterInfoSelection > controlCenterInfoMaxSelection then
+			controlCenterInfoSelection = controlCenterInfoMaxSelection
+		end
 	end
 end
 
@@ -680,4 +735,45 @@ function controlCenterContentMoveUp()
 	if controlCenterInfoSelection < 1 then
 		controlCenterInfoSelection = 1
 	end
+end
+
+function incrementOptionsValue(selection)
+	local selected = configVarOptionsOrder[selection]
+	
+	
+	local currentValueIndex = indexOf(configVarOptions[selected].values, configVars[selected])
+	if currentValueIndex == nil then currentValueIndex = 0 end
+	currentValueIndex += 1
+	if currentValueIndex > # configVarOptions[selected].values then currentValueIndex = 1 end
+	configVars[selected] = configVarOptions[selected].values[currentValueIndex]
+	
+	if selected == "autocollapselabels" then
+		if configVars.autocollapselabels then
+			for k,v in pairs(labels) do
+				if k == currentLabel then
+					labels[k].collapsed = false	
+				else
+					labels[k].collapsed = true	
+				end
+			end
+		else
+			for k,v in pairs(labels) do
+				labels[k].collapsed = false	
+			end	
+		end
+	elseif selected == "bgdither" or selected == "invertbgdither" then
+		makeBgDitherImg()
+	elseif selected == "musicon" then
+		if configVars.musicon then 
+			loadMusic() 
+		elseif music then
+			music:stop()
+		end
+	elseif selected == "bgon" then
+		if configVars.bgon then loadBgImg() else bgImg = nil end	
+	elseif selected == "iconborders" or selected == "invertborders" then
+		iconsCache = {}	
+	end
+	redrawFrame = true
+	saveConfig()
 end

@@ -10,11 +10,20 @@ gfx = playdate.graphics
 key = playdate.keyboard
 sys = playdate.system
 
-indexOf = table.indexOfElement
 lerp = playdate.math.lerp
+
+
 
 if sys ~= nil then
 	gme = playdate.system.game
+end
+
+--SCRATCH KEEP THIS FUNCTION, BUILT-IN DOESNT HANDLE BOOLS
+function indexOf(table, value) 
+	for i,v in ipairs(table) do
+		if v == value then return i end
+	end
+	return nil
 end
 
 function generateDrawTextScaledImage(text, x, y, scale, font)
@@ -143,6 +152,12 @@ function parseAnimFile(animFile)
 	return info
 end
 
+roundNumber = function(num, digits)
+	local fmt = "%." .. digits .. "f"
+	return tonumber(fmt:format(num))
+end
+
+
 -- THIS FUNCTION COMES FROM THE SETTINGS APP
 function readableBytes(bytes, maxDecimalPlaces)
 	local si = {
@@ -158,11 +173,7 @@ function readableBytes(bytes, maxDecimalPlaces)
 	}
 	
 	local decimalPlaces = maxDecimalPlaces or 1
-	local roundNumber = function(num, digits)
-		local fmt = "%." .. digits .. "f"
-		return tonumber(fmt:format(num))
-	end
-	
+
 	local negative = bytes < 0
 	if negative then
 		bytes = -bytes
@@ -204,4 +215,16 @@ function getListSize(list)
 	end
 	
 	return l
+end
+
+function makeOptionsValueReadable(value,type)
+	if type == "BOOL" then
+		if value then return "ON" else return "OFF" end	
+	elseif type == "DITHER" then
+		local s = roundNumber((1-value)*100, 0)
+		s = tostring(s).."%"
+		return s
+	elseif type == "PIXELS" then
+		return tostring(value).."px"	
+	end
 end

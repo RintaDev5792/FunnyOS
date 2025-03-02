@@ -11,6 +11,8 @@ import("system")
 gfx = playdate.graphics
 
 redrawFrame = true
+defaultRedrawFrame = true
+saveFrame = false
 
 buttons = {
 	["A"] = "Ⓐ",
@@ -29,7 +31,7 @@ buttons = {
 gameIconImgs = {}
 badgeIconImgs = {}
 
-iconsImage = nil
+iconsImg = nil
 blankImg = nil
 bgDitherImg = nil
 bgImg = nil
@@ -41,9 +43,6 @@ wrappedImgs = gfx.imagetable.new("images/wrapped")
 newGame = gfx.image.new("images/newgame")
 newGameMask = gfx.image.new("images/newgame_mask")
 cursorImgs = {gfx.imagetable.new("images/cursor-1"),gfx.imagetable.new("images/cursor-2")}
-
-music = nil
-
 
 labelSpacing, labelYMargin, labelTextSize = 10, 4, 15
 bottomBarHeight = 10 -- usually 22
@@ -60,14 +59,34 @@ invertedDrawModes = {[true] = gfx.kDrawModeInverted, [false] = gfx.kDrawModeCopy
 invertedFillDrawModes = {[true] = gfx.kDrawModeFillWhite, [false] = gfx.kDrawModeFillBlack}
 
 function drawRoutine()
-	gfx.clear()
+	gfx.clear(gfx.kColorWhite)
+	gfx.clear(gfx.kColorWhite)
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	snappiness = defaultSnappiness*(20/playdate.getFPS())
-if snappiness < 0.1 then snappiness = defaultSnappiness*(20/playdate.display.getRefreshRate()) end
+	if snappiness < 0.1 then snappiness = defaultSnappiness*(20/playdate.display.getRefreshRate()) end
+	
+	if redrawFrame then
+		if saveFrame then
+			iconsImg = gfx.image.new(400,240,gfx.kColorWhite)
+			gfx.pushContext(iconsImg)
+		end
+		
+		if bgDitherImg and configVars.bgdither ~= 1 then bgDitherImg:draw(0,0) end 
+		if bgImg and configVars.bgon then bgImg:draw(0,0) end 
+		drawLabelBackgrounds()
+		drawIcons()
+		
+		if saveFrame then
+			gfx.popContext()
+			saveFrame = false
+		end
+	end
+	redrawFrame = defaultRedrawFrame
+	
+	if iconsImg and ((not redrawFrame) or saveFrame) then iconsImg:draw(0,0) end
+	saveFrame = false
+	
 	processDrawChanges()
-	if bgImg then bgImg:draw(0,0) end 
-	if bgDitherImg then bgDitherImg:draw(0,0) end 
-	drawLabelBackgrounds()
-	drawIcons()
 	doScrolling()
 	--always last
 	drawBottomBar()
@@ -76,6 +95,7 @@ if snappiness < 0.1 then snappiness = defaultSnappiness*(20/playdate.display.get
 	elseif cursorState == cursorStates.RENAME_LABEL then
 		drawLabelNameBox(currentLabel)	
 	end
+	playdate.drawFPS(383,0)
 end
 
 function drawLabelNameBox(label)
@@ -86,29 +106,9 @@ function drawLabelNameBox(label)
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillRoundRect(labelSpacing/2, math.floor(240/2-h/2), w, h, configVars.cornerradius)
 	gfx.setColor(gfx.kColorBlack)
+	gfx.setLineWidth(configVars.linewidth)
 	gfx.drawRoundRect(labelSpacing/2, math.floor(240/2-h/2), w, h, configVars.cornerradius)
 	gfx.drawTextAligned("*"..key.text.."*", math.floor(w/2+labelSpacing/2), math.floor(240/2-h/2+labelSpacing/2)+2, kTextAlignment.center)
-end
-
-function setupEmptySpaceImages()
-	local scales = {6, 3}
-	emptySpaceImages = {}
-	for i, v in ipairs(scales) do
-		local size = objectSizes[v]
-		local rowsNumber = 6/v
-		local img = gfx.image.new(size,size,gfx.kColorClear)	
-		gfx.lockFocus(img)
-		gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertblanks])
-		gfx.setColor(invertedColors[not configVars.invertblanks])
-		gfx.fillRoundRect(rowsNumber, rowsNumber, size-2*rowsNumber, size-2*rowsNumber, 4*rowsNumber)
-		
-		gfx.setImageDrawMode(invertedFillDrawModes[configVars.invertblanks])
-		gfx.setColor(invertedColors[configVars.invertblanks])
-		gfx.setDitherPattern(configVars.blankdither)
-		gfx.fillRoundRect(rowsNumber, rowsNumber, size-2*rowsNumber, size-2*rowsNumber, 4*rowsNumber)
-		gfx.unlockFocus()
-		emptySpaceImgs[i] = img
-	end
 end
 
 function updateCursorFrame()
@@ -173,15 +173,15 @@ function drawObjectCursor()
 			t = "*"..t.."*"
 			local tw,th = gfx.getTextSize(t)
 			local textMargins = 5
-			local textImg = gfx.image.new(tw+textMargins*2,th+textMargins*2,gfx.kColorClear)
+			local textImg = gfx.image.new(tw+textMargins*2+configVars.linewidth*2,th+textMargins*2+configVars.linewidth*2,gfx.kColorClear)
 			gfx.lockFocus(textImg)
 			gfx.setColor(gfx.kColorWhite)
 			gfx.setImageDrawMode(gfx.kDrawModeCopy)
-			gfx.fillRoundRect(1, 1, tw-2+textMargins*2, th-2+textMargins*2, 4)
+			gfx.fillRoundRect(configVars.linewidth, configVars.linewidth, tw-2+textMargins*2, th-2+textMargins*2, 4)
 			gfx.setColor(gfx.kColorBlack)
-			gfx.setLineWidth(3)
-			gfx.drawRoundRect(1, 1, tw-2+textMargins*2, th-2+textMargins*2, 4)
-			gfx.drawText(t, textMargins, textMargins)
+			gfx.setLineWidth(configVars.linewidth)
+			gfx.drawRoundRect(configVars.linewidth, configVars.linewidth, tw-2+textMargins*2, th-2+textMargins*2, 4)
+			gfx.drawText(t, textMargins+configVars.linewidth-1, textMargins+configVars.linewidth)
 			gfx.unlockFocus()
 			gfx.setImageDrawMode(gfx.kDrawModeCopy)
 			local lx, ly = x,y
@@ -221,6 +221,9 @@ function processDrawChanges()
 			controlCenterProgress = 0
 			controlCenterState = 0
 		end
+		if controlCenterProgress < 20 then
+			changeCursorState(oldCursorState)	
+		end
 	end
 	if controlCenterState == 2 then
 		controlCenterProgress = math.floor(lerp(controlCenterProgress,  maxControlCenterProgress, snappiness))
@@ -239,7 +242,7 @@ function drawLabelBackgrounds()
 		gfx.setColor(invertedColors[configVars["invertlabels"]])
 		gfx.setDitherPattern(configVars.labeldither)
 		local label = labels[v]
-		w = labelTextSize*3 + math.ceil(#label["objects"]/label["rows"])*(objectSizes[label["rows"]] + objectSpacings[label["rows"]]) - objectSpacings[label["rows"]] -6
+		w = labelTextSize*3 + math.ceil(#label["objects"]/label["rows"])*(objectSizes[label["rows"]] + objectSpacings[label["rows"]]) - objectSpacings[label["rows"]] -6 + math.floor(configVars.cornerradius/2)
 		if labels[v]["collapsed"] then
 			w = labelTextSize*2	
 		end
@@ -253,15 +256,16 @@ function drawLabelBackgrounds()
 		th = math.floor(th*1.2)
 		local dw = 240-bottomBarHeight
 		local img = gfx.image.new(dw,th)
-		gfx.lockFocus(img)
+		gfx.pushContext(img)
 		
-		gfx.setColor(gfx.kColorWhite)
-		gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
-		gfx.fillRoundRect(dw/2 - tw/2, 1, tw, th-2, 10)
+		gfx.setColor(invertedColors[not configVars.invertlabeltext])
+		gfx.setImageDrawMode(invertedDrawModes[configVars.invertlabeltext])
+		if configVars.labeltextbgs then
+			gfx.fillRoundRect(dw/2 - tw/2, 1, tw, th-2, 10)
+		end
 		
-		gfx.setImageDrawMode(invertedFillDrawModes[configVars["invertlabels"]])
 		gfx.drawTextAligned(t, (240-bottomBarHeight)/2, 3,kTextAlignment.center)
-		gfx.unlockFocus()
+		gfx.popContext()
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		img = img:rotatedImage(90)
 		img = img:rotatedImage(180)
@@ -269,7 +273,8 @@ function drawLabelBackgrounds()
 		
 		if v == currentLabel then
 			gfx.setDitherPattern(0)
-			gfx.setLineWidth(3)
+			gfx.setLineWidth(configVars.linewidth)
+			gfx.setColor(invertedColors[configVars.invertcursor])
 			gfx.drawRoundRect(x, labelYMargin, w, 240-bottomBarHeight-(labelYMargin*2), configVars["cornerradius"])
 		end
 	end
@@ -283,32 +288,15 @@ function loadImgs()
 	end
 end
 
-function setEmptyIcon(n)
-	configVars["blankdither"] = n
-	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	gfx.setColor(invertedColors[configVars["invertblanks"]])
-	blankImg = gfx.image.new(66,66)
-	gfx.lockFocus(blankImg)
-	gfx.setDitherPattern(n,gfx.image.kDitherTypeBayer4x4)
-	gfx.fillRoundRect(0,0,66,66,8)
-	gfx.unlockFocus()
-	reloadIconsNextFrame = true
-	loadOptions()
-end
-
-function changeBgDither(n)
-	configVars["bgdither"] = n
-
-	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	gfx.setColor(gfx.kColorBlack)
-	local img = gfx.image.new(402,240)
+function makeBgDitherImg()
+	gfx.setImageDrawMode(invertedFillDrawModes[configVars.invertbgdither])
+	gfx.setColor(invertedColors[configVars.invertbgdither])
+	local img = gfx.image.new(402,240,gfx.kColorClear)
 	gfx.lockFocus(img)
-	gfx.setDitherPattern(n)
+	gfx.setDitherPattern(configVars.bgdither)
 	gfx.fillRect(0,0,402,240)
 	gfx.unlockFocus()
 	bgDitherImg = img
-	reloadIconsNextFrame = true
-	loadOptions()
 end
 
 function loadMusic()
@@ -342,13 +330,14 @@ function wrapPatternForGame(game)
 end
 
 function drawBottomBar()
-	gfx.setColor(gfx.kColorBlack)
-	gfx.setDitherPattern(0.25)
+	local color = invertedColors[configVars.invertcc]
+	gfx.setColor(color)
+	gfx.setDitherPattern(configVars.ccdither)
 	gfx.fillRoundRect(-1,240-bottomBarHeight-controlCenterProgress,402,bottomBarHeight*3+controlCenterProgress,configVars["cornerradius"])
 	if controlCenterState ~= 0 then
 		--backgrounds
 		--right text
-		gfx.setColor(gfx.kColorBlack)
+		gfx.setColor(color)
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		gfx.fillRoundRect(180-12, 244-controlCenterProgress, 226, 209, configVars["cornerradius"]/2)
 		--left text
@@ -361,7 +350,7 @@ function drawBottomBar()
 		drawControlCenterMenu()
 	end
 	
-	gfx.setColor(gfx.kColorWhite)
+	gfx.setColor(invertedColors[not configVars.invertcc])
 	gfx.setDitherPattern(0.25)
 	gfx.setLineWidth(4)
 	gfx.setLineCapStyle(gfx.kLineCapStyleRound)
@@ -376,7 +365,7 @@ function drawBottomBar()
 end
 
 function drawHelp()
-	gfx.setImageDrawMode(gfx.kDrawModeInverted)
+	gfx.setImageDrawMode(invertedDrawModes[not configVars.invertcc])
 	local t =  buttons.A.."*+*"..buttons.DOWN.."* - Toggle Menu*\n"
 	t = t..buttons.A.."*+*"..buttons.LEFT.."*/*"..buttons.RIGHT.."* - Select Label*\n"
 	t = t..buttons.A.."*+*"..buttons.UP.."* - Move Item*\n"
@@ -392,21 +381,19 @@ function drawHelp()
 end
 
 function drawComingSoon()
-	gfx.setImageDrawMode(gfx.kDrawModeInverted)
+	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 	gfx.getLargeUIFont():drawTextAligned("COMING", 275, 320-controlCenterProgress, kTextAlignment.center)
 	gfx.getLargeUIFont():drawTextAligned("SOON", 275, 345-controlCenterProgress, kTextAlignment.center)	gfx.setImageDrawMode(gfx.kDrawModeCopy)	
 end
 
 function drawControlCenterStatusBar()
 	--battery
-	gfx.setColor(gfx.kColorWhite)
-	gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+	gfx.setColor(invertedColors[not configVars.invertcc])
+	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 	batteryImg:draw(12,432-controlCenterProgress)
 	local batteryWidth = math.ceil(27*(playdate.getBatteryPercentage()/100))
 	gfx.fillRect(14, 432-controlCenterProgress, batteryWidth, 15)
 	
-	--time
-	gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
 	local t = playdate.getTime()
 	local min = tostring(t["minute"])
 	if #min < 2 then
@@ -428,18 +415,18 @@ function drawControlCenterStatusBar()
 	end
 	local text = "*"..hour..":"..min.."*"
 	gfx.drawText(text, 170 - 18 - gfx.getTextSize(text), 432-controlCenterProgress)
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 end
 
 function drawControlCenterMenu()
-	gfx.setImageDrawMode(gfx.kDrawModeInverted)
+	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 	local ccMenuSpacing = 25
 	for i,v in ipairs(controlCenterMenuItems) do
 		gfx.drawText("*"..v.."*", 28, 236-controlCenterProgress + ccMenuSpacing*i)
 	end
 	if cursorState == cursorStates.CONTROL_CENTER_MENU then
-		gfx.setImageDrawMode(gfx.kDrawModeCopy)
-		gfx.setColor(gfx.kColorWhite)
 		gfx.fillCircleAtPoint(17, 236-controlCenterProgress+8+ccMenuSpacing*controlCenterMenuSelection, 4)
+		drawCircleCursor(17, 236, ccMenuSpacing, controlCenterMenuSelection, #controlCenterMenuItems, 0)
 	end
 	local controlCenterMenuItem = controlCenterMenuItems[controlCenterMenuSelection]
 	if controlCenterMenuItem == "Controls Help" then
@@ -451,6 +438,7 @@ function drawControlCenterMenu()
 	else
 		drawComingSoon()	
 	end
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 end
 
 function drawInfoPopup()
@@ -464,7 +452,7 @@ function drawInfoPopup()
 	local x,y = (400-w) - math.floor((400-w)/2), (240-h) - math.floor((240-h)/2)
 	gfx.fillRoundRect(x,y , w, h, configVars.cornerradius)
 	gfx.setColor(gfx.kColorBlack)
-	gfx.setLineWidth(4)
+	gfx.setLineWidth(configVars.linewidth)
 	gfx.drawRoundRect(x,y , w, h, configVars.cornerradius)
 	gfx.getLargeUIFont():drawTextAligned(infoPopupTitle, 200, y+labelSpacing,kTextAlignment.center)
 	
@@ -479,18 +467,18 @@ function drawInfoPopup()
 end
 
 function drawSystemInfo()
+	gfx.setImageDrawMode(invertedDrawModes[configVars.invertcc])
+	
 	funnyIconImg:drawScaled(180, 256-controlCenterProgress, 4)
 	local freeSpace = playdate.system.getFreeDiskSpace()
 	local totalSpace = playdate.system.getTotalDiskSpace()
 	local storagePercent = (totalSpace-freeSpace)/totalSpace
-	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	gfx.setColor(gfx.kColorWhite)
+	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 	gfx.setPattern({ 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa })
 	gfx.fillRoundRect(180, 420-controlCenterProgress, 226-24, 20, configVars.cornerradius)
 	gfx.setDitherPattern(0)
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillRoundRect(180, 420-controlCenterProgress, math.floor((226-24)*storagePercent), 20, configVars.cornerradius)
-	gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
 	
 	local filledGB = readableBytes(totalSpace-freeSpace, 2)
 	local totalGB = readableBytes(totalSpace, 2)
@@ -499,27 +487,40 @@ function drawSystemInfo()
 	
 	gfx.drawText("*FunnyOS: *\n*v".. funnyOSMetadata.version .. "*", 320, 330-controlCenterProgress)
 	gfx.drawText("*PDOS: *\n*v".. playdate.systemInfo.sdk .. "*", 320, 280-controlCenterProgress)
-	
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 end
 
 function drawOptions()
-	gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 	local ccOptionsSpacing = 20
-	local controlCenterInfoScroll = 0
-	if controlCenterInfoSelection >= 9 then
-		controlCenterInfoScroll = controlCenterInfoSelection-8
+	if controlCenterInfoSelection-controlCenterInfoScroll > 9 then
+		controlCenterInfoScroll +=1
+	end
+	if controlCenterInfoSelection-controlCenterInfoScroll < 1 then
+		controlCenterInfoScroll -=1
 	end
 	for i,v in ipairs(configVarOptionsOrder) do
 		if configVarOptions[v] then
 			local y = 240-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
-			if y < 220 then
-				gfx.drawText("*"..configVarOptions[v].name.."*", 190, y)
+			if y < 440-controlCenterProgress and y > 240-controlCenterProgress then
+				gfx.drawText("*"..configVarOptions[v].name..":*", 190, y)
+				gfx.drawTextAligned("*"..makeOptionsValueReadable(configVars[v], configVarOptions[v].type).."*", 400-12-6, y, kTextAlignment.right)
 			end
 		end
 	end
-	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	if cursorState == cursorStates.CONTROL_CENTER_CONTENT then
-		gfx.setColor(gfx.kColorWhite)
-		gfx.fillCircleAtPoint(179, 240-controlCenterProgress+8+ccOptionsSpacing*(controlCenterInfoSelection-controlCenterInfoScroll), 4)
+		drawCircleCursor(179, 240, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
+	end
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+end
+
+function drawCircleCursor(baseX, baseY, spacing, index, maxIndex, scroll)
+	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
+	gfx.fillCircleAtPoint(baseX, baseY-controlCenterProgress+8+spacing*(index-scroll), 4)
+	if index ~= 1 then
+		gfx.fillTriangle(baseX,  baseY-controlCenterProgress+spacing*(index-scroll)-4, baseX+4,  baseY-controlCenterProgress+8+spacing*(index-scroll)-1 , baseX - 4,  baseY-controlCenterProgress+8+spacing*(index-scroll)-1)	
+	end
+	if index ~= maxIndex then
+		gfx.fillTriangle(baseX,  baseY-controlCenterProgress+16+spacing*(index-scroll)+4, baseX+4,  baseY-controlCenterProgress+8+spacing*(index-scroll)+1 , baseX - 4,  baseY-controlCenterProgress+8+spacing*(index-scroll)+1)	
 	end
 end
