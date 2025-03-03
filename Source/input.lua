@@ -361,6 +361,11 @@ cursorStateInputHandlers = {
 					controlCenterInfoScroll = 0
 					controlCenterInfoSelection = 1
 					controlCenterInfoMaxSelection = controlCenterInfoMaxSelections[controlCenterMenuItems[controlCenterMenuSelection]]
+				elseif selected == "Launcher Select" then
+					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
+					controlCenterInfoScroll = 0
+					controlCenterInfoSelection = 1
+					controlCenterInfoMaxSelection = #launcherOrder
 				end
 			end
 			delaySetNoShortcut()
@@ -423,6 +428,9 @@ cursorStateInputHandlers = {
 				local selected = controlCenterMenuItems[controlCenterMenuSelection]
 				if selected == "FunnyOS Options" then
 					incrementOptionsValue(controlCenterInfoSelection)
+				end
+				if selected == "Launcher Select" then
+					sys.switchToGame(launchers[launcherOrder[controlCenterInfoSelection]].path)
 				end
 			end
 			delaySetNoShortcut()

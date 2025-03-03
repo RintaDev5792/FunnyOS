@@ -435,6 +435,8 @@ function drawControlCenterMenu()
 		drawSystemInfo()	
 	elseif controlCenterMenuItem == "FunnyOS Options" then
 		drawOptions()
+	elseif controlCenterMenuItem == "Launcher Select" then
+		drawFunnyLoader()
 	else
 		drawComingSoon()	
 	end
@@ -488,6 +490,31 @@ function drawSystemInfo()
 	gfx.drawText("*FunnyOS: *\n*v".. funnyOSMetadata.version .. "*", 320, 330-controlCenterProgress)
 	gfx.drawText("*PDOS: *\n*v".. playdate.systemInfo.sdk .. "*", 320, 280-controlCenterProgress)
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+end
+
+function drawFunnyLoader()
+	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
+	local ccOptionsSpacing = 34
+	if controlCenterInfoSelection-controlCenterInfoScroll > 9 then
+		controlCenterInfoScroll +=1
+	end
+	if controlCenterInfoSelection-controlCenterInfoScroll < 1 then
+		controlCenterInfoScroll -=1
+	end
+	for i,v in pairs(launcherOrder) do
+		local y = 234-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
+		if y < 440-controlCenterProgress and y > 234-controlCenterProgress then
+			
+			gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
+			gfx.drawText("*"..v.."*", 190, y-8)
+			gfx.setImageDrawMode(gfx.kDrawModeCopy)
+			launchers[v].icon:draw(400-32-labelSpacing*2, y-16)
+		end
+	end
+	if cursorState == cursorStates.CONTROL_CENTER_CONTENT then
+		drawCircleCursor(179, 225, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
+	end
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)	
 end
 
 function drawOptions()

@@ -34,6 +34,45 @@ season1 = {
 	"net.stfj.snak"
 }
 
+function getLauncherIcon(path)
+	if fle.exists(path.."/icon.pdi") then
+		return gfx.image.new(path.."/icon.pdi")
+	elseif fle.exists(path.."/images/list_icon_default.pdi") then
+		return gfx.image.new(path.."/images/list_icon_default.pdi")
+	else
+		local f = fle.open(path.."/pdxinfo") 
+		if sys.getMetadata(path .. "/pdxinfo").name=="Index OS" then
+			local img = gfx.image.new(32,32,gfx.kColorClear)
+			gfx.lockFocus(img)
+			gfx.setColor(gfx.kColorWhite)
+			gfx.fillRoundRect(0, 0, 32, 32, 3)
+			gfx.image.new("images/indexOS"):draw(0,0)
+			gfx.unlockFocus()
+			return img
+		end
+	end	
+end
+
+function loadLaunchers()
+	local files = fle.listFiles("/System/Launchers")
+	launchers = {}
+	for i,v in ipairs(files) do
+		v = v:sub(1,#v-1) --remove slash
+		files[i] = v
+		if string.lower(v:sub(#v-3,#v)) == ".pdx" then
+			local launcherName = sys.getMetadata("/System/Launchers/".. v .. "/pdxinfo").name
+			launchers[launcherName] = {["icon"] = getLauncherIcon("/System/Launchers/"..v), ["path"] = "/System/Launchers/"..v}
+		end
+	end	
+	local launcherName = sys.getMetadata("/System/Launcher.pdx/pdxinfo").name
+	launchers[launcherName] = {["icon"] = getLauncherIcon("/System/Launcher.pdx"), ["path"] = "/System/Launcher.pdx"}
+	launcherOrder = {}
+	for k,v in pairs(launchers) do
+		table.insert(launcherOrder, k)	
+	end
+	table.sort(launcherOrder)
+end
+
 local function alphabetSortLabels()
 	table.sort(labelOrder)
 end

@@ -26,6 +26,9 @@ iconsCache = {}
 labels = {}
 labelOrder = {}
 
+launchers = {}
+launcherOrder = {}
+
 objectSizes = {[3] = 68, [6] = 34}
 objectSpacings = {[3] = 5, [6] = 2}
 local homeRows = 3
@@ -55,8 +58,6 @@ controlCenterMenuSelection = 0
 controlCenterInfoSelection = 0
 controlCenterInfoMaxSelection = 0
 controlCenterInfoScroll = 0
-
-installedLaunchers = {}
 -- launcher is {name, path}
 
 funnyOSMetadata = playdate.metadata
@@ -73,6 +74,9 @@ infoPopupTitle = ""
 infoPopupBody = ""
 infoPopupCallbackA = nil
 infoPopupEnableB = true
+
+dumpFrame = false
+dumpCount = 0
 
 configVarDefaults = {
 	["configversion"] = 2.0,
@@ -192,6 +196,61 @@ function changeCursorState(state)
 	end
 end
 
+function dumpGlobals()
+	dumpCount = 0
+	if fle.isdir(savePath.."Dump") then
+		fle.delete(savePath.."Dump", true)
+	end
+	fle.mkdir(savePath.."Dump")
+	playdate.resetElapsedTime()
+	deepStringCopy(_G, 0, true)
+	print("DONE")
+end
+
+function deepStringCopy(table, depth, save)
+	local s = "{"
+	for k,v in pairs(table) do
+		local valString = tostring(k).." = "
+		if k == "_G" then
+			valString = valString.."RECURSION PREVENTION SQUAD :sunglasses:"
+		elseif type(v) == "nil" or v == nil then
+			valString = valString.."nil"
+		elseif type(v) == "boolean" then
+			if v==true then
+				valString = valString.."true"
+			else
+				valString = valString.."false"
+			end
+		elseif type(v) == "table" then
+			if depth < 4 then
+				valString = valString..deepStringCopy(v, depth+1, false)
+			else
+				valString = valString.."miscellaneous "..type(v)	
+			end	
+		elseif type(v) == "number" or type(v) == "string" then
+			valString = valString..tostring(v)
+			
+		else
+			valString = valString.."miscellaneous "..type(v)	
+		end
+		s = s..valString..", "
+		if playdate.getElapsedTime() > 8.5 or #s > 1048576 then
+			if save then 
+				das.write(s.."}", savePath.."Dump/globals_"..tostring(dumpCount))
+				dumpCount += 1
+				s = "{" 
+			end
+			playdate.resetElapsedTime()
+			coroutine.yield()
+			
+		else
+			print(#s)	
+		end
+	end
+	if save then das.write(s.."}", savePath.."Dump/globals_"..tostring(dumpCount)); dumpCount += 1 end
+	return s.."}"
+end
+
 function saveConfig()
 	das.write(configVars,savePath.."funnyConfig")
 	das.write(labelOrder,savePath.."labelOrder")
@@ -242,7 +301,6 @@ end
 function dirSetup()
 	firstLaunch = not fle.exists(savePath .. "funnyConfig.json")
 	fle.mkdir(savePath)
-	fle.mkdir(savePath .. "Icons")
 	fle.mkdir(savePath .. "Badges")
 	fle.mkdir(savePath .. "Labels")
 	loadImgs()
@@ -315,6 +373,10 @@ function playdate.update()
 		playdate.inputHandlers.push(cursorStateInputHandlers[cursorState])	  
 	end
 	drawRoutine()
+	if dumpFrame then
+		dumpGlobals()
+		dumpFrame = false
+	end
 end
 
 function loadMusic()
@@ -341,10 +403,12 @@ end
 function main()
 	loadConfig()
 	dirSetup()
+	playdate.setAutoLockDisabled(false)
 	loadingImg:draw(0,0)
 	playdate.display.setRefreshRate(25)
 	playdate.display.flush()
 	changeCursorState(cursorStates.SELECT_LABEL)
+	loadLaunchers()
 	makeBgDitherImg()
 	if configVars.musicon then
 		loadMusic()
@@ -358,9 +422,10 @@ function main()
 	
 	local menu = playdate.getSystemMenu()
 	menu:removeAllMenuItems()
+	menu:addMenuItem("DUMP", function() dumpFrame = true end) 
+	
 	
 	playdate.timer.performAfterDelay(500, updateCursorFrame)
-	
 	if firstLaunch then
 		createInfoPopup("Welcome!", "*Hello, and thank you for using FunnyOS 2! FunnyOS 2 uses button combos, so you must know those to do most tasks. These combos can be found in the control center.*", false, function() createInfoPopup("Welcome!", "*In order to open the control center, press *"..buttons.A.."*+*"..buttons.DOWN.."*. The control center also houses other useful features, so be sure to look through it to get the most out of FunnyOS 2. Have fun!*", false, function()  end) end)
 	end

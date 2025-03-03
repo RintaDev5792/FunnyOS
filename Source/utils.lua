@@ -26,6 +26,16 @@ function indexOf(table, value)
 	return nil
 end
 
+function dictLength(table)
+	local n = 0
+	for k,v in pairs(table) do
+		if k ~= nil then
+			n+=1	
+		end
+	end
+	return n
+end
+
 function generateDrawTextScaledImage(text, x, y, scale, font)
 	local padding = text:upper() == text and 6 or 0 -- Weird padding hack?
 	local w <const> = font:getTextWidth(text)
