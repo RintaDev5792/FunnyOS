@@ -14,7 +14,7 @@ season1 = {
 	"com.davemakes.execgolf",
 	"com.gregorykogos.omaze",
 	"com.nelsanderson.forrest",
-	"com.NicMagnier.PickPackPup",
+	"com.nicmagnier.pickpackpup",
 	"com.panic.b360",
 	"com.panic.inventoryhero",
 	"com.panic.starsled",
@@ -33,6 +33,25 @@ season1 = {
 	"net.foddy.zipper",
 	"net.stfj.snak"
 }
+
+local kPDGameStateFreshlyInstalled, kPDGameStateInstalled
+if playdate.system ~= nil then
+	kPDGameStateFreshlyInstalled = playdate.system.game.kPDGameStateFreshlyInstalled
+	kPDGameStateInstalled = playdate.system.game.kPDGameStateInstalled
+end
+
+function launchRandomGame()
+	local possibleGames = {}
+	for i,v in ipairs(groups) do
+		if v.name ~= "System" then
+			for j,w in ipairs(v) do
+				table.insert(possibleGames, w)
+			end	
+		end	
+	end
+	local game = possibleGames[math.random(1, #possibleGames)]
+	sys.switchToGame(game:getPath())
+end
 
 function getLauncherIcon(path)
 	if fle.exists(path.."/icon.pdi") then
@@ -73,14 +92,18 @@ function loadLaunchers()
 	table.sort(launcherOrder)
 end
 
-local function alphabetSortLabels()
+function alphabetSortLabels()
 	table.sort(labelOrder)
 end
 
-local function alphabetSortLabelContents()
+function alphabetSortLabelContents()
 	for _, label in pairs(labels) do
 		table.sort(label.objects, function(o1, o2)
-			return o1.name < o2.name
+			if o1.name and o2.name then
+				return o1.name < o2.name
+			else
+				return o1.name	
+			end
 		end)
 	end
 end
@@ -301,6 +324,29 @@ function getIcon(bundleID, labelName, imageName)
 	end
 end
 
+function gameIsFreshlyInstalled(bundleID, set) 
+	if set == nil then set = false end
+	local gameGroup = nil
+	local gameIndex = nil
+	for i,v in ipairs(groups) do
+		if v.name == gameInfo[bundleID]["group"] then
+			gameGroup = i
+			for j,v2 in ipairs(v) do
+				if v2:getBundleID() == bundleID then
+					gameIndex = j
+					break
+				end
+			end
+			break
+		end
+	end	
+	if gameGroup and gameIndex and groups[gameGroup][gameIndex] then
+		local fresh =  groups[gameGroup][gameIndex]:getInstalledState() == kPDGameStateFreshlyInstalled
+		if set == true then groups[gameGroup][gameIndex]:setInstalledState(kPDGameStateInstalled) end
+		return fresh
+	end
+end
+
 function loadIcon(bundleID, labelName, imageName)
 	local rowsNumber = 6 / labels[labelName].rows
 	if bundleID == ".empty" then 
@@ -325,14 +371,15 @@ function loadIcon(bundleID, labelName, imageName)
 	end
 	
 	local gameIcon
-	
-	if gameInfo[bundleID].imagepath ~= nil then 
+	local fresh = gameIsFreshlyInstalled(bundleID,false)
+	if fresh then
+		gameIcon = wrappedImgs[(6/labels[labelName].rows)]
+	elseif gameInfo[bundleID].imagepath ~= nil then 
 		gameIcon = gfx.image.new(gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName) 
-	end
-	
-	if listHasValue(season1, bundleID) and gameIcon == nil then
+	elseif listHasValue(season1, bundleID) and gameIcon == nil then
 		gameIcon = gfx.image.new("s1_icons/"..bundleID)
 	end
+	
 	if gameIcon == nil then 
 		gameIcon = defaultListIcon 
 	end
@@ -340,7 +387,9 @@ function loadIcon(bundleID, labelName, imageName)
 	gfx.pushContext(iconImg)
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillRoundRect(rowsNumber, rowsNumber, objectSize-2*rowsNumber, objectSize-2*rowsNumber, 7*rowsNumber)
-	gameIcon:drawScaled(rowsNumber, rowsNumber, rowsNumber)
+	local scale = rowsNumber
+	if fresh then scale = 1 end
+	gameIcon:drawScaled(rowsNumber, rowsNumber, scale)
 	if configVars.iconborders then
 		gfx.setColor(invertedColors[configVars.invertborders])
 		gfx.setLineWidth(3 * rowsNumber)

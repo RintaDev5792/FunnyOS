@@ -121,18 +121,14 @@ function updateCursorFrame()
 end
 
 function drawIcons()
-	print("drawing icons")
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	for i,v in ipairs(labelOrder) do
 		if not labels[v].collapsed and #labels[v].objects > 0 then
 			for j, objectData in ipairs(labels[v].objects) do
 				local x, y = calcIconPosition(j, v)
-				print("calcIconPosition:")
-				print("X "..x)
-				print("Y ".. y)
 				if objectData and x > -objectSizes[labels[v].rows] and x < 400 then
 					local icon = getIcon(objectData.bundleid, v)
-					if icon then icon:draw(x,y); print("drew icon succesfully") else print("icon is nil?") end
+					if icon then icon:draw(x,y) end
 				end
 			end
 		end
@@ -239,7 +235,6 @@ function processDrawChanges()
 end
 
 function drawLabelBackgrounds()
-	print("drawing label backgrounds")
 	local currentLabelOffset = labelSpacing
 	for i,v in ipairs(labelOrder) do
 		
@@ -252,10 +247,6 @@ function drawLabelBackgrounds()
 			w = labelTextSize*2	
 		end
 		x = scrollX + currentLabelOffset
-		print("-------------------")
-		print("scrollX " .. tostring(scrollX))
-		print("currentLabelOffset " .. tostring(currentLabelOffset))
-		print("x " .. tostring(x))
 		currentLabelOffset += w + labelSpacing
 		labels[v]["drawX"] = x
 		gfx.fillRoundRect(x, labelYMargin, w, 240-bottomBarHeight-(labelYMargin*2), configVars["cornerradius"])
@@ -291,7 +282,7 @@ end
 
 function loadImgs()
 	if fle.exists(savePath.."load.pdi") then
-		loadingImgc = gfx.image.new(savePath.."load.pdi")
+		loadingImg = gfx.image.new(savePath.."load.pdi")
 	else
 		loadingImg = gfx.image.new("images/load")	
 	end
@@ -429,7 +420,7 @@ end
 
 function drawControlCenterMenu()
 	gfx.setImageDrawMode(invertedDrawModes[not configVars.invertcc])
-	local ccMenuSpacing = 25
+	local ccMenuSpacing = 22
 	for i,v in ipairs(controlCenterMenuItems) do
 		gfx.drawText("*"..v.."*", 28, 236-controlCenterProgress + ccMenuSpacing*i)
 	end
@@ -447,6 +438,8 @@ function drawControlCenterMenu()
 		drawOptions()
 	elseif controlCenterMenuItem == "Launcher Select" then
 		drawFunnyLoader()
+	elseif controlCenterMenuItem == "Actions Menu" then
+		drawActions()
 	else
 		drawComingSoon()	
 	end
@@ -542,6 +535,29 @@ function drawOptions()
 			if y < 440-controlCenterProgress and y > 240-controlCenterProgress then
 				gfx.drawText("*"..configVarOptions[v].name..":*", 190, y)
 				gfx.drawTextAligned("*"..makeOptionsValueReadable(configVars[v], configVarOptions[v].type).."*", 400-12-6, y, kTextAlignment.right)
+			end
+		end
+	end
+	if cursorState == cursorStates.CONTROL_CENTER_CONTENT then
+		drawCircleCursor(179, 240, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
+	end
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+end
+
+function drawActions()
+	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
+	local ccOptionsSpacing = 20
+	if controlCenterInfoSelection-controlCenterInfoScroll > 9 then
+		controlCenterInfoScroll +=1
+	end
+	if controlCenterInfoSelection-controlCenterInfoScroll < 1 then
+		controlCenterInfoScroll -=1
+	end
+	for i,v in ipairs(actionsMenuItems) do
+		if v then
+			local y = 240-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
+			if y < 440-controlCenterProgress and y > 240-controlCenterProgress then
+				gfx.drawText("*"..v.."*", 190, y)
 			end
 		end
 	end

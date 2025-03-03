@@ -23,6 +23,29 @@ cursorStates = {
 	INFO_POPUP = 10
 }
 
+blockInputHandler = {
+	AButtonUp = function()
+	end,
+	BButtonUp = function()
+	end,
+	rightButtonDown = function()
+	end,
+	rightButtonUp = function()
+	end,
+	leftButtonDown = function()
+	end,
+	leftButtonUp = function()
+	end,		
+	upButtonDown = function()
+	end,
+	upButtonUp = function()
+	end,		
+	downButtonDown = function()
+	end,
+	downButtonUp = function() 
+	end,
+}
+
 -- A - SELECT, A+U - MOVE OBJECT, A+L/R - SWITCH LABELS, A+D - ADD EMPTY SPACE
 -- B - BACK, B+U - RENAME LABEL, B+L/R - MOVE LABEL， B+D - TOGGLE CC
 -- A+B+L - REMOVE LABEL, A+B+R - ADD LABEL A+B+U - change scale, A+B+D - remove empty item
@@ -35,6 +58,7 @@ cursorStateInputHandlers = {
 				changeCursorState(cursorStates.SELECT_OBJECT)
 			end
 			delaySetNoShortcut()
+			removeKeyTimer()
 		end,
 		BButtonUp = function()
 			if not didShortcut then
@@ -42,6 +66,7 @@ cursorStateInputHandlers = {
 
 			end
 			delaySetNoShortcut()
+			removeKeyTimer()
 		end,
 		
 		rightButtonDown = function()
@@ -135,6 +160,7 @@ cursorStateInputHandlers = {
 				changeCursorState(cursorStates.SELECT_LABEL)
 			end
 			delaySetNoShortcut()
+			removeKeyTimer()
 		end,
 		
 		AButtonUp = function()
@@ -142,11 +168,25 @@ cursorStateInputHandlers = {
 				sound03ActionTrimmed:play()
 				if labels[currentLabel].objects[currentObject].path then
 					if fle.isdir(labels[currentLabel].objects[currentObject].path) or fle.exists(labels[currentLabel].objects[currentObject].path) then
-						sys.switchToGame(labels[currentLabel].objects[currentObject].path)
+						if gameIsFreshlyInstalled(labels[currentLabel].objects[currentObject].bundleid, true) then
+							soundUnwrap:setOffset(2)
+							soundUnwrap:play()
+							playdate.inputHandlers.push(blockInputHandler)
+							playdate.timer.performAfterDelay(1000, function()
+								iconsCache[labels[currentLabel].objects[currentObject].bundleid] = nil
+							end)
+							playdate.timer.performAfterDelay(3000,function()
+								sys.updateGameList()
+								playdate.inputHandlers.pop()
+							end)
+						else
+							sys.switchToGame(labels[currentLabel].objects[currentObject].path)
+						end
 					end
 				end
 			end
 			delaySetNoShortcut()
+			removeKeyTimer()
 		end,
 				
 		rightButtonDown = function()
@@ -238,6 +278,7 @@ cursorStateInputHandlers = {
 				placeHeldObject(heldObjectOriginIndex, heldObjectOriginLabel, false)
 			end
 			delaySetNoShortcut()
+			removeKeyTimer()
 		end,
 		
 		AButtonUp = function()
@@ -246,6 +287,7 @@ cursorStateInputHandlers = {
 				placeHeldObject(currentObject, currentLabel, true)
 			end
 			delaySetNoShortcut()
+			removeKeyTimer()
 		end,
 				
 		rightButtonDown = function()
@@ -350,6 +392,7 @@ cursorStateInputHandlers = {
 				toggleControlCenter()
 			end
 			delaySetNoShortcut()
+			removeKeyTimer()
 		end,
 		
 		AButtonUp = function()
@@ -360,15 +403,21 @@ cursorStateInputHandlers = {
 					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
 					controlCenterInfoScroll = 0
 					controlCenterInfoSelection = 1
-					controlCenterInfoMaxSelection = controlCenterInfoMaxSelections[controlCenterMenuItems[controlCenterMenuSelection]]
+					controlCenterInfoMaxSelection = #configVarOptionsOrder
 				elseif selected == "Launcher Select" then
 					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
 					controlCenterInfoScroll = 0
 					controlCenterInfoSelection = 1
 					controlCenterInfoMaxSelection = #launcherOrder
+				elseif selected == "Actions Menu" then
+					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
+					controlCenterInfoScroll = 0
+					controlCenterInfoSelection = 1
+					controlCenterInfoMaxSelection = #actionsMenuItems
 				end
 			end
 			delaySetNoShortcut()
+			removeKeyTimer()
 		end,
 				
 		upButtonDown = function()
@@ -424,6 +473,7 @@ cursorStateInputHandlers = {
 				changeCursorState(cursorStates.CONTROL_CENTER_MENU)
 			end
 			delaySetNoShortcut()
+			removeKeyTimer()
 		end,
 		
 		AButtonUp = function()
@@ -436,8 +486,12 @@ cursorStateInputHandlers = {
 				if selected == "Launcher Select" then
 					sys.switchToGame(launchers[launcherOrder[controlCenterInfoSelection]].path)
 				end
+				if selected == "Actions Menu" then
+					doActionsMenuAction(actionsMenuItems[controlCenterInfoSelection])
+				end
 			end
 			delaySetNoShortcut()
+			removeKeyTimer()
 		end,
 		
 		upButtonDown = function()
@@ -489,6 +543,7 @@ cursorStateInputHandlers = {
 				if infoPopupCallbackA then infoPopupCallbackA() end
 			end
 			delaySetNoShortcut()
+			removeKeyTimer()
 		end,
 		BButtonUp = function()
 			sound03ActionTrimmed:play()
@@ -496,6 +551,7 @@ cursorStateInputHandlers = {
 				changeCursorState(oldCursorState)
 			end
 			delaySetNoShortcut()	
+			removeKeyTimer()
 		end
 	},
 }
@@ -788,4 +844,27 @@ function incrementOptionsValue(selection)
 	end
 	redrawFrame = true
 	saveConfig()
+end
+
+function doActionsMenuAction(name) 
+	if name == "Play Random Game" then
+		launchRandomGame()
+	elseif name == "Alphabet Sort Objects" then
+		alphabetSortLabelContents()
+		saveConfig()
+	elseif name == "Alphabet Sort Labels" then
+		alphabetSortLabels()
+		saveLabelOrder()
+	elseif name == "Reset FunnyOS 2" then
+		createInfoPopup("Warning", "*This cannot be reversed. Pressing *"..buttons.A.."* on this prompt will erase your customizaion settings and label setups. Your custom assets in the shared folder will not be deleted.", true, function()
+			fle.delete(savePath.."funnyConfig.json")
+			fle.delete(savePath.."labelOrder.json")
+			if fle.isdir(savePath.."Labels") then
+				fle.delete(savePath.."Labels", true)
+			end
+			local path = launchers[funnyOSMetadata.name].path
+			sys.switchToGame(path)
+		end
+		)
+	end	
 end

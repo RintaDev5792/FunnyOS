@@ -53,6 +53,7 @@ sound01SelectionTrimmed = playdate.sound.fileplayer.new("systemsfx/01-selection-
 sound02SelectionReverseTrimmed = playdate.sound.fileplayer.new("systemsfx/02-selection-reverse-trimmed")
 sound03ActionTrimmed = playdate.sound.fileplayer.new("systemsfx/03-action-trimmed")
 sound04DenialTrimmed = playdate.sound.fileplayer.new("systemsfx/04-denial-trimmed")
+soundUnwrap = playdate.sound.fileplayer.new("systemsfx/unwrap")
 
 controlCenterMenuSelection = 0
 controlCenterInfoSelection = 0
@@ -151,15 +152,19 @@ configVarOptionsOrder = {
 
 controlCenterMenuItems = {
 	"Controls Help",
+	"Actions Menu",
 	"Badges Menu",
+	"FunnyOS Options",
 	"Screenshots",
 	"Launcher Select",
-	"FunnyOS Options",
 	"System Info"
 }
 
-controlCenterInfoMaxSelections = {
-	["FunnyOS Options"] = #configVarOptionsOrder
+actionsMenuItems = {
+	"Play Random Game",
+	"Alphabet Sort Objects",
+	"Alphabet Sort Labels",
+	"Reset FunnyOS 2",
 }
 
 configVars = configVarDefaults
@@ -417,8 +422,11 @@ function main()
 		loadBgImg()
 	end
 	
+	math.randomseed(playdate.getSecondsSinceEpoch())
+	
 	gfx.clear()
 	setupGameInfo()
+	
 	
 	local menu = playdate.getSystemMenu()
 	menu:removeAllMenuItems()
