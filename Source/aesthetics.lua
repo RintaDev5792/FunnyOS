@@ -419,7 +419,7 @@ function drawControlCenterStatusBar()
 end
 
 function drawControlCenterMenu()
-	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
+	gfx.setImageDrawMode(invertedDrawModes[not configVars.invertcc])
 	local ccMenuSpacing = 25
 	for i,v in ipairs(controlCenterMenuItems) do
 		gfx.drawText("*"..v.."*", 28, 236-controlCenterProgress + ccMenuSpacing*i)
@@ -428,6 +428,7 @@ function drawControlCenterMenu()
 		gfx.fillCircleAtPoint(17, 236-controlCenterProgress+8+ccMenuSpacing*controlCenterMenuSelection, 4)
 		drawCircleCursor(17, 236, ccMenuSpacing, controlCenterMenuSelection, #controlCenterMenuItems, 0)
 	end
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	local controlCenterMenuItem = controlCenterMenuItems[controlCenterMenuSelection]
 	if controlCenterMenuItem == "Controls Help" then
 		drawHelp()
@@ -493,7 +494,6 @@ function drawSystemInfo()
 end
 
 function drawFunnyLoader()
-	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 	local ccOptionsSpacing = 34
 	if controlCenterInfoSelection-controlCenterInfoScroll > 9 then
 		controlCenterInfoScroll +=1
@@ -504,10 +504,9 @@ function drawFunnyLoader()
 	for i,v in pairs(launcherOrder) do
 		local y = 234-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
 		if y < 440-controlCenterProgress and y > 234-controlCenterProgress then
-			
 			gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 			gfx.drawText("*"..v.."*", 190, y-8)
-			gfx.setImageDrawMode(gfx.kDrawModeCopy)
+			gfx.setImageDrawMode(invertedDrawModes[configVars.invertcc])
 			launchers[v].icon:draw(400-32-labelSpacing*2, y-16)
 		end
 	end

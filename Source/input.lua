@@ -386,6 +386,8 @@ cursorStateInputHandlers = {
 			else
 				didShortcut = false
 				removeKeyTimer()
+				controlCenterInfoSelection = 1
+				controlCenterInfoScroll = 0
 				keyTimer = playdate.timer.keyRepeatTimerWithDelay(keyTimerInitialDelay,keyTimerRepeatDelay, controlCenterMenuMoveUp)
 			end
 		end,
@@ -406,6 +408,8 @@ cursorStateInputHandlers = {
 			else
 				didShortcut = false
 				removeKeyTimer()
+				controlCenterInfoSelection = 1
+				controlCenterInfoScroll = 0
 				keyTimer = playdate.timer.keyRepeatTimerWithDelay(keyTimerInitialDelay,keyTimerRepeatDelay, controlCenterMenuMoveDown)
 			end
 		end,
