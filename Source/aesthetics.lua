@@ -121,14 +121,18 @@ function updateCursorFrame()
 end
 
 function drawIcons()
+	print("drawing icons")
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	for i,v in ipairs(labelOrder) do
 		if not labels[v].collapsed and #labels[v].objects > 0 then
 			for j, objectData in ipairs(labels[v].objects) do
 				local x, y = calcIconPosition(j, v)
+				print("calcIconPosition:")
+				print("X "..x)
+				print("Y ".. y)
 				if objectData and x > -objectSizes[labels[v].rows] and x < 400 then
 					local icon = getIcon(objectData.bundleid, v)
-					if icon then icon:draw(x,y) end
+					if icon then icon:draw(x,y); print("drew icon succesfully") else print("icon is nil?") end
 				end
 			end
 		end
@@ -235,6 +239,7 @@ function processDrawChanges()
 end
 
 function drawLabelBackgrounds()
+	print("drawing label backgrounds")
 	local currentLabelOffset = labelSpacing
 	for i,v in ipairs(labelOrder) do
 		
@@ -247,6 +252,10 @@ function drawLabelBackgrounds()
 			w = labelTextSize*2	
 		end
 		x = scrollX + currentLabelOffset
+		print("-------------------")
+		print("scrollX " .. tostring(scrollX))
+		print("currentLabelOffset " .. tostring(currentLabelOffset))
+		print("x " .. tostring(x))
 		currentLabelOffset += w + labelSpacing
 		labels[v]["drawX"] = x
 		gfx.fillRoundRect(x, labelYMargin, w, 240-bottomBarHeight-(labelYMargin*2), configVars["cornerradius"])
@@ -507,7 +516,9 @@ function drawFunnyLoader()
 			gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 			gfx.drawText("*"..v.."*", 190, y-8)
 			gfx.setImageDrawMode(invertedDrawModes[configVars.invertcc])
-			launchers[v].icon:draw(400-32-labelSpacing*2, y-16)
+			if launchers[v].icon then
+				launchers[v].icon:draw(400-32-labelSpacing*2, y-16)
+			end
 		end
 	end
 	if cursorState == cursorStates.CONTROL_CENTER_CONTENT then
