@@ -67,7 +67,6 @@ function launchGame(bundleID)
 					playdate.inputHandlers.pop()
 				end)
 			else
-				print(gameInfo[bundleID].suppresscontentwarning)
 				if gameInfo[bundleID].suppresscontentwarning or not gameInfo[bundleID].contentwarning then
 					sys.switchToGame(labels[currentLabel].objects[currentObject].path)
 				elseif gameInfo[bundleID].contentwarning then
