@@ -73,16 +73,18 @@ function getLauncherIcon(path)
 end
 
 function loadLaunchers()
-	local files = fle.listFiles("/System/Launchers")
 	launchers = {}
-	for i,v in ipairs(files) do
-		v = v:sub(1,#v-1) --remove slash
-		files[i] = v
-		if string.lower(v:sub(#v-3,#v)) == ".pdx" then
-			local launcherName = sys.getMetadata("/System/Launchers/".. v .. "/pdxinfo").name
-			launchers[launcherName] = {["icon"] = getLauncherIcon("/System/Launchers/"..v), ["path"] = "/System/Launchers/"..v}
-		end
-	end	
+	if fle.isdir("/System/Launchers") then
+		local files = fle.listFiles("/System/Launchers")
+		for i,v in ipairs(files) do
+			v = v:sub(1,#v-1) --remove slash
+			files[i] = v
+			if string.lower(v:sub(#v-3,#v)) == ".pdx" then
+				local launcherName = sys.getMetadata("/System/Launchers/".. v .. "/pdxinfo").name
+				launchers[launcherName] = {["icon"] = getLauncherIcon("/System/Launchers/"..v), ["path"] = "/System/Launchers/"..v}
+			end
+		end	
+	end
 	local launcherName = sys.getMetadata("/System/Launcher.pdx/pdxinfo").name
 	launchers[launcherName] = {["icon"] = getLauncherIcon("/System/Launcher.pdx"), ["path"] = "/System/Launcher.pdx"}
 	launcherOrder = {}
