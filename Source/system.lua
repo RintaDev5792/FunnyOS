@@ -378,11 +378,14 @@ function loadIcon(bundleID, labelName, imageName)
 	local fresh = gameIsFreshlyInstalled(bundleID,false)
 	if gameInfo[bundleID].imagepath ~= nil then 
 		gameIcon = gfx.image.new(gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName) 
-	elseif listHasValue(season1, bundleID) and gameIcon == nil then
+	end
+	
+	if listHasValue(season1, bundleID) and gameIcon == nil then
 		gameIcon = gfx.image.new("s1_icons/"..bundleID)
 	end
 	
 	if gameIcon == nil then 
+		
 		gameIcon = defaultListIcon 
 	end
 	

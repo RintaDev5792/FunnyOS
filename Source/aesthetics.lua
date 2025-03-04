@@ -169,8 +169,10 @@ function drawObjectCursor()
 		if cursorFrame > #cursorImgs[rowsNumber] then cursorFrame = 1 end
 		cursorImgs[rowsNumber][cursorFrame]:draw(x,y)
 		local t = labels[currentLabel].objects[currentObject].name
-		if configVars.hidewrapped and gameInfo[labels[currentLabel].objects[currentObject].bundleid].wrapped then
-			t = "?????"	
+		if labels[currentLabel].objects ~= nil and labels[currentLabel].objects[currentObject] ~= nil and  gameInfo[labels[currentLabel].objects[currentObject].bundleid] ~= nil then
+			if configVars.hidewrapped and gameInfo[labels[currentLabel].objects[currentObject].bundleid].wrapped then
+				t = "?????"	
+			end
 		end
 		if t then
 			t = "*"..t.."*"
