@@ -23,6 +23,8 @@ tempVars = {}
 
 iconsCache = {}
 
+recentlyPlayed = {}
+
 labels = {}
 labelOrder = {}
 
@@ -159,6 +161,7 @@ configVarOptionsOrder = {
 controlCenterMenuItems = {
 	"Controls Help",
 	"Actions Menu",
+	"Recently Played",
 	"Badges Menu",
 	"FunnyOS Options",
 	"Screenshots",
@@ -270,6 +273,10 @@ function saveConfig()
 	end
 end
 
+function saveRecentlyPlayed()
+	das.write(recentlyPlayed,savePath.."recentlyPlayed")	
+end
+
 function saveLabelOrder()
 	das.write(labelOrder,savePath.."labelOrder")	
 end
@@ -306,6 +313,11 @@ function loadConfig()
 			labels[labelFile:sub(1,-6)] = das.read(savePath .. "Labels/" .. labelFile:sub(1,-6))
 			labels[labelFile:sub(1,-6)]["collapsed"] = configVars.autocollapselabels
 		end
+	end
+	local datastore = das.read(savePath .. "recentlyPlayed")
+	if not datastore then recentlyPlayed = {} else recentlyPlayed = datastore end
+	while #recentlyPlayed > 6 do
+		table.remove(recentlyPlayed,#recentlyPlayed)	
 	end
 end
 

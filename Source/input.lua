@@ -392,6 +392,11 @@ cursorStateInputHandlers = {
 					controlCenterInfoScroll = 0
 					controlCenterInfoSelection = 1
 					controlCenterInfoMaxSelection = #launcherOrder
+				elseif selected == "Recently Played" then
+					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
+					controlCenterInfoScroll = 0
+					controlCenterInfoSelection = 1
+					controlCenterInfoMaxSelection = #recentlyPlayed
 				elseif selected == "Actions Menu" then
 					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
 					controlCenterInfoScroll = 0
@@ -468,6 +473,9 @@ cursorStateInputHandlers = {
 				end
 				if selected == "Launcher Select" then
 					sys.switchToGame(launchers[launcherOrder[controlCenterInfoSelection]].path)
+				end
+				if selected == "Recently Played" then
+					sys.switchToGame(gameInfo[recentlyPlayed[controlCenterInfoSelection]].path)
 				end
 				if selected == "Actions Menu" then
 					doActionsMenuAction(actionsMenuItems[controlCenterInfoSelection])

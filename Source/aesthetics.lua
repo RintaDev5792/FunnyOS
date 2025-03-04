@@ -435,13 +435,12 @@ end
 
 function drawControlCenterMenu()
 	gfx.setImageDrawMode(invertedDrawModes[not configVars.invertcc])
-	local ccMenuSpacing = 22
+	local ccMenuSpacing = 18
 	for i,v in ipairs(controlCenterMenuItems) do
-		gfx.drawText("*"..v.."*", 28, 236-controlCenterProgress + ccMenuSpacing*i)
+		gfx.drawText("*"..v.."*", 28, 260-controlCenterProgress + ccMenuSpacing*(i-1))
 	end
 	if cursorState == cursorStates.CONTROL_CENTER_MENU then
-		gfx.fillCircleAtPoint(17, 236-controlCenterProgress+8+ccMenuSpacing*controlCenterMenuSelection, 4)
-		drawCircleCursor(17, 236, ccMenuSpacing, controlCenterMenuSelection, #controlCenterMenuItems, 0)
+		drawCircleCursor(17, 260, ccMenuSpacing, controlCenterMenuSelection-1, #controlCenterMenuItems, 0)
 	end
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	local controlCenterMenuItem = controlCenterMenuItems[controlCenterMenuSelection]
@@ -451,6 +450,8 @@ function drawControlCenterMenu()
 		drawSystemInfo()	
 	elseif controlCenterMenuItem == "FunnyOS Options" then
 		drawOptions()
+	elseif controlCenterMenuItem == "Recently Played" then
+		drawRecentlyPlayed()
 	elseif controlCenterMenuItem == "Launcher Select" then
 		drawFunnyLoader()
 	elseif controlCenterMenuItem == "Actions Menu" then
@@ -511,7 +512,7 @@ function drawSystemInfo()
 end
 
 function drawFunnyLoader()
-	local ccOptionsSpacing = 34
+	local ccOptionsSpacing = 32
 	if controlCenterInfoSelection-controlCenterInfoScroll > 9 then
 		controlCenterInfoScroll +=1
 	end
@@ -519,7 +520,7 @@ function drawFunnyLoader()
 		controlCenterInfoScroll -=1
 	end
 	for i,v in pairs(launcherOrder) do
-		local y = 234-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
+		local y = 235-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
 		if y < 440-controlCenterProgress and y > 234-controlCenterProgress then
 			gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 			gfx.drawText("*"..v.."*", 190, y-8)
@@ -530,7 +531,33 @@ function drawFunnyLoader()
 		end
 	end
 	if cursorState == cursorStates.CONTROL_CENTER_CONTENT then
-		drawCircleCursor(179, 226, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
+		drawCircleCursor(179, 227, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
+	end
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)	
+end
+
+function drawRecentlyPlayed()
+	local ccOptionsSpacing = 32
+	if controlCenterInfoSelection-controlCenterInfoScroll > 9 then
+		controlCenterInfoScroll +=1
+	end
+	if controlCenterInfoSelection-controlCenterInfoScroll < 1 then
+		controlCenterInfoScroll -=1
+	end
+	for i,v in pairs(recentlyPlayed) do
+		local y = 235-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
+		if y < 440-controlCenterProgress and y > 234-controlCenterProgress then
+			gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
+			gfx.drawText("*"..gameInfo[v].name.."*", 190, y-8)
+			gfx.setImageDrawMode(invertedDrawModes[configVars.invertcc])
+			local icon = getIcon(v, "recentlyPlayed", "recentlyPlayed")
+			if icon then
+				icon:draw(400-32-labelSpacing*2, y-16)
+			end
+		end
+	end
+	if cursorState == cursorStates.CONTROL_CENTER_CONTENT then
+		drawCircleCursor(179, 227, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
 	end
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)	
 end

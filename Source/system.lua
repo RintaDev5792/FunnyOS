@@ -52,6 +52,16 @@ function getGameObject(bundleID)
 	return nil
 end
 
+function addToRecentlyPlayed(bundleid)
+	if not listHasValue(recentlyPlayed, bundleid) then
+		table.insert(recentlyPlayed, 1, bundleid)
+	end
+	while #recentlyPlayed > 6 do
+		table.remove(recentlyPlayed, #recentlyPlayed)
+	end
+	saveRecentlyPlayed()
+end
+
 function launchGame(bundleID)
 	if gameInfo[bundleID].path then
 		if fle.isdir(gameInfo[bundleID].path) or fle.exists(gameInfo[bundleID].path) then
@@ -68,6 +78,7 @@ function launchGame(bundleID)
 				end)
 			else
 				if gameInfo[bundleID].suppresscontentwarning or not gameInfo[bundleID].contentwarning then
+					addToRecentlyPlayed(bundleID)
 					sys.switchToGame(labels[currentLabel].objects[currentObject].path)
 				elseif gameInfo[bundleID].contentwarning then
 					createInfoPopup("Content Warning", "*"..gameInfo[bundleID].contentwarning.."*", true, function()
@@ -78,6 +89,7 @@ function launchGame(bundleID)
 									game:setSuppressContentWarning(true)
 								end
 								sys.updateGameList()
+								addToRecentlyPlayed(bundleID)
 								sys.switchToGame(labels[currentLabel].objects[currentObject].path)
 							end)
 						else
@@ -89,6 +101,7 @@ function launchGame(bundleID)
 								print("THEREISNOGAME")	
 							end
 							sys.updateGameList()
+							addToRecentlyPlayed(bundleID)
 							sys.switchToGame(labels[currentLabel].objects[currentObject].path)
 						end
 						
@@ -411,7 +424,14 @@ function gameIsFreshlyInstalled(bundleID, set)
 end
 
 function loadIcon(bundleID, labelName, imageName)
-	local rowsNumber = 6 / labels[labelName].rows
+	local rowsNumber = 1
+	if labels[labelName] then
+		rowsNumber = 6 / labels[labelName].rows
+	elseif labelName == "recentlyPlayed" then
+		rowsNumber = 1	
+	else
+		return nil	
+	end
 	if bundleID == ".empty" then 
 		if configVars["drawblanks"] then
 			return emptySpaceImgs[rowsNumber] 
@@ -422,11 +442,11 @@ function loadIcon(bundleID, labelName, imageName)
 	
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	
-	if not imageName then
+	if not imageName or imageName == "recentlyPlayed" then
 		imageName = "icon"
 	end
 	
-	local objectSize = objectSizes[labels[labelName].rows]
+	local objectSize = objectSizes[(1/rowsNumber)*6]
 	local iconImg = gfx.image.new(objectSize, objectSize, gfx.kColorClear)
 	
 	if not gameInfo[bundleID] then
@@ -469,7 +489,11 @@ function loadIcon(bundleID, labelName, imageName)
 	if iconsCache[bundleID] == nil then
 		iconsCache[bundleID] = {}
 	end
-	iconsCache[bundleID][imageName] = iconImg
+	if labelName ~= "recentlyPlayed" then
+		iconsCache[bundleID][imageName] = iconImg
+	else
+		iconsCache[bundleID]["recentlyPlayed"] = iconImg
+	end
 	
 	return iconImg
 end
