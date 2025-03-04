@@ -831,6 +831,9 @@ function incrementOptionsValue(selection)
 		end
 	elseif selected == "bgdither" or selected == "invertbgdither" then
 		makeBgDitherImg()
+	elseif selected == "transwrapped" then
+		makeWrappedImgs()
+		iconsCache = {}
 	elseif selected == "musicon" then
 		if configVars.musicon then 
 			loadMusic() 

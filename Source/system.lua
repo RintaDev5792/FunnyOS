@@ -144,6 +144,7 @@ function setupGameInfo()
 
 					props["group"] = group.name
 					props["suppresscontentwarning"] = game:getSuppressContentWarning()
+					props["wrapped"] = game:getInstalledState() == kPDGameStateFreshlyInstalled
 					gameInfo[game:getBundleID()] = props
 				end
 			else
@@ -343,6 +344,7 @@ function gameIsFreshlyInstalled(bundleID, set)
 	if gameGroup and gameIndex and groups[gameGroup][gameIndex] then
 		local fresh =  groups[gameGroup][gameIndex]:getInstalledState() == kPDGameStateFreshlyInstalled
 		if set == true then groups[gameGroup][gameIndex]:setInstalledState(kPDGameStateInstalled) end
+		gameInfo[bundleID].wrapped = groups[gameGroup][gameIndex]:getInstalledState() == kPDGameStateFreshlyInstalled
 		return fresh
 	end
 end
@@ -372,9 +374,7 @@ function loadIcon(bundleID, labelName, imageName)
 	
 	local gameIcon
 	local fresh = gameIsFreshlyInstalled(bundleID,false)
-	if fresh then
-		gameIcon = wrappedImgs[(6/labels[labelName].rows)]
-	elseif gameInfo[bundleID].imagepath ~= nil then 
+	if gameInfo[bundleID].imagepath ~= nil then 
 		gameIcon = gfx.image.new(gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName) 
 	elseif listHasValue(season1, bundleID) and gameIcon == nil then
 		gameIcon = gfx.image.new("s1_icons/"..bundleID)
@@ -387,9 +387,10 @@ function loadIcon(bundleID, labelName, imageName)
 	gfx.pushContext(iconImg)
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillRoundRect(rowsNumber, rowsNumber, objectSize-2*rowsNumber, objectSize-2*rowsNumber, 7*rowsNumber)
-	local scale = rowsNumber
-	if fresh then scale = 1 end
-	gameIcon:drawScaled(rowsNumber, rowsNumber, scale)
+	gameIcon:drawScaled(rowsNumber, rowsNumber, rowsNumber)
+	if fresh then
+		wrappedImgs[(6/labels[labelName].rows)]:draw(rowsNumber,rowsNumber, 1)
+	end
 	if configVars.iconborders then
 		gfx.setColor(invertedColors[configVars.invertborders])
 		gfx.setLineWidth(3 * rowsNumber)

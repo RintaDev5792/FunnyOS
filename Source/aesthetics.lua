@@ -39,7 +39,7 @@ loadingImg = nil
 shuffleImgs = gfx.imagetable.new("images/shuffle")
 batteryImg = gfx.image.new("images/battery")
 funnyIconImg = gfx.image.new("icon")
-wrappedImgs = gfx.imagetable.new("images/wrapped")
+wrappedImgs = gfx.imagetable.new("images/trans-wrapped")
 newGame = gfx.image.new("images/newgame")
 newGameMask = gfx.image.new("images/newgame_mask")
 cursorImgs = {gfx.imagetable.new("images/cursor-1"),gfx.imagetable.new("images/cursor-2")}
@@ -169,6 +169,9 @@ function drawObjectCursor()
 		if cursorFrame > #cursorImgs[rowsNumber] then cursorFrame = 1 end
 		cursorImgs[rowsNumber][cursorFrame]:draw(x,y)
 		local t = labels[currentLabel].objects[currentObject].name
+		if configVars.hidewrapped and gameInfo[labels[currentLabel].objects[currentObject].bundleid].wrapped then
+			t = "?????"	
+		end
 		if t then
 			t = "*"..t.."*"
 			local tw,th = gfx.getTextSize(t)
@@ -263,7 +266,6 @@ function drawLabelBackgrounds()
 		if configVars.labeltextbgs then
 			gfx.fillRoundRect(dw/2 - tw/2, 1, tw, th-2, 10)
 		end
-		
 		gfx.drawTextAligned(t, (240-bottomBarHeight)/2, 3,kTextAlignment.center)
 		gfx.popContext()
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
@@ -285,6 +287,17 @@ function loadImgs()
 		loadingImg = gfx.image.new(savePath.."load.pdi")
 	else
 		loadingImg = gfx.image.new("images/load")	
+	end
+	
+	makeBgDitherImg()
+	makeWrappedImgs()
+end
+
+function makeWrappedImgs()
+	if configVars.transwrapped then
+		wrappedImgs = gfx.imagetable.new("images/trans-wrapped")
+	else
+		wrappedImgs = gfx.imagetable.new("images/wrapped")
 	end
 end
 
@@ -515,7 +528,7 @@ function drawFunnyLoader()
 		end
 	end
 	if cursorState == cursorStates.CONTROL_CENTER_CONTENT then
-		drawCircleCursor(179, 225, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
+		drawCircleCursor(179, 226, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
 	end
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)	
 end

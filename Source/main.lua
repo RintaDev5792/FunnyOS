@@ -101,7 +101,9 @@ configVarDefaults = {
 	["labeldither"] = 0.75,
 	["cornerradius"] = 20,
 	["linewidth"] = 3,
-	["autocollapselabels"] = false
+	["autocollapselabels"] = false,
+	["transwrapped"] = true,
+	["hidewrapped"] = true,
 }
 
 configVarOptions = {
@@ -125,6 +127,8 @@ configVarOptions = {
 	["cornerradius"] = {["name"] = "Corner Radius", ["values"] = {1, 5, 10, 15, 20, 25}, ["type"] = "PIXELS"},
 	["linewidth"] = {["name"] = "Outline Width", ["values"] = {2, 3, 4, 5, 6}, ["type"] = "PIXELS"},
 	["autocollapselabels"] =  {["name"] = "Auto-Close Labels", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["transwrapped"] =  {["name"] = "Clear Icon Wrap", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["hidewrapped"] =  {["name"] = "Hide New Names", ["values"] = {true, false}, ["type"] = "BOOL"},
 }
 
 configVarOptionsOrder = {
@@ -147,6 +151,8 @@ configVarOptionsOrder = {
 	"linewidth",
 	"autocollapselabels",
 	"skipcard",
+	"transwrapped",
+	"hidewrapped",
 }
 
 
@@ -414,7 +420,6 @@ function main()
 	playdate.display.flush()
 	changeCursorState(cursorStates.SELECT_LABEL)
 	loadLaunchers()
-	makeBgDitherImg()
 	if configVars.musicon then
 		loadMusic()
 	end
