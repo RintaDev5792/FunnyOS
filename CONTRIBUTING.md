@@ -29,5 +29,5 @@ to user preferences and UX, some basic guidelines must be followed.
 ## Provide meaningful commit messages
 
 It is preferred that you list everything that a commit does in detail so that I  
-know where to make sure everything works. I will not be following this guidelione  
+know where to make sure everything works. I will not be following this guideline  
 because I already know what my commits do.
