@@ -29,5 +29,8 @@ to user preferences and UX, some basic guidelines must be followed.
 ## Provide meaningful commit messages
 
 It is preferred that you list everything that a commit does in detail so that I  
-know where to make sure everything works. I will not be following this guideline  
-because I already know what my commits do.
+know where to make sure everything works. Example:  
+
+Title: Updated Label Spacing
+
+Content: Changed label spacing in aesthetics.lua so that labels look more cohesive and clean.
