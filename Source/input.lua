@@ -166,24 +166,7 @@ cursorStateInputHandlers = {
 		AButtonUp = function()
 			if not didShortcut then
 				sound03ActionTrimmed:play()
-				if labels[currentLabel].objects[currentObject].path then
-					if fle.isdir(labels[currentLabel].objects[currentObject].path) or fle.exists(labels[currentLabel].objects[currentObject].path) then
-						if gameIsFreshlyInstalled(labels[currentLabel].objects[currentObject].bundleid, true) then
-							soundUnwrap:setOffset(2)
-							soundUnwrap:play()
-							playdate.inputHandlers.push(blockInputHandler)
-							playdate.timer.performAfterDelay(1000, function()
-								iconsCache[labels[currentLabel].objects[currentObject].bundleid] = nil
-							end)
-							playdate.timer.performAfterDelay(3000,function()
-								sys.updateGameList()
-								playdate.inputHandlers.pop()
-							end)
-						else
-							sys.switchToGame(labels[currentLabel].objects[currentObject].path)
-						end
-					end
-				end
+				launchGame(labels[currentLabel].objects[currentObject].bundleid)
 			end
 			delaySetNoShortcut()
 			removeKeyTimer()

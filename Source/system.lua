@@ -40,6 +40,66 @@ if playdate.system ~= nil then
 	kPDGameStateInstalled = playdate.system.game.kPDGameStateInstalled
 end
 
+function getGameObject(bundleID) 
+	if not gameInfo[bundleID] then return nil end
+	for i,v in ipairs(groups) do
+		if v.name == gameInfo[bundleID].group then
+			for j, w in ipairs(v) do
+				if w:getBundleID() == bundleID then return w end	
+			end
+		end
+	end	
+	return nil
+end
+
+function launchGame(bundleID)
+	if gameInfo[bundleID].path then
+		if fle.isdir(gameInfo[bundleID].path) or fle.exists(gameInfo[bundleID].path) then
+			if gameIsFreshlyInstalled(bundleID, true) then
+				soundUnwrap:setOffset(2)
+				soundUnwrap:play()
+				playdate.inputHandlers.push(blockInputHandler)
+				playdate.timer.performAfterDelay(1000, function()
+					iconsCache[labels[currentLabel].objects[currentObject].bundleid] = nil
+				end)
+				playdate.timer.performAfterDelay(3000,function()
+					sys.updateGameList()
+					playdate.inputHandlers.pop()
+				end)
+			else
+				print(gameInfo[bundleID].suppresscontentwarning)
+				if gameInfo[bundleID].suppresscontentwarning or not gameInfo[bundleID].contentwarning then
+					sys.switchToGame(labels[currentLabel].objects[currentObject].path)
+				elseif gameInfo[bundleID].contentwarning then
+					createInfoPopup("Content Warning", "*"..gameInfo[bundleID].contentwarning.."*", true, function()
+						if gameInfo[bundleID].contentwarning2 then
+							createInfoPopup("Content Warning", "*"..gameInfo[bundleID].contentwarning2.."*", true, function()
+								local game = getGameObject(bundleID)
+								if game then
+									game:setSuppressContentWarning(true)
+								end
+								sys.updateGameList()
+								sys.switchToGame(labels[currentLabel].objects[currentObject].path)
+							end)
+						else
+							local game = getGameObject(bundleID)
+							if game then
+								game:setSuppressContentWarning(true)
+								print("SUPRESSED")
+							else
+								print("THEREISNOGAME")	
+							end
+							sys.updateGameList()
+							sys.switchToGame(labels[currentLabel].objects[currentObject].path)
+						end
+						
+					end)	
+				end
+			end
+		end
+	end
+end
+
 function launchRandomGame()
 	local possibleGames = {}
 	for i,v in ipairs(groups) do
@@ -50,7 +110,7 @@ function launchRandomGame()
 		end	
 	end
 	local game = possibleGames[math.random(1, #possibleGames)]
-	sys.switchToGame(game:getPath())
+	launchGame(game:getBundleID())
 end
 
 function getLauncherIcon(path)
