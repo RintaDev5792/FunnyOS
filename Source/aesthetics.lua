@@ -48,6 +48,9 @@ labelSpacing, labelYMargin, labelTextSize = 10, 4, 15
 bottomBarHeight = 10 -- usually 22
 snappiness, defaultSnappiness = 0.45,0.45
 
+widgetsScreenWidth = 240
+widgetWidth, widgetHeight = 200, 200
+
 scrollX = 0
 controlCenterProgress, maxControlCenterProgress, controlCenterState = 0, 224, 0 -- 0 close 1 closing 2 opening 3 open
 
@@ -71,10 +74,15 @@ function drawRoutine()
 			gfx.pushContext(iconsImg)
 		end
 		
-		if bgDitherImg and configVars.bgdither ~= 1 then bgDitherImg:draw(0,0) end 
-		if bgImg and configVars.bgon then bgImg:draw(0,0) end 
+		if bgDitherImg and configVars.bgdither ~= 1 then 
+			bgDitherImg:draw(0 ,0) 
+		end 
+		if bgImg and configVars.bgon then 
+			bgImg:draw(0,0) --bgImg:draw(0,0) 
+		end 
 		drawLabelBackgrounds()
 		drawIcons()
+		drawWidgets()
 		
 		if saveFrame then
 			gfx.popContext()
@@ -89,13 +97,35 @@ function drawRoutine()
 	processDrawChanges()
 	doScrolling()
 	--always last
-	drawBottomBar()
+	local yOffset = 0
+	if scrollX > 0 then
+		yOffset = math.floor(scrollX/(widgetsScreenWidth/bottomBarHeight))	
+	end
+	drawBottomBar(yOffset)
 	if cursorState == cursorStates.INFO_POPUP then
 		drawInfoPopup()	
 	elseif cursorState == cursorStates.RENAME_LABEL then
 		drawLabelNameBox(currentLabel)	
 	end
 	playdate.drawFPS(383,0)
+end
+
+function drawWidgets()
+	if scrollX >= widgetsScreenWidth-410 then
+		gfx.setImageDrawMode(gfx.kDrawModeCopy)
+		gfx.setColor(gfx.kColorBlack)
+		gfx.setPattern({0, 255,0,255,0,255,0,255})
+		local x = -widgetsScreenWidth+scrollX
+		local y = math.floor(((240-widgetWidth)/2))
+		gfx.fillRect(x, 0, widgetsScreenWidth, 240)
+		
+		gfx.setImageDrawMode(gfx.kDrawModeCopy)
+		gfx.setColor(gfx.kColorWhite)
+		gfx.setDitherPattern(0.5)
+		gfx.fillRoundRect(x+math.floor((widgetsScreenWidth - widgetWidth)/2), y, widgetWidth, widgetHeight, configVars.cornerradius)
+		gfx.fillRoundRect(x+math.floor((widgetsScreenWidth - widgetWidth)/2), y-widgetHeight-labelSpacing, widgetWidth, widgetHeight, configVars.cornerradius)
+		gfx.fillRoundRect(x+math.floor((widgetsScreenWidth - widgetWidth)/2), y+widgetHeight+labelSpacing, widgetWidth, widgetHeight, configVars.cornerradius)
+	end	
 end
 
 function drawLabelNameBox(label)
@@ -141,7 +171,10 @@ end
 function doScrolling()
 	if labels[currentLabel]["drawX"] ~= labelSpacing and cursorState == cursorStates.SELECT_LABEL then
 		scrollX = lerpFloored(scrollX,scrollX-labels[currentLabel]["drawX"]+labelSpacing,snappiness)
-	end	
+	end
+	if cursorState == cursorStates.SELECT_WIDGET then
+		scrollX = lerpFloored(scrollX, widgetsScreenWidth, snappiness)	
+	end
 	local objectTotalSize = objectSizes[labels[currentLabel].rows]+objectSpacings[labels[currentLabel].rows]
 	if (lastObjectCursorDrawX > 400-objectTotalSize-labelSpacing) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
 		scrollX = lerpFloored(scrollX,scrollX-(lastObjectCursorDrawX-400)-objectTotalSize-labelSpacing,snappiness)
@@ -344,11 +377,11 @@ function wrapPatternForGame(game)
 	return pattern
 end
 
-function drawBottomBar()
+function drawBottomBar(yOffset)
 	local color = invertedColors[configVars.invertcc]
 	gfx.setColor(color)
 	gfx.setDitherPattern(configVars.ccdither)
-	gfx.fillRoundRect(-1,240-bottomBarHeight-controlCenterProgress,402,bottomBarHeight*3+controlCenterProgress,configVars["cornerradius"])
+	gfx.fillRoundRect(-1,240-bottomBarHeight-controlCenterProgress+yOffset,402,bottomBarHeight*3+controlCenterProgress,configVars["cornerradius"])
 	if controlCenterState ~= 0 then
 		--backgrounds
 		--right text
@@ -375,8 +408,8 @@ function drawBottomBar()
 		arrowProgress = 3 - math.floor((maxControlCenterProgress-controlCenterProgress)/arrowFactor)
 	end
 	--arrow
-	gfx.drawLine(180, 245-bottomBarHeight-controlCenterProgress, 199, 236 + arrowProgress-controlCenterProgress)
-	gfx.drawLine(219, 245-bottomBarHeight-controlCenterProgress, 200, 236 + arrowProgress-controlCenterProgress)
+	gfx.drawLine(180, 245-bottomBarHeight-controlCenterProgress+yOffset, 199, 236 + arrowProgress-controlCenterProgress+yOffset)
+	gfx.drawLine(219, 245-bottomBarHeight-controlCenterProgress+yOffset, 200, 236 + arrowProgress-controlCenterProgress+yOffset)
 end
 
 function drawHelp()

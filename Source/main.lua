@@ -47,7 +47,8 @@ cursorStates = {
 	RENAME_LABEL = 7, 
 	CONTROL_CENTER_MENU = 8, 
 	CONTROL_CENTER_CONTENT = 9, 
-	INFO_POPUP = 10
+	INFO_POPUP = 10,
+	SELECT_WIDGET = 11
 }
 
 music = nil

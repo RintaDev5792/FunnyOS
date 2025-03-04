@@ -20,7 +20,8 @@ cursorStates = {
 	RENAME_LABEL = 7, 
 	CONTROL_CENTER_MENU = 8, 
 	CONTROL_CENTER_CONTENT = 9, 
-	INFO_POPUP = 10
+	INFO_POPUP = 10,
+	SELECT_WIDGET = 11
 }
 
 blockInputHandler = {
@@ -545,6 +546,58 @@ cursorStateInputHandlers = {
 			removeKeyTimer()
 		end
 	},
+	[cursorStates.SELECT_WIDGET ] = {
+		AButtonUp = function()
+			sound03ActionTrimmed:play()
+			if not didShortcut then
+				
+			end
+			delaySetNoShortcut()
+			removeKeyTimer()
+		end,
+		BButtonUp = function()
+			sound03ActionTrimmed:play()
+			if not didShortcut then
+				
+			end
+			delaySetNoShortcut()	
+			removeKeyTimer()
+		end,
+		
+		rightButtonDown = function()
+			sound01SelectionTrimmed:play()
+			if playdate.buttonIsPressed("A") then
+				didShortcut = true
+				if playdate.buttonIsPressed("B") then
+				--create label
+				else
+				end
+			elseif playdate.buttonIsPressed("B") then
+				didShortcut = true
+			else
+				didShortcut = false
+				changeCursorState(cursorStates.SELECT_LABEL)
+			end
+		end,
+		rightButtonUp = function() removeKeyTimer() end,
+		
+		leftButtonDown = function()
+			sound01SelectionTrimmed:play()
+			if playdate.buttonIsPressed("A") then
+				didShortcut = true
+				if playdate.buttonIsPressed("B") then
+				--create label
+				else
+				end
+			elseif playdate.buttonIsPressed("B") then
+				didShortcut = true
+			else
+				didShortcut = false
+			end
+		end,
+		
+		leftButtonUp = function() removeKeyTimer() end,
+	},
 }
 
 function removeEmptyObject(index,label)
@@ -586,6 +639,8 @@ function labelSelectMoveLeft()
 		currentLabel = labelOrder[indexOf(labelOrder, currentLabel)-1]	
 		labels[currentLabel]["collapsed"] = false
 		cursorFrame = 1
+	elseif cursorState == cursorStates.SELECT_LABEL then
+		changeCursorState(cursorStates.SELECT_WIDGET)	
 	end
 end
 
