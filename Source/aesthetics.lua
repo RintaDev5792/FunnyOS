@@ -555,7 +555,7 @@ function drawControlCenterMenu()
 		gfx.drawText("*"..v.."*", 28, 260-controlCenterProgress + ccMenuSpacing*(i-1))
 	end
 	if cursorState == cursorStates.CONTROL_CENTER_MENU then
-		drawCircleCursor(17, 260, ccMenuSpacing, controlCenterMenuSelection-1, #controlCenterMenuItems, 0)
+		drawCircleCursor(17, 260-17, ccMenuSpacing, controlCenterMenuSelection, #controlCenterMenuItems, 0)
 	end
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	local controlCenterMenuItem = controlCenterMenuItems[controlCenterMenuSelection]
