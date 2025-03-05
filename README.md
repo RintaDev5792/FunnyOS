@@ -7,8 +7,8 @@ Made for playdateOS 2.6.2+
 ## Features
 - grid-based icon system, different from the list-based default one, similar to the 3ds
 - "badges" similar to those on the 3ds, that can be created from any square .pdi image
-- labels system, letting you create and name "labels" (sections of objects) on the grid that allow organisation and faster movement
-- button combinations letting you do anything without ever opening a menu or holding a button
+- labels system, letting you create and name "labels" on the grid that can be jumped between  
+- organize mode, letting you customize the placement of icons, badges, and labels, accessible from the main menu
 - alphabetical organization by default to make it easier to find games when you first install it
 
 ## Instructions
@@ -16,14 +16,13 @@ Made for playdateOS 2.6.2+
 
 Video tutorial available [here](https://www.youtube.com/watch?v=L6Q6Tsoksgg) for installations not utilising FunnyLoader.
   
-1. Download FunnyOS-2.pdx and os-download-x.x.x.py from the [releases](https://github.com/RintaDev5792/FunnyOS/releases) page
+1. Download FunnyOS.pdx and os-download-x.x.x.py from the [releases](https://github.com/RintaDev5792/FunnyOS) page
 1. Run os-download and follow the instructions. After it is complete, you should have a .pdos and a .pdkey file in the same directory
 1. Rename the PlaydateOS.pdos file to a .zip and unzip it
 
 #### If installing only FunnyOS
 1. Go into the new folder and then /System, and rename Launcher.pdx to StockLauncher.pdx
 1. Copy your FunnyOS.pdx file into the System folder and rename it to Launcher.pdx
-1. If you intend to use the "Launcher Select" feature, follow the FunnyLoader instructions for directory setup, just using FunnyOS-2 swapped for FunnyLoader.  
 
 #### If utilising FunnyLoader to have multiple launchers
 1. Go into the new folder and then /System, and create a folder named "Launchers" inside of it with that exact capitalisation
@@ -38,7 +37,7 @@ Video tutorial available [here](https://www.youtube.com/watch?v=L6Q6Tsoksgg) for
 1. Download [Playdate Utility](https://download-cdn.panic.com/playdate_utility/)
 1. Open Playdate Utility, and plug in your Playdate to your computer
 1. Click "Upgrade Firmware" and select your .pdos and .pdkey file in that order, wait while your playdate "installs system update"
-1. Done! 
+1. Done! Wow, so easy TvT
 
 If this at any point freezes or errors out during installation, especially multiple times in a row, you can (as a last resort) hold A+B+MENU+LOCK to enter recovery mode and flash stock OS. FunnyOS installations will just about always work when installing from stock OS.
 
@@ -58,9 +57,7 @@ This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi
 Some pre-made badges in pdi form are available [Here](https://github.com/RintaDev5792/FunnyOS/tree/main/Config/Badges).  
 (Thanks to Palette in the Playdate Squad discord server for making OpenFunnyBadges, a badge pack to get you started!)  
 As soon as you load up the launcher with .pdi files in `/Shared/FunnyOS/Badges`, they are placed on the far right of the grid.  
-You can move them in organize mode just like other icons.  
-
-If you are using FunnyOS 2, there is a built-in asset manager in which badges can be downloaded from FunnyOS servers.
+You can move them in organize mode just like other icons.
   
 ### Music  
 In order to load background music into FunnyOS, put an audio file called `bgm.pda` inside `/Shared/FunnyOS/`.  
@@ -73,8 +70,6 @@ In order to load a background image into FunnyOS, put an image file called `bg.p
 This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
 The image will be automatically scaled to 400x240 and used as the background behind the dither pattern in the launcher.  
 
-If you are using FunnyOS 2, there is a built-in asset manager in which wallpapers can be downloaded from FunnyOS servers.  
-
 ### Loading Image  
 In order to load a loading image into FunnyOS, put an image file called `load.pdi` inside `/Shared/FunnyOS/`.  
 This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
@@ -86,6 +81,14 @@ This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi
 The image will be automatically scaled to 64x64 and used as the icon for that game in the launcher.  
 You can add animations for the icon by making a folder called `icon-highlighted` inside of `/Shared/FunnyOS/Icons/<bundleid>`, and putting an `animation.txt` file and your numbered frame pdi files in it (`1.pdi`, `2.pdi`, etc).   
 See [here](https://sdk.play.date/2.5.0/Inside%20Playdate.html#pdxinfo) for instructions on `animation.txt`
+
+### Custom Cursors  
+In order to load a custom cursor into FunnyOS, put any .pdi image file called `cursor.pdi` inside `/Shared/FunnyOS`. 
+This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
+In order to load an animated custom cursor into FunnyOS, put any .pdt file called `cursor.pdt` inside `/Shared/FunnyOS`.  
+This image must be compiled with `pdc` from the playdate SDK, and must be a .pdt file. pdt files are usually made by compiling a .gif with `pdc`.  
+Animated cursors will animate at a constant 5 fps, so plan your gifs around that.
+Some pre-made cursors in pdi and pdt form are available [Here](https://github.com/RintaDev5792/FunnyOS/tree/main/Config/Cursors), and are based on the 3ds cursor.  
 
 ## FAQ
 > Q: how does FunnyOS import badges that aren't perfectly square or 64x64?
@@ -135,6 +138,5 @@ A: hold A+B+MENU+LOCK then release A and B when told to hold MENU and LOCK. This
 ## Credits
 * IndexOS Installer and FunnyOS Installer - scratchminer
 * Cool install video with the rocket + IndexOS dev - Rae
-* Programming and documentation help - Ocean and Scratchminer
 * FunnyOS programming - RintaDev 
 * Music - Chris Mandra / Drunk With Honey
