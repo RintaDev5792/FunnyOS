@@ -207,9 +207,12 @@ function loadLaunchers()
 	launchers[launcherName] = {["icon"] = getLauncherIcon("/System/Launcher.pdx"), ["path"] = "/System/Launcher.pdx"}
 	launcherOrder = {}
 	for k,v in pairs(launchers) do
-		table.insert(launcherOrder, k)	
+		if k ~= "FunnyOS 2" then
+			table.insert(launcherOrder, k)	
+		end
 	end
 	table.sort(launcherOrder)
+	launchers["FunnyOS 2"] = nil
 end
 
 function alphabetSortLabels()

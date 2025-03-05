@@ -576,16 +576,16 @@ function drawSystemInfo()
 end
 
 function drawFunnyLoader()
-	local ccOptionsSpacing = 32
-	if controlCenterInfoSelection-controlCenterInfoScroll > 9 then
+	local ccOptionsSpacing = 34
+	if controlCenterInfoSelection-controlCenterInfoScroll > 5 then
 		controlCenterInfoScroll +=1
 	end
 	if controlCenterInfoSelection-controlCenterInfoScroll < 1 then
 		controlCenterInfoScroll -=1
 	end
 	for i,v in pairs(launcherOrder) do
-		local y = 235-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
-		if y < 440-controlCenterProgress and y > 234-controlCenterProgress then
+		local y = 245-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
+		if y < 440-controlCenterProgress and y > 245-controlCenterProgress then
 			gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 			gfx.drawText("*"..v.."*", 190, y-8)
 			gfx.setImageDrawMode(invertedDrawModes[configVars.invertcc])
@@ -595,22 +595,22 @@ function drawFunnyLoader()
 		end
 	end
 	if cursorState == cursorStates.CONTROL_CENTER_CONTENT then
-		drawCircleCursor(179, 227, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
+		drawCircleCursor(179, 237, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
 	end
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)	
 end
 
 function drawRecentlyPlayed()
-	local ccOptionsSpacing = 32
-	if controlCenterInfoSelection-controlCenterInfoScroll > 9 then
+	local ccOptionsSpacing = 34
+	if controlCenterInfoSelection-controlCenterInfoScroll > 5 then
 		controlCenterInfoScroll +=1
 	end
 	if controlCenterInfoSelection-controlCenterInfoScroll < 1 then
 		controlCenterInfoScroll -=1
 	end
 	for i,v in pairs(recentlyPlayed) do
-		local y = 235-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
-		if y < 440-controlCenterProgress and y > 234-controlCenterProgress then
+		local y = 245-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
+		if y < 440-controlCenterProgress and y > 245-controlCenterProgress then
 			gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 			gfx.drawText("*"..gameInfo[v].name.."*", 190, y-8)
 			gfx.setImageDrawMode(invertedDrawModes[configVars.invertcc])
@@ -621,7 +621,7 @@ function drawRecentlyPlayed()
 		end
 	end
 	if cursorState == cursorStates.CONTROL_CENTER_CONTENT then
-		drawCircleCursor(179, 227, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
+		drawCircleCursor(179, 237, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
 	end
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)	
 end
