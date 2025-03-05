@@ -227,7 +227,7 @@ function drawObjectCursor()
 		gfx.setColor(gfx.kColorBlack)
 		gfx.setDitherPattern(0.5)
 		gfx.fillRoundRect(x+2*rowsNumber, y+2*rowsNumber, objectSizes[labels[currentLabel].rows], objectSizes[labels[currentLabel].rows], 4*rowsNumber)
-		loadIcon(heldObject.bundleid, currentLabel):draw(x,y)
+		getIcon(heldObject.bundleid, currentLabel):draw(x,y)
 		gfx.setImageDrawMode(invertedDrawModes[configVars.invertcursor])
 		
 		cursorImgs[rowsNumber][cursorFrame]:draw(x-2*rowsNumber,y-2*rowsNumber)
