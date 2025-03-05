@@ -61,6 +61,59 @@ invertedColors = {[true] = gfx.kColorWhite, [false] = gfx.kColorBlack}
 invertedDrawModes = {[true] = gfx.kDrawModeInverted, [false] = gfx.kDrawModeCopy}
 invertedFillDrawModes = {[true] = gfx.kDrawModeFillWhite, [false] = gfx.kDrawModeFillBlack}
 
+widgets = {}
+
+local activeWidget = nil
+local widgetPadding = 10  -- Padding for inactive selected widget
+local widgetSpacing = 20  -- Vertical space between widgets
+local widgetScrollY = 0
+local targetWidgetScrollY = 0
+
+function loadWidgets()
+    local widgetsPath = "/Shared/FunnyOS2/Widgets/"
+    print("Loading widgets from: " .. widgetsPath)
+    
+    if not playdate.file.exists(widgetsPath) then
+        print("Creating widgets directory")
+        playdate.file.mkdir(widgetsPath)
+    end
+
+    local folders = playdate.file.listFiles(widgetsPath)
+    print("Found " .. #folders .. " folders")
+    
+    for _, folder in ipairs(folders) do
+        local folderPath = widgetsPath .. folder .. "/"
+        print("Checking folder: " .. folderPath)
+        
+        if playdate.file.isdir(folderPath) then
+            print("Is directory, checking for main.pdz")
+            if playdate.file.exists(folderPath .. "main.pdz") then
+                print("Found main.pdz, loading widget")
+                local success, widget = pcall(function()
+                    return playdate.file.run(folderPath .. "main.pdz")
+                end)
+                
+                if success and widget and widget.metadata and widget.main then
+                    print("Successfully loaded widget: " .. widget.metadata.name)
+                    widget.path = folderPath
+                    table.insert(widgets, widget)
+                else
+                    print("Failed to load widget: " .. (success and "invalid widget" or widget))
+                end
+            end
+        end
+    end
+    
+    print("Loaded " .. #widgets .. " widgets total")
+    if #widgets > 0 then
+        selectedWidget = 1
+        -- Generate initial cached images for all widgets
+        for _, widget in ipairs(widgets) do
+            widget.lastDrawnImage = widget:main(widget.path)
+        end
+    end
+end
+
 function drawRoutine()
 	gfx.clear(gfx.kColorWhite)
 	gfx.clear(gfx.kColorWhite)
@@ -111,21 +164,50 @@ function drawRoutine()
 end
 
 function drawWidgets()
-	if scrollX >= widgetsScreenWidth-410 then
-		gfx.setImageDrawMode(gfx.kDrawModeCopy)
-		gfx.setColor(gfx.kColorBlack)
-		gfx.setPattern({0, 255,0,255,0,255,0,255})
-		local x = -widgetsScreenWidth+scrollX
-		local y = math.floor(((240-widgetWidth)/2))
-		gfx.fillRect(x, 0, widgetsScreenWidth, 240)
-		
-		gfx.setImageDrawMode(gfx.kDrawModeCopy)
-		gfx.setColor(gfx.kColorWhite)
-		gfx.setDitherPattern(0.5)
-		gfx.fillRoundRect(x+math.floor((widgetsScreenWidth - widgetWidth)/2), y, widgetWidth, widgetHeight, configVars.cornerradius)
-		gfx.fillRoundRect(x+math.floor((widgetsScreenWidth - widgetWidth)/2), y-widgetHeight-labelSpacing, widgetWidth, widgetHeight, configVars.cornerradius)
-		gfx.fillRoundRect(x+math.floor((widgetsScreenWidth - widgetWidth)/2), y+widgetHeight+labelSpacing, widgetWidth, widgetHeight, configVars.cornerradius)
-	end	
+    if scrollX >= widgetsScreenWidth-410 then
+        gfx.setImageDrawMode(gfx.kDrawModeCopy)
+        gfx.setColor(gfx.kColorBlack)
+        gfx.setPattern({0, 255,0,255,0,255,0,255})
+        local x = -widgetsScreenWidth+scrollX
+        local baseY = math.floor(((240-widgetHeight)/2))
+        gfx.fillRect(x, 0, widgetsScreenWidth, 240)
+        
+        -- Update widget scroll position with lerp
+        targetWidgetScrollY = -(selectedWidget - 1) * (widgetHeight + widgetSpacing)
+        widgetScrollY = lerpFloored(widgetScrollY, targetWidgetScrollY, snappiness)
+        
+        -- Draw all widgets in a vertical list
+        for i, widget in ipairs(widgets) do
+            local widgetY = baseY + (i-1) * (widgetHeight + widgetSpacing) + widgetScrollY
+            local widgetX = x + math.floor((widgetsScreenWidth - widgetWidth)/2)
+            
+            -- Only draw if widget would be visible
+            if widgetY + widgetHeight > 0 and widgetY < 240 then
+                -- Draw widget content first
+                local widgetImage = widget:main(widget.path)  -- Always run main()
+                if widgetImage then
+                    widgetImage:draw(widgetX, widgetY)
+                end
+
+                -- Draw selection border on top
+                if i == selectedWidget then
+                    gfx.setLineWidth(3)
+                    gfx.setColor(gfx.kColorWhite)
+                    
+                    -- If widget is active, border fits exactly
+                    -- If inactive, border has padding
+                    local padding = (widget == activeWidget) and 0 or widgetPadding
+                    gfx.drawRoundRect(
+                        widgetX - padding, 
+                        widgetY - padding, 
+                        widgetWidth + padding*2, 
+                        widgetHeight + padding*2, 
+                        12
+                    )
+                end
+            end
+        end
+    end
 end
 
 function drawLabelNameBox(label)
@@ -651,4 +733,15 @@ function drawCircleCursor(baseX, baseY, spacing, index, maxIndex, scroll)
 	if index ~= maxIndex then
 		gfx.fillTriangle(baseX,  baseY-controlCenterProgress+16+spacing*(index-scroll)+4, baseX+4,  baseY-controlCenterProgress+8+spacing*(index-scroll)+1 , baseX - 4,  baseY-controlCenterProgress+8+spacing*(index-scroll)+1)	
 	end
+end
+
+function OpenApp(bundleId)
+    if bundleId and gameInfo[bundleId] then
+        local success = playdate.system.switchToGame(gameInfo[bundleId].path)
+        if not success then
+            print("Failed to launch app: " .. bundleId)
+            sound04DenialTrimmed:play()
+            createInfoPopup("Launch Failed", "*The game or app could not be launched. It may have been moved or deleted.*", false)
+        end
+    end
 end

@@ -15,6 +15,9 @@ firstLaunch = false
 currentLabel = "System"
 currentObject = 1
 
+widgets = {}
+selectedWidget = 1
+
 heldObject = nil
 heldObjectOriginIndex = 1
 heldObjectOriginLabel = ""
@@ -424,9 +427,60 @@ function loadBgImg()
 	end
 end
 
+function loadWidgets()
+    local widgetsPath = "/Shared/FunnyOS2/Widgets/"
+    print("Loading widgets from: " .. widgetsPath)
+    
+    if not playdate.file.exists(widgetsPath) then
+        print("Creating widgets directory")
+        playdate.file.mkdir(widgetsPath)
+        return
+    end
+
+    local items = playdate.file.listFiles(widgetsPath)
+    print("Found " .. #items .. " items")
+    
+    for _, item in ipairs(items) do
+        local fullPath = widgetsPath .. item
+        print("Checking: " .. fullPath)
+        
+        -- Check if it's a folder
+        if playdate.file.isdir(fullPath) then
+            print("Found folder: " .. item)
+            local mainPath = fullPath .. "/main.pdz"
+            
+            -- Check if main.pdz exists in the folder
+            if playdate.file.exists(mainPath) then
+                print("Loading widget from: " .. mainPath)
+                local success, widget = pcall(function()
+                    return playdate.file.run(mainPath)
+                end)
+                
+                if success and widget and widget.metadata and widget.main then
+                    print("Successfully loaded widget: " .. widget.metadata.name)
+                    widget.path = fullPath .. "/"
+                    table.insert(widgets, widget)
+                else
+                    print("Failed to load widget: " .. tostring(success and "invalid widget" or widget))
+                end
+            else
+                print("No main.pdz found in: " .. fullPath)
+            end
+        else
+            print("Skipping non-folder: " .. item)
+        end
+    end
+    
+    print("Loaded " .. #widgets .. " widgets total")
+    if #widgets > 0 then
+        selectedWidget = 1
+    end
+end
+
 function main()
 	loadConfig()
 	dirSetup()
+	loadWidgets()
 	playdate.setAutoLockDisabled(false)
 	loadingImg:draw(0,0)
 	playdate.display.setRefreshRate(25)

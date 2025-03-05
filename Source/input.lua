@@ -546,58 +546,91 @@ cursorStateInputHandlers = {
 			removeKeyTimer()
 		end
 	},
-	[cursorStates.SELECT_WIDGET ] = {
-		AButtonUp = function()
-			sound03ActionTrimmed:play()
-			if not didShortcut then
-				
-			end
-			delaySetNoShortcut()
-			removeKeyTimer()
-		end,
-		BButtonUp = function()
-			sound03ActionTrimmed:play()
-			if not didShortcut then
-				
-			end
-			delaySetNoShortcut()	
-			removeKeyTimer()
-		end,
-		
-		rightButtonDown = function()
-			sound01SelectionTrimmed:play()
-			if playdate.buttonIsPressed("A") then
-				didShortcut = true
-				if playdate.buttonIsPressed("B") then
-				--create label
-				else
-				end
-			elseif playdate.buttonIsPressed("B") then
-				didShortcut = true
-			else
-				didShortcut = false
-				changeCursorState(cursorStates.SELECT_LABEL)
-			end
-		end,
-		rightButtonUp = function() removeKeyTimer() end,
-		
-		leftButtonDown = function()
-			sound01SelectionTrimmed:play()
-			if playdate.buttonIsPressed("A") then
-				didShortcut = true
-				if playdate.buttonIsPressed("B") then
-				--create label
-				else
-				end
-			elseif playdate.buttonIsPressed("B") then
-				didShortcut = true
-			else
-				didShortcut = false
-			end
-		end,
-		
-		leftButtonUp = function() removeKeyTimer() end,
-	},
+	[cursorStates.SELECT_WIDGET] = {
+        AButtonDown = function()
+            if not didShortcut then
+                if activeWidget then
+                    if activeWidget.AButtonDown then
+                        activeWidget:AButtonDown()
+                    end
+                else
+                    activeWidget = widgets[selectedWidget]
+                    sound03ActionTrimmed:play()
+                end
+            end
+            delaySetNoShortcut()
+        end,
+        AButtonUp = function()
+            removeKeyTimer()
+        end,
+        
+        BButtonDown = function()
+            if not didShortcut then
+                if activeWidget then
+                    activeWidget = nil
+                    sound02SelectionReverseTrimmed:play()
+                end
+            end
+            delaySetNoShortcut()
+        end,
+        BButtonUp = function()
+            removeKeyTimer()
+        end,
+        
+        upButtonDown = function()
+            if not didShortcut then
+                if activeWidget and activeWidget.upButtonDown then
+                    activeWidget:upButtonDown()
+                else
+                    selectedWidget = math.max(selectedWidget - 1, 1)
+                    sound01SelectionTrimmed:play()
+                end
+            end
+            delaySetNoShortcut()
+        end,
+        upButtonUp = function()
+            removeKeyTimer()
+        end,
+        
+        downButtonDown = function()
+            if not didShortcut then
+                if activeWidget and activeWidget.downButtonDown then
+                    activeWidget:downButtonDown()
+                else
+                    selectedWidget = math.min(selectedWidget + 1, #widgets)
+                    sound01SelectionTrimmed:play()
+                end
+            end
+            delaySetNoShortcut()
+        end,
+        downButtonUp = function()
+            removeKeyTimer()
+        end,
+        
+        rightButtonDown = function()
+            if not didShortcut and not activeWidget then
+                changeCursorState(cursorStates.SELECT_LABEL)
+                scrollX = 0
+                sound02SelectionReverseTrimmed:play()
+            end
+            delaySetNoShortcut()
+        end,
+        rightButtonUp = function()
+            removeKeyTimer()
+        end,
+        
+        leftButtonDown = function()
+            if not didShortcut then
+                if activeWidget and activeWidget.leftButtonDown then
+                    activeWidget:leftButtonDown()
+                end
+            end
+            delaySetNoShortcut()
+        end,
+        leftButtonUp = function()
+            removeKeyTimer()
+        end
+    },
 }
 
 function removeEmptyObject(index,label)
