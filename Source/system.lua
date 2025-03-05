@@ -112,6 +112,7 @@ function addToRecentlyPlayed(bundleid)
 end
 
 function launchGame(bundleID)
+	if not gameInfo[bundleID] then return end
 	if gameInfo[bundleID].path then
 		if fle.isdir(gameInfo[bundleID].path) or fle.exists(gameInfo[bundleID].path) then
 			if gameIsFreshlyInstalled(bundleID, true) then
