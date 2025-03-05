@@ -83,7 +83,9 @@ function loadWidgets()
 			widget.lastDrawnImage = widget:main(widget.path)
 		end
 	end
-	print(#widgets)
+	alphabetSortWidgets()
+	printTable(widgets)
+	
 end
 
 function getGameObject(bundleID) 
@@ -229,6 +231,18 @@ function alphabetSortLabelContents()
 				return o1.name < o2.name
 			else
 				return o1.name	
+			end
+		end)
+	end
+end
+
+function alphabetSortWidgets()
+	for _, label in pairs(widgets) do
+		table.sort(widgets, function(o1, o2)
+			if o1.metadata.name and o2.metadata.name then
+				return o1.metadata.name < o2.metadata.name
+			else
+				return o1.metadata.name	
 			end
 		end)
 	end

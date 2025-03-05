@@ -33,12 +33,9 @@ function widget:main(path)
 	playdate.graphics.pushContext(widget.image)
 		-- Draw widget content
 		playdate.graphics.clear(playdate.graphics.kColorClear)
-
-		if self.style.inverted then
-			playdate.graphics.setColor(playdate.graphics.kColorBlack)
-		else
-			playdate.graphics.setColor(playdate.graphics.kColorWhite)
-		end
+		
+		playdate.graphics.setColor(playdate.graphics.kColorBlack)
+		playdate.graphics.setColor(playdate.graphics.kColorWhite)
 
 		playdate.graphics.fillRoundRect(0, 0, 200, 200, configVars.cornerradius)
 
