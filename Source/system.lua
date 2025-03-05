@@ -101,6 +101,9 @@ end
 function addToRecentlyPlayed(bundleid)
 	if not listHasValue(recentlyPlayed, bundleid) then
 		table.insert(recentlyPlayed, 1, bundleid)
+	else
+		table.remove(recentlyPlayed,indexOf(recentlyPlayed, bundleid))
+		table.insert(recentlyPlayed, 1, bundleid)
 	end
 	while #recentlyPlayed > 6 do
 		table.remove(recentlyPlayed, #recentlyPlayed)
