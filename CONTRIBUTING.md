@@ -3,6 +3,12 @@
 This document outlines the guidelines for contributing to FunnyOS 2 or any  
 associated programs/plugins.
 
+## NO GENAI
+
+Pretty much what this one says on the tin. It is fairly obvious when an AI made  
+something and if you really want to help, the least you can do is bother to help  
+with your own efforts.
+
 ## Please Use camelCase and Tables
 
 Variables in FunnyOS 2 are usually declared using camelCase in which the first  
