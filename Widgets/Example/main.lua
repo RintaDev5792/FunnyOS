@@ -29,6 +29,12 @@ function widget:rightButtonDown()
 	
 end
 
+function widget:update()
+	
+end
+
+
+
 function widget:main(path)
 	playdate.graphics.pushContext(widget.image)
 		-- Draw widget content

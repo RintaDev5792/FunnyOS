@@ -129,7 +129,7 @@ function launchGame(bundleID)
 			else
 				if gameInfo[bundleID].suppresscontentwarning or not gameInfo[bundleID].contentwarning then
 					addToRecentlyPlayed(bundleID)
-					sys.switchToGame(labels[currentLabel].objects[currentObject].path)
+					openApp(labels[currentLabel].objects[currentObject].bundleid)
 				elseif gameInfo[bundleID].contentwarning then
 					createInfoPopup("Content Warning", "*"..gameInfo[bundleID].contentwarning.."*", true, function()
 						if gameInfo[bundleID].contentwarning2 then

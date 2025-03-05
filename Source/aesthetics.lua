@@ -114,7 +114,8 @@ function drawRoutine()
 end
 
 function drawWidgets()
-	if scrollX >= widgetsScreenWidth-410 then
+	if scrollX > 0 then
+		print("drawwidgets")
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		gfx.setColor(gfx.kColorBlack)
 		gfx.setPattern({0, 255,0,255,0,255,0,255})
