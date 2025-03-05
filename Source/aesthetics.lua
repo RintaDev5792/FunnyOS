@@ -140,7 +140,7 @@ function drawWidgets()
 	
 				-- Draw selection border on top
 				if i == currentWidget then
-					gfx.setLineWidth(3)
+					gfx.setLineWidth(configVars.linewidth)
 					gfx.setColor(invertedColors[configVars.invertcursor])
 	
 					-- If widget is active, border fits exactly

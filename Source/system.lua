@@ -43,13 +43,13 @@ end
 
 function openApp(bundleId)
 	if bundleId and gameInfo[bundleId] then
-		local success = playdate.system.switchToGame(gameInfo[bundleId].path)
-		if not success then
-			print("Failed to launch app: " .. bundleId)
-			sound04DenialTrimmed:play()
-			createInfoPopup("Launch Failed", "*The game or app could not be launched. It may have been moved or deleted.*", false)
+		if gameInfo[bundleId].path then
+			playdate.system.switchToGame(gameInfo[bundleId].path)
+			return
 		end
 	end
+	sound04DenialTrimmed:play()
+	createInfoPopup("Action Failed", "*The game or app could not be launched. It may have been moved or deleted.*", false)
 end
 
 function loadWidgets()
@@ -69,8 +69,6 @@ function loadWidgets()
 				if success and widget and widget.metadata and widget.main then
 					widget.path = folderPath
 					table.insert(widgets, widget)
-				else
-					print("Failed to load widget: " .. (success and "invalid widget" or widget))
 				end
 			end
 		end
