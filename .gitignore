@@ -1,5 +1,1 @@
-# built artifacts
-*.pdx/*
-
-# macOS config files
-.DS_Store
+*.pdx
