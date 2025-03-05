@@ -162,12 +162,16 @@ function launchRandomGame()
 	for i,v in ipairs(groups) do
 		if v.name ~= "System" then
 			for j,w in ipairs(v) do
-				table.insert(possibleGames, w)
+				local cwpassed = w:getSuppressContentWarning()
+				if not gameInfo[w:getBundleID()].contentwarning then cwpassed = true end
+				if w:getInstalledState() == kPDGameStateInstalled and cwpassed then
+					table.insert(possibleGames, w)
+				end
 			end	
 		end	
 	end
 	local game = possibleGames[math.random(1, #possibleGames)]
-	launchGame(game:getBundleID())
+	openApp(game:getBundleID())
 end
 
 function getLauncherIcon(path)
