@@ -85,7 +85,7 @@ function drawRoutine()
 		end 
 		drawLabelBackgrounds()
 		drawIcons()
-		drawWidgets()
+		processAndDrawWidgets()
 		
 		if saveFrame then
 			gfx.popContext()
@@ -113,9 +113,8 @@ function drawRoutine()
 	playdate.drawFPS(383,0)
 end
 
-function drawWidgets()
+function processAndDrawWidgets()
 	if scrollX > 0 then
-		print("drawwidgets")
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		gfx.setColor(gfx.kColorBlack)
 		gfx.setPattern({0, 255,0,255,0,255,0,255})
@@ -128,25 +127,28 @@ function drawWidgets()
 	
 		-- Draw all widgets in a vertical list
 		for i, widget in ipairs(widgets) do
+			if i == currentWidget then
+				widget:update(widgetIsActive)
+			end
 			local widgetY = baseY + (i-1) * (widgetHeight + widgetSpacing) + widgetScroll
 			local widgetX = x + math.floor((widgetsScreenWidth - widgetWidth)/2)
 	
 			-- Only draw if widget would be visible
 			if widgetY + widgetHeight > 0 and widgetY < 240 then
 				-- Draw widget content first
-				local widgetImage = widget:main(widget.path)  -- Always run main()
+				local widgetImage = widget:getWidgetImage()  -- Always run main()
 				if widgetImage then
 					widgetImage:draw(widgetX, widgetY)
 				end
 	
-				-- Draw selection border on top
+				-- Draw widget cursor
 				if i == currentWidget then
 					gfx.setLineWidth(configVars.linewidth)
 					gfx.setColor(invertedColors[configVars.invertcursor])
 	
 					-- If widget is active, border fits exactly
 					-- If inactive, border has padding
-					local padding = (widget == activeWidget) and 0 or widgetPadding
+					local padding = (widgetIsActive) and 0 or widgetPadding
 					gfx.drawRoundRect(
 						widgetX - padding, 
 						widgetY - padding, 

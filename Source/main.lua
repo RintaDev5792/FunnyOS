@@ -30,6 +30,7 @@ labelOrder = {}
 
 widgets = {}
 currentWidget = 1
+widgetIsActive = false
 
 launchers = {}
 launcherOrder = {}

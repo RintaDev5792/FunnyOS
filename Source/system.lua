@@ -65,9 +65,9 @@ function loadWidgets()
 				local success, widget = pcall(function()
 					return playdate.file.run(folderPath .. "main.pdz")
 				end)
-
-				if success and widget and widget.metadata and widget.main then
-					widget.path = folderPath
+				
+				if success and widget and widget.metadata and widget.update and widget.getWidgetImage and widget.loadWidgetImage then
+					widget.metadata.path = folderPath
 					table.insert(widgets, widget)
 				end
 			end
@@ -78,12 +78,10 @@ function loadWidgets()
 		selectedWidget = 1
 		-- Generate initial cached images for all widgets
 		for _, widget in ipairs(widgets) do
-			widget.lastDrawnImage = widget:main(widget.path)
+			widget:getWidgetImage()
 		end
 	end
 	alphabetSortWidgets()
-	printTable(widgets)
-	
 end
 
 function getGameObject(bundleID) 
@@ -146,9 +144,6 @@ function launchGame(bundleID)
 							local game = getGameObject(bundleID)
 							if game then
 								game:setSuppressContentWarning(true)
-								print("SUPRESSED")
-							else
-								print("THEREISNOGAME")	
 							end
 							sys.updateGameList()
 							addToRecentlyPlayed(bundleID)

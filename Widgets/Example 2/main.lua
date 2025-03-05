@@ -1,12 +1,16 @@
 local ExampleWidget2 = {}
 local widget = ExampleWidget2
 
+local counter = 0
+
+-- path is filled out when loaded by system
 widget.metadata = {
-    name = "Example Widget 2",
-    game = "com.pencilpals.illuremination"
+    name = "Example Widget #2",
+    game = "com.pencilpals.illuremination",
+    path = nil
 }
 
-widget.image = playdate.graphics.image.new(200, 200)
+widget.image = nil
 
 -- Input handlers
 function widget:AButtonDown()
@@ -14,7 +18,7 @@ function widget:AButtonDown()
 end
 
 function widget:upButtonDown()
-   
+    
 end
 
 function widget:downButtonDown()
@@ -29,30 +33,38 @@ function widget:rightButtonDown()
     
 end
 
-function widget:main(path)
-    
+-- call this to get UPDATED widget image
+function widget:loadWidgetImage()
+    widget.image = playdate.graphics.image.new(200, 200)
     playdate.graphics.pushContext(widget.image)
-        -- Clear the widget
+        -- Draw widget content
         playdate.graphics.clear(playdate.graphics.kColorClear)
-        
-        -- Draw background with styling
-        playdate.graphics.setColor(playdate.graphics.kColorWhite)
-        
-        playdate.graphics.fillRoundRect(0, 0, 200, 200, configVars.cornerradius)
-        
-        -- Reset draw settings for content
-        playdate.graphics.setColor(playdate.graphics.kColorBlack)
-        playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeCopy)
-        
-        -- Draw content (now on top of background)
-        playdate.graphics.drawText("Example Widget 2", 10, 90)
 
+        playdate.graphics.setColor(playdate.graphics.kColorBlack)
+        playdate.graphics.fillRoundRect(0, 0, 200, 200, configVars.cornerradius)
+
+        playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeFillWhite)
+
+        playdate.graphics.drawTextAligned(tostring(counter), 100, 91, kTextAlignment.center)
     playdate.graphics.popContext()
-    
-    -- Cache this image for when widget is inactive
-    self.lastDrawnImage = widget.image
-    
+
     return widget.image
+end
+
+-- call this to get RECENT widget image, DO NOT MODIFY
+function widget:getWidgetImage()
+    if widget.image and not forceReload then
+        return widget.image
+    else
+        return widget:loadWidgetImage()	
+    end
+end
+
+function widget:update(isActive)
+    if isActive then
+        counter-=1
+        widget:loadWidgetImage()
+    end
 end
 
 return widget

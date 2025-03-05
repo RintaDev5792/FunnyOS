@@ -551,12 +551,12 @@ cursorStateInputHandlers = {
 			
 			sound03ActionTrimmed:play()
 			if not didShortcut then
-				if activeWidget then
-					if activeWidget.AButtonDown then
-						activeWidget:AButtonDown()
+				if widgetIsActive then
+					if widgets[currentWidget].AButtonDown then
+						widgets[currentWidget]:AButtonDown()
 					end
 				else
-					activeWidget = widgets[currentWidget]
+					widgetIsActive = true
 				end
 			end
 			removeKeyTimer()
@@ -567,8 +567,8 @@ cursorStateInputHandlers = {
 			
 			sound03ActionTrimmed:play()
 			if not didShortcut then
-				if activeWidget then
-					activeWidget = nil
+				if widgetIsActive then
+					widgetIsActive = false
 				end
 			end
 			removeKeyTimer()
@@ -576,9 +576,9 @@ cursorStateInputHandlers = {
 		end,
 	
 		upButtonDown = function()
-			if activeWidget then
-				if activeWidget.upButtonDown then
-					activeWidget:upButtonDown()
+			if widgetIsActive then
+				if widgets[currentWidget].upButtonDown then
+					widgets[currentWidget]:upButtonDown()
 				end
 			else
 				currentWidget = math.max(currentWidget - 1, 1)
@@ -593,9 +593,9 @@ cursorStateInputHandlers = {
 		end,
 	
 		downButtonDown = function()
-			if activeWidget then
-				if activeWidget.downButtonDown then
-					activeWidget:downButtonDown()
+			if widgetIsActive then
+				if widgets[currentWidget].downButtonDown then
+					widgets[currentWidget]:downButtonDown()
 				end
 			else
 				currentWidget = math.min(currentWidget + 1, #widgets)
@@ -608,9 +608,9 @@ cursorStateInputHandlers = {
 		end,
 	
 		rightButtonDown = function()
-			if activeWidget then
-				if activeWidget.rightButtonDown then
-					activeWidget:rightButtonDown()
+			if widgetIsActive then
+				if widgets[currentWidget].rightButtonDown then
+					widgets[currentWidget]:rightButtonDown()
 				end
 			else
 				changeCursorState(cursorStates.SELECT_LABEL)
@@ -623,9 +623,9 @@ cursorStateInputHandlers = {
 		end,
 	
 		leftButtonDown = function()
-			if activeWidget then
-				if activeWidget.leftButtonDown then
-					activeWidget:leftButtonDown()
+			if widgetIsActive then
+				if widgets[currentWidget].leftButtonDown then
+					widgets[currentWidget]:leftButtonDown()
 				end
 			end
 			sound02SelectionReverseTrimmed:play()

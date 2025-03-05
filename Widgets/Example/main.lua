@@ -1,12 +1,16 @@
 local ExampleWidget = {}
 local widget = ExampleWidget
 
+local counter = 0
+
+-- path is filled out when loaded by system
 widget.metadata = {
 	name = "Example Widget",
-	game = "com.pencilpals.illuremination"
+	game = "com.panic.settings",
+	path = nil
 }
 
-widget.image = playdate.graphics.image.new(200, 200)
+widget.image = nil
 
 -- Input handlers
 function widget:AButtonDown()
@@ -29,30 +33,37 @@ function widget:rightButtonDown()
 	
 end
 
-function widget:update()
-	
-end
-
-
-
-function widget:main(path)
+-- call this to get UPDATED widget image
+function widget:loadWidgetImage()
+	widget.image = playdate.graphics.image.new(200, 200)
 	playdate.graphics.pushContext(widget.image)
 		-- Draw widget content
 		playdate.graphics.clear(playdate.graphics.kColorClear)
-		
-		playdate.graphics.setColor(playdate.graphics.kColorBlack)
-		playdate.graphics.setColor(playdate.graphics.kColorWhite)
 
+		playdate.graphics.setColor(playdate.graphics.kColorWhite)
 		playdate.graphics.fillRoundRect(0, 0, 200, 200, configVars.cornerradius)
 
-		playdate.graphics.setColor(playdate.graphics.kColorBlack)
 		playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeCopy)
-
-		playdate.graphics.drawText("Example Widget", 10, 90)
+		playdate.graphics.drawTextAligned(tostring(counter), 100, 91, kTextAlignment.center)
 	playdate.graphics.popContext()
 
-	self.lastDrawnImage = widget.image:copy()
 	return widget.image
+end
+
+-- call this to get RECENT widget image
+function widget:getWidgetImage()
+	if widget.image and not forceReload then
+		return widget.image
+	else
+		return widget:loadWidgetImage()	
+	end
+end
+
+function widget:update(isActive)
+	if isActive then
+		counter+=1
+		widget:loadWidgetImage()
+	end
 end
 
 return widget
