@@ -28,6 +28,9 @@ recentlyPlayed = {}
 labels = {}
 labelOrder = {}
 
+widgets = {}
+currentWidget = 1
+
 launchers = {}
 launcherOrder = {}
 
@@ -326,6 +329,7 @@ function dirSetup()
 	firstLaunch = not fle.exists(savePath .. "funnyConfig.json")
 	fle.mkdir(savePath)
 	fle.mkdir(savePath .. "Badges")
+	fle.mkdir(savePath .. "Widgets")
 	fle.mkdir(savePath .. "Labels")
 	loadImgs()
 end
@@ -433,6 +437,7 @@ function main()
 	playdate.display.flush()
 	changeCursorState(cursorStates.SELECT_LABEL)
 	loadLaunchers()
+	loadWidgets()
 	if configVars.musicon then
 		loadMusic()
 	end

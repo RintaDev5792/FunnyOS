@@ -546,57 +546,94 @@ cursorStateInputHandlers = {
 			removeKeyTimer()
 		end
 	},
-	[cursorStates.SELECT_WIDGET ] = {
+	[cursorStates.SELECT_WIDGET] = {
 		AButtonUp = function()
+			
 			sound03ActionTrimmed:play()
 			if not didShortcut then
-				
+				if activeWidget then
+					if activeWidget.AButtonDown then
+						activeWidget:AButtonDown()
+					end
+				else
+					activeWidget = widgets[currentWidget]
+				end
 			end
+			removeKeyTimer()
 			delaySetNoShortcut()
-			removeKeyTimer()
 		end,
-		BButtonUp = function()
+	
+		BButtonDown = function()
+			
 			sound03ActionTrimmed:play()
 			if not didShortcut then
-				
+				if activeWidget then
+					activeWidget = nil
+				end
 			end
-			delaySetNoShortcut()	
 			removeKeyTimer()
+			delaySetNoShortcut()
+		end,
+	
+		upButtonDown = function()
+			if activeWidget then
+				if activeWidget.upButtonDown then
+					activeWidget:upButtonDown()
+				end
+			else
+				currentWidget = math.max(currentWidget - 1, 1)
+			end
+			
+			sound02SelectionReverseTrimmed:play()
+			delaySetNoShortcut()
 		end,
 		
-		rightButtonDown = function()
-			sound01SelectionTrimmed:play()
-			if playdate.buttonIsPressed("A") then
-				didShortcut = true
-				if playdate.buttonIsPressed("B") then
-				--create label
-				else
+		upButtonUp = function()
+			removeKeyTimer()
+		end,
+	
+		downButtonDown = function()
+			if activeWidget then
+				if activeWidget.downButtonDown then
+					activeWidget:downButtonDown()
 				end
-			elseif playdate.buttonIsPressed("B") then
-				didShortcut = true
 			else
-				didShortcut = false
+				currentWidget = math.min(currentWidget + 1, #widgets)
+			end
+			sound01SelectionTrimmed:play()
+			delaySetNoShortcut()
+		end,
+		downButtonUp = function()
+			removeKeyTimer()
+		end,
+	
+		rightButtonDown = function()
+			if activeWidget then
+				if activeWidget.rightButtonDown then
+					activeWidget:rightButtonDown()
+				end
+			else
 				changeCursorState(cursorStates.SELECT_LABEL)
 			end
-		end,
-		rightButtonUp = function() removeKeyTimer() end,
-		
-		leftButtonDown = function()
 			sound01SelectionTrimmed:play()
-			if playdate.buttonIsPressed("A") then
-				didShortcut = true
-				if playdate.buttonIsPressed("B") then
-				--create label
-				else
-				end
-			elseif playdate.buttonIsPressed("B") then
-				didShortcut = true
-			else
-				didShortcut = false
-			end
+			delaySetNoShortcut()
 		end,
-		
-		leftButtonUp = function() removeKeyTimer() end,
+		rightButtonUp = function()
+			removeKeyTimer()
+		end,
+	
+		leftButtonDown = function()
+			if activeWidget then
+				if activeWidget.leftButtonDown then
+					activeWidget:leftButtonDown()
+				end
+			end
+			sound02SelectionReverseTrimmed:play()
+			delaySetNoShortcut()
+		end,
+		leftButtonUp = function()
+			removeKeyTimer()
+		end
 	},
 }
 

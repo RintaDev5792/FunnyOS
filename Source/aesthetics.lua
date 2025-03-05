@@ -45,6 +45,7 @@ newGameMask = gfx.image.new("images/newgame_mask")
 cursorImgs = {gfx.imagetable.new("images/cursor-1"),gfx.imagetable.new("images/cursor-2")}
 
 labelSpacing, labelYMargin, labelTextSize = 10, 4, 15
+widgetPadding, widgetSpacing = 8, 16
 bottomBarHeight = 10 -- usually 22
 snappiness, defaultSnappiness = 0.45,0.45
 
@@ -60,6 +61,8 @@ lastObjectCursorDrawX = 0
 invertedColors = {[true] = gfx.kColorWhite, [false] = gfx.kColorBlack}
 invertedDrawModes = {[true] = gfx.kDrawModeInverted, [false] = gfx.kDrawModeCopy}
 invertedFillDrawModes = {[true] = gfx.kDrawModeFillWhite, [false] = gfx.kDrawModeFillBlack}
+-- Vertical space between widgets
+widgetScroll = 0
 
 function drawRoutine()
 	gfx.clear(gfx.kColorWhite)
@@ -99,7 +102,7 @@ function drawRoutine()
 	--always last
 	local yOffset = 0
 	if scrollX > 0 then
-		yOffset = math.floor(scrollX/(widgetsScreenWidth/bottomBarHeight))	
+		yOffset = math.ceil(scrollX/(widgetsScreenWidth/bottomBarHeight))
 	end
 	drawBottomBar(yOffset)
 	if cursorState == cursorStates.INFO_POPUP then
@@ -116,16 +119,44 @@ function drawWidgets()
 		gfx.setColor(gfx.kColorBlack)
 		gfx.setPattern({0, 255,0,255,0,255,0,255})
 		local x = -widgetsScreenWidth+scrollX
-		local y = math.floor(((240-widgetWidth)/2))
+		local baseY = math.floor(((240-widgetHeight)/2))
 		gfx.fillRect(x, 0, widgetsScreenWidth, 240)
-		
-		gfx.setImageDrawMode(gfx.kDrawModeCopy)
-		gfx.setColor(gfx.kColorWhite)
-		gfx.setDitherPattern(0.5)
-		gfx.fillRoundRect(x+math.floor((widgetsScreenWidth - widgetWidth)/2), y, widgetWidth, widgetHeight, configVars.cornerradius)
-		gfx.fillRoundRect(x+math.floor((widgetsScreenWidth - widgetWidth)/2), y-widgetHeight-labelSpacing, widgetWidth, widgetHeight, configVars.cornerradius)
-		gfx.fillRoundRect(x+math.floor((widgetsScreenWidth - widgetWidth)/2), y+widgetHeight+labelSpacing, widgetWidth, widgetHeight, configVars.cornerradius)
-	end	
+	
+		-- Update widget scroll position with lerp
+		widgetScroll = lerpFloored(widgetScroll, -(currentWidget-1)*(widgetHeight + widgetSpacing), snappiness)
+	
+		-- Draw all widgets in a vertical list
+		for i, widget in ipairs(widgets) do
+			local widgetY = baseY + (i-1) * (widgetHeight + widgetSpacing) + widgetScroll
+			local widgetX = x + math.floor((widgetsScreenWidth - widgetWidth)/2)
+	
+			-- Only draw if widget would be visible
+			if widgetY + widgetHeight > 0 and widgetY < 240 then
+				-- Draw widget content first
+				local widgetImage = widget:main(widget.path)  -- Always run main()
+				if widgetImage then
+					widgetImage:draw(widgetX, widgetY)
+				end
+	
+				-- Draw selection border on top
+				if i == currentWidget then
+					gfx.setLineWidth(3)
+					gfx.setColor(invertedColors[configVars.invertcursor])
+	
+					-- If widget is active, border fits exactly
+					-- If inactive, border has padding
+					local padding = (widget == activeWidget) and 0 or widgetPadding
+					gfx.drawRoundRect(
+						widgetX - padding, 
+						widgetY - padding, 
+						widgetWidth + padding*2, 
+						widgetHeight + padding*2, 
+						configVars.cornerradius
+					)
+				end
+			end
+		end
+	end
 end
 
 function drawLabelNameBox(label)
