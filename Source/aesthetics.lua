@@ -189,10 +189,10 @@ function drawIcons()
 	for i,v in ipairs(labelOrder) do
 		if not labels[v].collapsed and #labels[v].objects > 0 then
 			for j, objectData in ipairs(labels[v].objects) do
-				local x, y = calcIconPosition(j, v)
-				if objectData and x > -objectSizes[labels[v].rows] and x < 400 then
+				local x, y = calcIconPositionCentered(j, v)
+				if objectData and x > -objectSizes[labels[v].rows] and x < 450 then
 					local icon = getIcon(objectData.bundleid, v)
-					if icon then icon:draw(x,y) end
+					if icon then icon:drawCentered(x,y) end
 				end
 			end
 		end
@@ -226,15 +226,17 @@ function drawObjectCursor()
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		gfx.setColor(gfx.kColorBlack)
 		gfx.setDitherPattern(0.5)
-		gfx.fillRoundRect(x+2*rowsNumber, y+2*rowsNumber, objectSizes[labels[currentLabel].rows], objectSizes[labels[currentLabel].rows], 4*rowsNumber)
-		getIcon(heldObject.bundleid, currentLabel):draw(x,y)
+		local heldObjectImage = getIcon(heldObject.bundleid, currentLabel)
+		local w,h = heldObjectImage:getSize()
+		gfx.fillRoundRect(x+2*rowsNumber, y+2*rowsNumber, w, h, 4*rowsNumber)
+		heldObjectImage:drawCentered(x + math.floor(w/2),y + math.floor(w/2))
 		gfx.setImageDrawMode(invertedDrawModes[configVars.invertcursor])
 		
 		cursorImgs[rowsNumber][cursorFrame]:draw(x-2*rowsNumber,y-2*rowsNumber)
 	else	
 		gfx.setImageDrawMode(invertedDrawModes[configVars.invertcursor])
 		if cursorFrame > #cursorImgs[rowsNumber] then cursorFrame = 1 end
-		cursorImgs[rowsNumber][cursorFrame]:draw(x,y)
+		cursorImgs[rowsNumber][cursorFrame]:draw(x+rowsNumber,y+rowsNumber-1)
 		local t = labels[currentLabel].objects[currentObject].name
 		if labels[currentLabel].objects ~= nil and labels[currentLabel].objects[currentObject] ~= nil and  gameInfo[labels[currentLabel].objects[currentObject].bundleid] ~= nil then
 			if configVars.hidewrapped and gameInfo[labels[currentLabel].objects[currentObject].bundleid].wrapped then
@@ -284,6 +286,22 @@ function calcIconPosition(index, label)
 	x+=labels[label].drawX+labelTextSize*2
 	y+=labelYMargin+4
 	return x, y	
+end
+
+function calcIconPositionCentered(index, label)
+	local objectSize = objectSizes[labels[label].rows]
+	local objectSpacing = objectSpacings[labels[label].rows]
+	local x, y = posFromIndex(index, labels[label].rows)
+	x-=1;y-=1
+	--y+=(6/labels[label].rows)-1
+	x*=(objectSize+objectSpacing)
+	x+=(objectSize+objectSpacing)/2
+	y*=(objectSize+objectSpacing)
+	y+=(objectSize+objectSpacing)/2
+	x+=labels[label].drawX+labelTextSize*2
+	y+=labelYMargin+3
+	
+	return math.floor(x), math.floor(y)	
 end
 
 function processDrawChanges()

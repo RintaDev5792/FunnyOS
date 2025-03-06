@@ -705,6 +705,9 @@ function objectSelectMoveLeft()
 		if newCurrentObject < 1 then newCurrentObject = 1 end
 		currentObject = newCurrentObject
 		cursorFrame = 1	
+		if heldObject then
+			iconsCache[heldObject.bundleid] = nil	
+		end
 	end
 end
 
@@ -722,6 +725,9 @@ function objectSelectMoveRight()
 		if newCurrentObject > #labels[currentLabel].objects then newCurrentObject = #labels[currentLabel].objects end
 		currentObject = newCurrentObject
 		cursorFrame = 1	
+		if heldObject then
+			iconsCache[heldObject.bundleid] = nil	
+		end
 	end
 end
 
@@ -819,6 +825,10 @@ end
 
 
 function placeHeldObject(index, label, swap)
+	
+	if heldObject then
+		iconsCache[labels[label].objects[index].bundleid] = nil	
+	end
 	if not swap then
 		labels[label].objects[index] = heldObject
 		heldObject = nil
@@ -929,6 +939,7 @@ function incrementOptionsValue(selection)
 		iconsCache = {}	
 	end
 	redrawFrame = true
+	saveFrame = true
 	saveConfig()
 end
 

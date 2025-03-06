@@ -248,175 +248,132 @@ end
 
 function setupGameInfo()
 	sys.updateGameList()
-	
 	gameInfo = {}
 	groups = sys.getInstalledGameList()
-	
-	-- fill out the gameInfo table
-	for i, group in ipairs(groups) do
-		for j, game in ipairs(group) do
-			local gamePath = game:getPath()
-			if gamePath ~= nil then
-				if game:getBundleID() then
-					local props = sys.getMetadata(gamePath .. "/pdxinfo")
+	for i,v in ipairs(groups) do
+		for j,v2 in ipairs(v) do
+			if gme.getPath(v2) then
+				local gamePath = gme.getPath(v2)
+				if gme.getBundleID(v2) then
+					local props = playdate.system.getMetadata(gamePath .. "/pdxinfo")
 					local newprops = {}
-					
-					for k, v in pairs(props) do
-						newprops[k:lower()] = v
+					for k,v in pairs(props) do
+						newprops[string.lower(k)] = v
 					end
-					
 					props = newprops
-					props["path"] = gamePath
-					
-					local imagePath = props["imagepath"]
-					if imagePath then
-						if imagePath:sub(-4) == ".png" or fle.exists(gamePath .. "/" .. imagePath .. ".pdi") then
-							local found, _, imgp = imagePath:find("^([^/]-)/")
-							if found == nil or imgp == imagePath then
+					props["path"] = gme.getPath(v2)
+					if props["imagepath"] and props["path"] then
+						if props["imagepath"]:sub(#props["imagepath"]-3,#props["imagepath"]) == ".png" or fle.exists(props["path"] .."/"..props["imagepath"]..".pdi") then
+							local imgp = ""
+							local str = props["imagepath"]
+							for i = 1, #str do
+								local c = str:sub(i,i)
+								if c ~= "/" then
+									imgp = imgp..c
+								else
+									break
+								end
+							end
+							if imgp == props["imagepath"] then
 								imgp = ""
 							end
-							
 							props["imagepath"] = imgp
 						end
 					end
 
-					props["group"] = group.name
-					props["suppresscontentwarning"] = game:getSuppressContentWarning()
-					props["wrapped"] = game:getInstalledState() == kPDGameStateFreshlyInstalled
-					gameInfo[game:getBundleID()] = props
+					props["group"] = v.name
+					props["suppresscontentwarning"] = v2:getSuppressContentWarning()
+					gameInfo[gme.getBundleID(v2)] = props
 				end
 			else
 				return false
 			end
 		end
 	end
-	
-	-- copy all the game metadata to sortedGameInfo
 	sortedGameInfo = {}
-	for bundleID, props in pairs(gameInfo) do
-		if sortedGameInfo[props["group"]] == nil then
-			sortedGameInfo[props["group"]] = {}
-		end
-		sortedGameInfo[props["group"]][bundleID] = props
+	for k,v in pairs(gameInfo) do
+		if not sortedGameInfo[v["group"]] then sortedGameInfo[v["group"]] = {} end
+		sortedGameInfo[v["group"]][k] = v
 	end
-	
-	for groupName, group in pairs(sortedGameInfo) do
-		for bundleID, objectData in pairs(group) do
+	for k,v in pairs(sortedGameInfo) do
+		for bundleID, objectData in pairs(sortedGameInfo[k]) do
 			local found = false
-			
-			-- make sure the game actually exists and is not an empty slot
-			if bundleID ~= ".empty" then
-				for name, label in pairs(labels) do
-					for _, object in ipairs(label.objects) do
-						if object.bundleid == bundleID then
-							found = true
-							break
-						end
-					end
-					
-					if found then
-						break
+			for label,data in pairs(labels) do
+				for i,object in ipairs(labels[label].objects) do
+					if object.bundleid == bundleID and bundleID ~= ".empty" then
+						found = true	
 					end
 				end
 			end
-			
-			-- games which should not be displayed in the launcher
-			local systemGameBlacklist = {
-				"com.panic.launcher",
-				"com.shauninman.InputTest",
-				"com.panic.setup",
-				"com.panic.setupintro"
-			}
-			
-			-- remove the games which weren't found or are on the blacklist
-			if not found and not listHasValue(systemGameBlacklist, bundleID) then 
-				if labels[groupName] == nil then
-					labels[groupName] = {
-						displayName = groupName,
-						rows = 3,
-						objects = {},
-						collapsed = false
-					}
-				end
-				
+			if not found and bundleID ~= "com.panic.launcher" and bundleID ~= "com.shauninman.InputTest" and bundleID ~= "com.panic.setup" and bundleID ~= "com.panic.setupintro" then 
 				local foundEmpty = false
-				local index = nil
-				
-				for i, data in ipairs(labels[groupName].objects) do
-					if data.bundleid == ".empty" then
+				local index = nil				
+				if not labels[k] then labels[k] = {["displayName"] = k, ["rows"] = 3, ["objects"] = {}, ["collapsed"] = false} end
+
+				for i, data in ipairs(labels[k].objects) do
+					if data.bundleid == ".empty" and not foundEmpty then
 						index = i
-						foundEmpty = true
-						break
-					end
+					end	
 				end
-				
-				if foundEmpty then
-					labels[groupName].objects[index] = objectData
+				if index then
+					labels[k].objects[index] = objectData
 				else
-					table.insert(labels[groupName].objects, objectData) 
+					table.insert(labels[k].objects,objectData) 
 				end
 			end
 		end
 	end
-	
-	-- don't display empty labels
-	for name, label in pairs(labels) do
-		if label.objects == {} then
-			labels[name] = nil	
-			fle.delete(savePath.."Labels/"..name..".json")
-		end
+	for k,v in pairs(labels) do
+		if v.objects == {} then
+			labels[k] = nil	
+		end	
 	end
-	
-	-- delete empty label names from labelOrder
 	local newLabelOrder = {}
-	for _, name in ipairs(labelOrder) do
-		if labels[name] ~= nil then
-			table.insert(newLabelOrder, name)	
-		end
+	for i,v in ipairs(labelOrder) do
+		if labels[v] then
+			table.insert(newLabelOrder, v)	
+		end	
 	end
 	labelOrder = newLabelOrder
-	
-	-- deduplicate games and delete nonexistent ones
 	local alreadyFoundObjects = {}
-	for name, label in pairs(labels) do
+	for k,v in pairs(labels) do
 		local newObjects = {}
-		for _, data in ipairs(label.objects) do
+		for i,data in ipairs(v.objects) do
 			if gameInfo[data.bundleid] and not listHasValue(alreadyFoundObjects, data.bundleid)then
 				table.insert(newObjects, data)
 				table.insert(alreadyFoundObjects, data.bundleid)
 			elseif data.bundleid == ".empty" then
 				table.insert(newObjects, data)	
-			else
-				table.insert(newObjects, emptyObject)	
 			end
 		end	
-		labels[name].objects = newObjects
+		labels[k].objects = newObjects
 	end
-	
-	-- make sure every label at this point is visible
-	for name, label in pairs(labels) do
-		if not listHasValue(labelOrder, name) then
-			table.insert(labelOrder, name)
+	for k,v in pairs(labels) do
+		if not listHasValue(labelOrder, k) then
+			table.insert(labelOrder, k)
 		end
 	end
 	
-	-- sort the labels if this is the first launch
 	if firstLaunch then
 		alphabetSortLabels()
 		alphabetSortLabelContents()
 	end
-	
-	-- uncollapse the current label
 	currentLabel = labelOrder[1]
 	labels[currentLabel]["collapsed"] = false
-	
-	for name, label in pairs(labels) do
-		fillLabelEndWithEmpty(name, false)
+	for k,v in pairs(labels) do
+		fillLabelEndWithEmpty(k, false)	
 	end
 	
 	saveConfig()
 end
 
+function getBadgeName(bundleID)
+	return bundleID:sub(8,#bundleID)	
+end
+
+function bundleIDIsBadge(bundleID)
+	return bundleID:sub(1,7) == ".badge:"
+end
 
 --scratch whatever refactoring you did here broke it so i returned it to previous
 function fillLabelEndWithEmpty(label, removeEmptyColumns)
@@ -496,6 +453,9 @@ function loadIcon(bundleID, labelName, imageName)
 	else
 		return nil	
 	end
+	if iconsCache[bundleID] == nil then
+		iconsCache[bundleID] = {}
+	end
 	if bundleID == ".empty" then 
 		if configVars["drawblanks"] then
 			return emptySpaceImgs[rowsNumber] 
@@ -511,10 +471,25 @@ function loadIcon(bundleID, labelName, imageName)
 	end
 	
 	local objectSize = objectSizes[(1/rowsNumber)*6]
+	local objectSpacing = objectSpacings[(1/rowsNumber)*6]
 	local iconImg = gfx.image.new(objectSize, objectSize, gfx.kColorClear)
 	
 	if not gameInfo[bundleID] then
-		return iconImg
+		if bundleIDIsBadge(bundleID) then
+			local badgeIcon = gfx.image.new(savePath.."Badges/"..getBadgeName(bundleID))
+			if badgeIcon then
+				local w,h = badgeIcon:getSize()
+				badgeIcon = badgeIcon:scaledImage((objectSize+objectSpacing)/w)
+				iconsCache[bundleID][imageName] = badgeIcon
+				return badgeIcon
+			else
+				iconsCache[bundleID][imageName] = iconImg
+				return iconImg	
+			end
+		else
+			iconsCache[bundleID][imageName] = iconImg
+			return iconImg
+		end
 	end
 	
 	local gameIcon
@@ -549,10 +524,6 @@ function loadIcon(bundleID, labelName, imageName)
 		end
 	end
 	gfx.popContext()
-	
-	if iconsCache[bundleID] == nil then
-		iconsCache[bundleID] = {}
-	end
 	if labelName ~= "recentlyPlayed" then
 		iconsCache[bundleID][imageName] = iconImg
 	else

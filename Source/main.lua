@@ -36,7 +36,7 @@ launchers = {}
 launcherOrder = {}
 
 objectSizes = {[3] = 68, [6] = 34}
-objectSpacings = {[3] = 5, [6] = 2}
+objectSpacings = {[3] = 4, [6] = 2}
 local homeRows = 3
 
 local firstUpdate = true
