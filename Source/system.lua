@@ -193,6 +193,19 @@ function getLauncherIcon(path)
 	end	
 end
 
+function loadBadges()
+	badges = {}
+	if fle.isdir(savePath.."Badges") then
+		local files = fle.listFiles(savePath.."Badges")
+		for i,v in ipairs(files) do
+			if v:sub(#v-3,#v) == ".pdi" then
+				table.insert(badges, ".badge:"..v:sub(1,#v-4))
+			end
+		end
+	end
+	table.sort(badges)
+end
+
 function loadLaunchers()
 	launchers = {}
 	if fle.isdir("/System/Launchers") then
@@ -290,14 +303,43 @@ function setupGameInfo()
 			end
 		end
 	end
+	
+	
+	-- add badges here
+	for i,bundleID in ipairs(badges) do
+		-- found is "if an object has been found in label"
+		local found = false
+		-- if an object is in a label, it is "found"
+		for label,data in pairs(labels) do
+			for i,object in ipairs(labels[label].objects) do
+				if object.bundleid == bundleID and bundleID ~= ".empty" then
+					found = true	
+					break
+				end
+			end
+		end
+		-- if the game isn't in your launcher and isnt a system app
+		if not found and bundleID ~= "com.panic.launcher" and bundleID ~= "com.shauninman.InputTest" and bundleID ~= "com.panic.setup" and bundleID ~= "com.panic.setupintro" then 
+			-- look for an empty space to place it
+			local badgeObject = listCopy(emptyObject)
+			badgeObject.bundleid = bundleID
+			placeObjectAtEmpty(badgeObject, "Badges")
+		end
+	end
+	
+	
 	sortedGameInfo = {}
+	-- if a group doesn't exist in sortedgameinfo, create it with gameinfo
 	for k,v in pairs(gameInfo) do
 		if not sortedGameInfo[v["group"]] then sortedGameInfo[v["group"]] = {} end
 		sortedGameInfo[v["group"]][k] = v
 	end
 	for k,v in pairs(sortedGameInfo) do
+		-- for each game
 		for bundleID, objectData in pairs(sortedGameInfo[k]) do
+			-- found is "if an object has been found"
 			local found = false
+			-- if an object is in a label, it is "found"
 			for label,data in pairs(labels) do
 				for i,object in ipairs(labels[label].objects) do
 					if object.bundleid == bundleID and bundleID ~= ".empty" then
@@ -305,24 +347,14 @@ function setupGameInfo()
 					end
 				end
 			end
+			-- if the game isn't in your launcher and isnt a system app
 			if not found and bundleID ~= "com.panic.launcher" and bundleID ~= "com.shauninman.InputTest" and bundleID ~= "com.panic.setup" and bundleID ~= "com.panic.setupintro" then 
-				local foundEmpty = false
-				local index = nil				
-				if not labels[k] then labels[k] = {["displayName"] = k, ["rows"] = 3, ["objects"] = {}, ["collapsed"] = false} end
-
-				for i, data in ipairs(labels[k].objects) do
-					if data.bundleid == ".empty" and not foundEmpty then
-						index = i
-					end	
-				end
-				if index then
-					labels[k].objects[index] = objectData
-				else
-					table.insert(labels[k].objects,objectData) 
-				end
+				-- look for an empty space to place it
+				placeObjectAtEmpty(objectData, k)
 			end
 		end
 	end
+	
 	for k,v in pairs(labels) do
 		if v.objects == {} then
 			labels[k] = nil	
@@ -339,11 +371,11 @@ function setupGameInfo()
 	for k,v in pairs(labels) do
 		local newObjects = {}
 		for i,data in ipairs(v.objects) do
-			if gameInfo[data.bundleid] and not listHasValue(alreadyFoundObjects, data.bundleid)then
+			if (gameInfo[data.bundleid] or bundleIDIsBadge(data.bundleid)) and not listHasValue(alreadyFoundObjects, data.bundleid)then
 				table.insert(newObjects, data)
 				table.insert(alreadyFoundObjects, data.bundleid)
-			elseif data.bundleid == ".empty" then
-				table.insert(newObjects, data)	
+			else
+				table.insert(newObjects, emptyObject)
 			end
 		end	
 		labels[k].objects = newObjects
@@ -363,8 +395,25 @@ function setupGameInfo()
 	for k,v in pairs(labels) do
 		fillLabelEndWithEmpty(k, false)	
 	end
-	
 	saveConfig()
+end
+
+function placeObjectAtEmpty(objectData, label)
+	local foundEmpty = false
+	local index = nil				
+	if labels[label] == nil then labels[label] = {["displayName"] = label, ["rows"] = 3, ["objects"] = {}, ["collapsed"] = false} end
+
+	for i, data in ipairs(labels[label].objects) do
+		if data.bundleid == ".empty" and not foundEmpty then
+			index = i
+		end
+	end
+-- if there's an empty space, put it there, otherwise put it at the end.
+	if index then
+		labels[label].objects[index] = objectData
+	else
+		table.insert(labels[label].objects,objectData) 
+	end	
 end
 
 function getBadgeName(bundleID)

@@ -28,6 +28,8 @@ recentlyPlayed = {}
 labels = {}
 labelOrder = {}
 
+badges = {}
+
 widgets = {}
 currentWidget = 1
 widgetIsActive = false
@@ -439,6 +441,7 @@ function main()
 	changeCursorState(cursorStates.SELECT_LABEL)
 	loadLaunchers()
 	loadWidgets()
+	loadBadges()
 	if configVars.musicon then
 		loadMusic()
 	end
