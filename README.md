@@ -1,15 +1,23 @@
 # FunnyOS
 Grid-based playdate custom launcher based on the 3ds menu (with badges!)
 
-Made for playdateOS 2.6.2+  
+Made for playdateOS 2.6.2 and up, 2.7.0 required for networking features.
 ![](readme-images/showntell.gif)
 
 ## Features
 - grid-based icon system, different from the list-based default one, similar to the 3ds
 - "badges" similar to those on the 3ds, that can be created from any square .pdi image
+- square-shaped convenient widgets that anybody can easily program
 - labels system, letting you create and name "labels" (sections of objects) on the grid that allow organisation and faster movement
 - button combinations letting you do anything without ever opening a menu or holding a button
 - alphabetical organization by default to make it easier to find games when you first install it
+
+## Navigation
+- FOS2 is based almost entirely on button combinations to do most major actions
+- To open the "control center," press A+DOWN
+    - Button combos are similar to how keyboard shortcuts work on computers, think of A and B as ctrl/alt and the directions as actual keys (i.e. hold A and/or B and THEN press the direction to execute a combo)
+- To navigate, use the DPAD. To select a label or object, press A. To go back, press B.
+- While the first label on your home screen is selected, press LEFT to access the widgets list! If you have no widgets this will show up blank, but if you place some into the shared folder it will show them all there.
 
 ## Instructions
 ### Installing on hardware
@@ -23,7 +31,7 @@ Video tutorial available [here](https://www.youtube.com/watch?v=L6Q6Tsoksgg) for
 #### If installing only FunnyOS
 1. Go into the new folder and then /System, and rename Launcher.pdx to StockLauncher.pdx
 1. Copy your FunnyOS.pdx file into the System folder and rename it to Launcher.pdx
-1. If you intend to use the "Launcher Select" feature, follow the FunnyLoader instructions for directory setup, just using FunnyOS-2 swapped for FunnyLoader.  
+1. If you intend to use the FunnyLoader widget as given in the Widgets section, follow the FunnyLoader instructions for directory setup, just using FunnyOS2.pdx swapped for FunnyLoader.pdx.  
 
 #### If utilising FunnyLoader to have multiple launchers
 1. Go into the new folder and then /System, and create a folder named "Launchers" inside of it with that exact capitalisation
@@ -53,25 +61,34 @@ If this at any point freezes or errors out during installation, especially multi
 Before any of these actions can be completed, run the launcher on-device after installing.  
 
 ### Badges  
-In order to load badges into FunnyOS, put any .pdi image file called `<name>.pdi` inside `/Shared/FunnyOS/Badges`. 
+In order to load badges into FunnyOS, put any .pdi image file called `<name>.pdi` inside `/Shared/FunnyOS2/Badges`. 
 This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
-Some pre-made badges in pdi form are available [Here](https://github.com/RintaDev5792/FunnyOS/tree/main/Config/Badges).  
+Some pre-made badges in pdi form are available [Here](https://github.com/RintaDev5792/FunnyOS/tree/main/Assets/Badges).  
 (Thanks to Palette in the Playdate Squad discord server for making OpenFunnyBadges, a badge pack to get you started!)  
 As soon as you load up the launcher with .pdi files in `/Shared/FunnyOS/Badges`, they are placed on the far right of the grid.  
 You can move them in organize mode just like other icons.  
 
 If you are using FunnyOS 2, there is a built-in asset manager in which badges can be downloaded from FunnyOS servers.
+
+### Widgets  
+In order to load widgets into FunnyOS, put any .pdx file (that you know is a widget) called `<name>.pdi` inside `/Shared/FunnyOS2/Widgets`. 
+Pre-made widgets are available [Here](https://github.com/RintaDev5792/FunnyOS/tree/main/Assets/Widgets).  
+It is highly recommended if you have multiple launchers to install the FunnyLoader widget from that directory, as it lets you switch launchers right from FOS2!  
   
+If you want to develop your own widgets, some example code is availale [Here](https://github.com/RintaDev5792/FunnyOS/tree/main/Widgets).  
+
+
 ### Music  
 In order to load background music into FunnyOS, put an audio file called `bgm.pda` inside `/Shared/FunnyOS/`.  
 This audio must be compiled with `pdc` from the playdate SDK, and must be a .pda file.  
-The default background music is available [Here](https://github.com/RintaDev5792/FunnyOS/blob/main/Config/bgm.pda), as compiling it into the installer takes up a lot of space.
+The default background music is available [Here](https://github.com/RintaDev5792/FunnyOS/blob/main/Assets/bgm.pda), as compiling it into the installer takes up a lot of space.
 Music provided by Chris Mandra and Drunk With Honey. Huge shoutout to them, they make some good music!  
 
 ### Background Image  
 In order to load a background image into FunnyOS, put an image file called `bg.pdi` inside `/Shared/FunnyOS/`.  
 This image must be compiled with `pdc` from the playdate SDK, and must be a .pdi file.  
 The image will be automatically scaled to 400x240 and used as the background behind the dither pattern in the launcher.  
+The default background image is available [Here](https://github.com/RintaDev5792/FunnyOS/blob/main/Assets/bg.pdi).  
 
 If you are using FunnyOS 2, there is a built-in asset manager in which wallpapers can be downloaded from FunnyOS servers.  
 

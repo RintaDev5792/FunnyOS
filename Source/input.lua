@@ -388,11 +388,6 @@ cursorStateInputHandlers = {
 					controlCenterInfoScroll = 0
 					controlCenterInfoSelection = 1
 					controlCenterInfoMaxSelection = #configVarOptionsOrder
-				elseif selected == "Launcher Select" then
-					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
-					controlCenterInfoScroll = 0
-					controlCenterInfoSelection = 1
-					controlCenterInfoMaxSelection = #launcherOrder
 				elseif selected == "Recently Played" then
 					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
 					controlCenterInfoScroll = 0
@@ -471,9 +466,6 @@ cursorStateInputHandlers = {
 				local selected = controlCenterMenuItems[controlCenterMenuSelection]
 				if selected == "FunnyOS Options" then
 					incrementOptionsValue(controlCenterInfoSelection)
-				end
-				if selected == "Launcher Select" then
-					sys.switchToGame(launchers[launcherOrder[controlCenterInfoSelection]].path)
 				end
 				if selected == "Recently Played" then
 					sys.switchToGame(gameInfo[recentlyPlayed[controlCenterInfoSelection]].path)
@@ -568,7 +560,12 @@ cursorStateInputHandlers = {
 			sound03ActionTrimmed:play()
 			if not didShortcut then
 				if widgetIsActive then
-					widgetIsActive = false
+					
+					if widgets[currentWidget].BButtonDown then
+						widgets[currentWidget]:BButtonDown()
+					else
+						widgetIsActive = false
+					end
 				end
 			end
 			removeKeyTimer()
@@ -959,7 +956,7 @@ function doActionsMenuAction(name)
 			if fle.isdir(savePath.."Labels") then
 				fle.delete(savePath.."Labels", true)
 			end
-			local path = launchers[funnyOSMetadata.name].path
+			local path = funnyOSMetadata.path
 			sys.switchToGame(path)
 		end
 		)

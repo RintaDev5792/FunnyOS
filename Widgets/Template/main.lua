@@ -1,20 +1,28 @@
-local ExampleWidget = {}
-local widget = ExampleWidget
+local TemplateWidget = {}
+local widget = TemplateWidget
 
 local counter = 0
 
 -- path is filled out when loaded by system
 widget.metadata = {
-	name = "Example Widget",
+	name = "Template Widget!",
 	game = "com.panic.settings",
 	path = nil
 }
 
 widget.image = nil
 
--- Input handlers
+-- Fill these out with your inputs
 function widget:AButtonDown()
+	-- Open the bundle id listed in Metadata
 	openApp(self.metadata.game)
+end
+
+-- If a B button function isn't provided, this is the default action for it.
+function widget:BButtonDown()
+	-- Removes focus from the widget so others can be selected
+	-- Need this line somewhere if you use the B button.
+	widgetIsActive = false
 end
 
 function widget:upButtonDown()
@@ -33,7 +41,7 @@ function widget:rightButtonDown()
 	
 end
 
--- call this to get UPDATED widget image
+-- Refresh the widget image
 function widget:loadWidgetImage()
 	widget.image = playdate.graphics.image.new(200, 200)
 	playdate.graphics.pushContext(widget.image)
@@ -50,20 +58,27 @@ function widget:loadWidgetImage()
 	return widget.image
 end
 
--- call this to get RECENT widget image
+-- Get the widget image most recently drawn with loadWidgetImage(); called every frame.
 function widget:getWidgetImage()
-	if widget.image and not forceReload then
+	if widget.image then
 		return widget.image
 	else
 		return widget:loadWidgetImage()	
 	end
 end
 
+-- Called every frame, put main loop here
 function widget:update(isActive)
 	if isActive then
 		counter+=1
+		-- Refresh graphic
 		widget:loadWidgetImage()
 	end
+end
+
+-- Called when FunnyOS boots up
+function widget:init()
+	widget:getWidgetImage()	
 end
 
 return widget

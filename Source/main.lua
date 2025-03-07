@@ -34,8 +34,6 @@ widgets = {}
 currentWidget = 1
 widgetIsActive = false
 
-launchers = {}
-launcherOrder = {}
 
 objectSizes = {[3] = 68, [6] = 34}
 objectSpacings = {[3] = 4, [6] = 2}
@@ -68,7 +66,6 @@ controlCenterMenuSelection = 0
 controlCenterInfoSelection = 0
 controlCenterInfoMaxSelection = 0
 controlCenterInfoScroll = 0
--- launcher is {name, path}
 
 funnyOSMetadata = playdate.metadata
 
@@ -172,7 +169,6 @@ controlCenterMenuItems = {
 	"Badges Menu",
 	"FunnyOS Options",
 	"Screenshots",
-	"Launcher Select",
 	"System Info"
 }
 
@@ -439,7 +435,6 @@ function main()
 	playdate.display.setRefreshRate(25)
 	playdate.display.flush()
 	changeCursorState(cursorStates.SELECT_LABEL)
-	loadLaunchers()
 	loadWidgets()
 	loadBadges()
 	if configVars.musicon then
