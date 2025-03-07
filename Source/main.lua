@@ -34,7 +34,6 @@ widgets = {}
 currentWidget = 1
 widgetIsActive = false
 
-
 objectSizes = {[3] = 68, [6] = 34}
 objectSpacings = {[3] = 4, [6] = 2}
 local homeRows = 3
@@ -432,7 +431,7 @@ function main()
 	dirSetup()
 	playdate.setAutoLockDisabled(false)
 	loadingImg:draw(0,0)
-	playdate.display.setRefreshRate(25)
+	playdate.display.setRefreshRate(50)
 	playdate.display.flush()
 	changeCursorState(cursorStates.SELECT_LABEL)
 	loadWidgets()
@@ -454,8 +453,8 @@ function main()
 	menu:removeAllMenuItems()
 	menu:addMenuItem("DUMP", function() dumpFrame = true end) 
 	
-	
 	playdate.timer.performAfterDelay(500, updateCursorFrame)
+	playdate.timer.performAfterDelay(500, updateCircleCursorRadius)
 	if firstLaunch then
 		createInfoPopup("Welcome!", "*Hello, and thank you for using FunnyOS 2! FunnyOS 2 uses button combos, so you must know those to do most tasks. These combos can be found in the control center.*", false, function() createInfoPopup("Welcome!", "*In order to open the control center, press *"..buttons.A.."*+*"..buttons.DOWN.."*. The control center also houses other useful features, so be sure to look through it to get the most out of FunnyOS 2. Have fun!*", false, function()  end) end)
 	end

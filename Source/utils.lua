@@ -215,7 +215,7 @@ function easeInOutSine(t, b, c, d)
 end
 
 function lerpFloored(a, b, t) 
-	local v =  math.floor(a * (1 - t) + b * t)
+	local v =  (a * (1 - t) + b * t) // 1
 	if v ~= v then return 0 else return v end 
 end
 

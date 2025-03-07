@@ -48,6 +48,7 @@ labelSpacing, labelYMargin, labelTextSize = 10, 4, 15
 widgetPadding, widgetSpacing = 8, 16
 bottomBarHeight = 10 -- usually 22
 snappiness, defaultSnappiness = 0.45,0.45
+circleCursorRadius = 4
 
 widgetsScreenWidth = 240
 widgetWidth, widgetHeight = 200, 200
@@ -102,7 +103,7 @@ function drawRoutine()
 	--always last
 	local yOffset = 0
 	if scrollX > 0 then
-		yOffset = math.ceil(scrollX/(widgetsScreenWidth/bottomBarHeight))
+		yOffset = (scrollX/(widgetsScreenWidth/bottomBarHeight)+1)//1
 	end
 	drawBottomBar(yOffset)
 	if cursorState == cursorStates.INFO_POPUP then
@@ -119,11 +120,11 @@ function processAndDrawWidgets()
 		gfx.setColor(gfx.kColorBlack)
 		gfx.setPattern({0, 255,0,255,0,255,0,255})
 		local x = -widgetsScreenWidth+scrollX
-		local baseY = math.floor(((240-widgetHeight)/2))
+		local baseY = (((240-widgetHeight)/2))//1
 		gfx.fillRect(x, 0, widgetsScreenWidth, 240)
 	
 		-- Update widget scroll position with lerp
-		widgetScroll = lerpFloored(widgetScroll, -(currentWidget-1)*(widgetHeight + widgetSpacing), snappiness)
+		widgetScroll = lerp(widgetScroll, -(currentWidget-1)*(widgetHeight + widgetSpacing), snappiness)//1
 	
 		-- Draw all widgets in a vertical list
 		for i, widget in ipairs(widgets) do
@@ -131,7 +132,7 @@ function processAndDrawWidgets()
 				widget:update(widgetIsActive)
 			end
 			local widgetY = baseY + (i-1) * (widgetHeight + widgetSpacing) + widgetScroll
-			local widgetX = x + math.floor((widgetsScreenWidth - widgetWidth)/2)
+			local widgetX = x + ((widgetsScreenWidth - widgetWidth)/2)//1
 	
 			-- Only draw if widget would be visible
 			if widgetY + widgetHeight > 0 and widgetY < 240 then
@@ -168,11 +169,11 @@ function drawLabelNameBox(label)
 	h+=labelSpacing
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	gfx.setColor(gfx.kColorWhite)
-	gfx.fillRoundRect(labelSpacing/2, math.floor(240/2-h/2), w, h, configVars.cornerradius)
+	gfx.fillRoundRect(labelSpacing/2, (120-h/2)//1, w, h, configVars.cornerradius)
 	gfx.setColor(gfx.kColorBlack)
 	gfx.setLineWidth(configVars.linewidth)
-	gfx.drawRoundRect(labelSpacing/2, math.floor(240/2-h/2), w, h, configVars.cornerradius)
-	gfx.drawTextAligned("*"..key.text.."*", math.floor(w/2+labelSpacing/2), math.floor(240/2-h/2+labelSpacing/2)+2, kTextAlignment.center)
+	gfx.drawRoundRect(labelSpacing/2, (120-h/2)//1, w, h, configVars.cornerradius)
+	gfx.drawTextAligned("*"..key.text.."*", (w/2+labelSpacing/2)//1, (120-h/2+labelSpacing/2)//1+2, kTextAlignment.center)
 end
 
 function updateCursorFrame()
@@ -229,7 +230,7 @@ function drawObjectCursor()
 		local heldObjectImage = getIcon(heldObject.bundleid, currentLabel)
 		local w,h = heldObjectImage:getSize()
 		gfx.fillRoundRect(x+2*rowsNumber, y+2*rowsNumber, w, h, 4*rowsNumber)
-		heldObjectImage:drawCentered(x + math.floor(w/2),y + math.floor(w/2))
+		heldObjectImage:drawCentered(x + (w/2)//1,y + (w/2)//1)
 		gfx.setImageDrawMode(invertedDrawModes[configVars.invertcursor])
 		
 		cursorImgs[rowsNumber][cursorFrame]:draw(x-2*rowsNumber,y-2*rowsNumber)
@@ -260,7 +261,7 @@ function drawObjectCursor()
 			gfx.setImageDrawMode(gfx.kDrawModeCopy)
 			local lx, ly = x,y
 			lx+=2
-			if currentObject % labels[currentLabel].rows < math.floor(labels[currentLabel].rows/2)+1 and currentObject % labels[currentLabel].rows > 0 then
+			if currentObject % labels[currentLabel].rows < (labels[currentLabel].rows/2)//1+1 and currentObject % labels[currentLabel].rows > 0 then
 				ly += ((objectSizes[3]+4)*(6/labels[currentLabel].rows))/2 + 4
 			else
 				ly -= (th-2+textMargins*2) + 4
@@ -294,19 +295,17 @@ function calcIconPositionCentered(index, label)
 	local x, y = posFromIndex(index, labels[label].rows)
 	x-=1;y-=1
 	--y+=(6/labels[label].rows)-1
-	x*=(objectSize+objectSpacing)
-	x+=(objectSize+objectSpacing)/2
-	y*=(objectSize+objectSpacing)
-	y+=(objectSize+objectSpacing)/2
+	x = (x+0.5)*(objectSize+objectSpacing)
+	y = (y+0.5)*(objectSize+objectSpacing)
 	x+=labels[label].drawX+labelTextSize*2
 	y+=labelYMargin+3
 	
-	return math.floor(x), math.floor(y)	
+	return x // 1, y // 1	
 end
 
 function processDrawChanges()
 	if controlCenterState == 1 then
-		controlCenterProgress = math.floor(lerp(controlCenterProgress,  0, snappiness))	
+		controlCenterProgress = lerp(controlCenterProgress,  0, snappiness)//1
 		if controlCenterProgress < 2 then 
 			controlCenterProgress = 0
 			controlCenterState = 0
@@ -316,7 +315,7 @@ function processDrawChanges()
 		end
 	end
 	if controlCenterState == 2 then
-		controlCenterProgress = math.floor(lerp(controlCenterProgress,  maxControlCenterProgress, snappiness))
+		controlCenterProgress = lerp(controlCenterProgress,  maxControlCenterProgress, snappiness)//1
 		if controlCenterProgress > maxControlCenterProgress-2 then 
 			controlCenterProgress = maxControlCenterProgress
 			controlCenterState = 3  
@@ -332,7 +331,7 @@ function drawLabelBackgrounds()
 		gfx.setColor(invertedColors[configVars["invertlabels"]])
 		gfx.setDitherPattern(configVars.labeldither)
 		local label = labels[v]
-		w = labelTextSize*3 + math.ceil(#label["objects"]/label["rows"])*(objectSizes[label["rows"]] + objectSpacings[label["rows"]]) - objectSpacings[label["rows"]] -6 + math.floor(configVars.cornerradius/2)
+		w = labelTextSize*3 + ((1+#label["objects"]/label["rows"])//1)*(objectSizes[label["rows"]] + objectSpacings[label["rows"]]) - objectSpacings[label["rows"]] -6 + (configVars.cornerradius/2)//1
 		if labels[v]["collapsed"] then
 			w = labelTextSize*2	
 		end
@@ -343,7 +342,7 @@ function drawLabelBackgrounds()
 		local t = "*"..labels[v]["displayName"].."*"
 		local tw,th = gfx.getTextSize(t)
 		tw += 20
-		th = math.floor(th*1.2)
+		th = (th*1.2)//1
 		local dw = 240-bottomBarHeight
 		local img = gfx.image.new(dw,th)
 		gfx.pushContext(img)
@@ -457,7 +456,7 @@ function drawBottomBar(yOffset)
 	local arrowFactor = 50
 	local arrowProgress = 0
 	if controlCenterProgress > maxControlCenterProgress-(6*arrowFactor) then
-		arrowProgress = 3 - math.floor((maxControlCenterProgress-controlCenterProgress)/arrowFactor)
+		arrowProgress = 3 - ((maxControlCenterProgress-controlCenterProgress)/arrowFactor)//1
 	end
 	--arrow
 	gfx.drawLine(180, 245-bottomBarHeight-controlCenterProgress+yOffset, 199, 236 + arrowProgress-controlCenterProgress+yOffset)
@@ -491,7 +490,7 @@ function drawControlCenterStatusBar()
 	gfx.setColor(invertedColors[not configVars.invertcc])
 	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 	batteryImg:draw(12,432-controlCenterProgress)
-	local batteryWidth = math.ceil(27*(playdate.getBatteryPercentage()/100))
+	local batteryWidth = (27*(playdate.getBatteryPercentage()/100)+1)//1
 	gfx.fillRect(14, 432-controlCenterProgress, batteryWidth, 15)
 	
 	local t = playdate.getTime()
@@ -553,7 +552,7 @@ function drawInfoPopup()
 	gfx.setFont(gfx.getLargeUIFont())
 	local textWidth, textHeight = gfx.getTextSize("HI")
 	gfx.setFont(oldFont)
-	local x,y = (400-w) - math.floor((400-w)/2), (240-h) - math.floor((240-h)/2)
+	local x,y = (200-w/2)//1, (120-h/2)//1
 	gfx.fillRoundRect(x,y , w, h, configVars.cornerradius)
 	gfx.setColor(gfx.kColorBlack)
 	gfx.setLineWidth(configVars.linewidth)
@@ -561,8 +560,8 @@ function drawInfoPopup()
 	gfx.getLargeUIFont():drawTextAligned(infoPopupTitle, 200, y+labelSpacing,kTextAlignment.center)
 	
 	if infoPopupEnableB then
-		gfx.drawText(buttons.B.." *Back* ",math.floor((400-w)/2)+labelSpacing, y+h-18-labelSpacing)
-		gfx.drawTextAligned("* Accept *"..buttons.A, math.floor(w+(400-w)/2)-labelSpacing, y+h-18-labelSpacing,kTextAlignment.right)
+		gfx.drawText(buttons.B.." *Back* ",((200-w/2)//1) +labelSpacing, y+h-18-labelSpacing)
+		gfx.drawTextAligned("* Accept *"..buttons.A, w+((200-w/2)//1)-labelSpacing, y+h-18-labelSpacing,kTextAlignment.right)
 	else
 		gfx.drawTextAligned("* Accept *"..buttons.A, 200, y+h-18-labelSpacing,kTextAlignment.center)
 	end
@@ -582,7 +581,7 @@ function drawSystemInfo()
 	gfx.fillRoundRect(180, 420-controlCenterProgress, 226-24, 20, configVars.cornerradius)
 	gfx.setDitherPattern(0)
 	gfx.setColor(gfx.kColorWhite)
-	gfx.fillRoundRect(180, 420-controlCenterProgress, math.floor((226-24)*storagePercent), 20, configVars.cornerradius)
+	gfx.fillRoundRect(180, 420-controlCenterProgress, ((226-24)*storagePercent)//1, 20, configVars.cornerradius)
 	
 	local filledGB = readableBytes(totalSpace-freeSpace, 2)
 	local totalGB = readableBytes(totalSpace, 2)
@@ -667,13 +666,18 @@ function drawActions()
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 end
 
+function updateCircleCursorRadius()
+	if circleCursorRadius == 4 then circleCursorRadius = 5 else circleCursorRadius = 4 end
+	playdate.timer.performAfterDelay(500, updateCircleCursorRadius)
+end
+
 function drawCircleCursor(baseX, baseY, spacing, index, maxIndex, scroll)
 	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
-	gfx.fillCircleAtPoint(baseX, baseY-controlCenterProgress+8+spacing*(index-scroll), 4)
+	gfx.fillCircleAtPoint(baseX, baseY-controlCenterProgress+8+spacing*(index-scroll), circleCursorRadius)
 	if index ~= 1 then
-		gfx.fillTriangle(baseX,  baseY-controlCenterProgress+spacing*(index-scroll)-4, baseX+4,  baseY-controlCenterProgress+8+spacing*(index-scroll)-1 , baseX - 4,  baseY-controlCenterProgress+8+spacing*(index-scroll)-1)	
+		gfx.fillTriangle(baseX,  baseY-controlCenterProgress+spacing*(index-scroll)-circleCursorRadius, baseX+circleCursorRadius,  baseY-controlCenterProgress+8+spacing*(index-scroll)-1 , baseX - circleCursorRadius,  baseY-controlCenterProgress+8+spacing*(index-scroll)-1)	
 	end
 	if index ~= maxIndex then
-		gfx.fillTriangle(baseX,  baseY-controlCenterProgress+16+spacing*(index-scroll)+4, baseX+4,  baseY-controlCenterProgress+8+spacing*(index-scroll)+1 , baseX - 4,  baseY-controlCenterProgress+8+spacing*(index-scroll)+1)	
+		gfx.fillTriangle(baseX,  baseY-controlCenterProgress+16+spacing*(index-scroll)+circleCursorRadius, baseX+circleCursorRadius,  baseY-controlCenterProgress+8+spacing*(index-scroll)+1 , baseX - circleCursorRadius,  baseY-controlCenterProgress+8+spacing*(index-scroll)+1)	
 	end
 end

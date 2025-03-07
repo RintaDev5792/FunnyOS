@@ -16,6 +16,7 @@ local launchers = {}
 local launcherOrder = {}
 local selectedLauncher = 1
 local scroll = 1
+local lastCircleCursorRadius = 4
 
 
 -- Input handlers
@@ -124,16 +125,17 @@ end
 
 -- call this to get RECENT widget image, DO NOT MODIFY
 function widget:getWidgetImage()
-    if widget.image and not forceReload then
+    if widget.image and not forceReload and lastCircleCursorRadius == circleCursorRadius then
         return widget.image
     else
+        lastCircleCursorRadius = circleCursorRadius
         return widget:loadWidgetImage()	
     end
 end
 
 function widget:update(isActive)
     if isActive then
-        counter-=1
+        counter+=1
         widget:getWidgetImage()
     end
 end
