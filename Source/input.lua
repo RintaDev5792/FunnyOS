@@ -9,6 +9,7 @@ local keyTimer = nil
 local keyTimerInitialDelay = 300
 local keyTimerRepeatDelay = 40
 local didShortcut = false
+local scrollLeftFast = false
 
 cursorStates = {
 	SELECT_LABEL = 1, 
@@ -108,11 +109,11 @@ cursorStateInputHandlers = {
 			else
 				didShortcut = false
 				removeKeyTimer()
-				keyTimer = playdate.timer.keyRepeatTimerWithDelay(keyTimerInitialDelay,keyTimerRepeatDelay, labelSelectMoveLeft)
+				keyTimer = playdate.timer.keyRepeatTimerWithDelay(keyTimerInitialDelay,keyTimerRepeatDelay, labelSelectMoveLeft, scrollLeftFast)
 			end
 		end,
 		leftButtonUp = function()
-			removeKeyTimer()
+			removeKeyTimer(); scrollLeftFast = false
 		end,		
 		upButtonDown = function()
 			sound02SelectionReverseTrimmed:play()
@@ -666,16 +667,17 @@ function toggleControlCenter()
 	end	
 end
 
-function labelSelectMoveLeft()
+function labelSelectMoveLeft(fast)
 	if indexOf(labelOrder, currentLabel) > 1 then
 		currentObject = 1
 		labels[currentLabel]["collapsed"] = configVars.autocollapselabels
 		currentLabel = labelOrder[indexOf(labelOrder, currentLabel)-1]	
 		labels[currentLabel]["collapsed"] = false
 		cursorFrame = 1
-	elseif cursorState == cursorStates.SELECT_LABEL then
+	elseif cursorState == cursorStates.SELECT_LABEL and not fast then
 		changeCursorState(cursorStates.SELECT_WIDGET)	
 	end
+	scrollLeftFast = true
 end
 
 function labelSelectMoveRight()
