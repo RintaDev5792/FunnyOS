@@ -69,6 +69,9 @@ local widgetSpacing = 20  -- Vertical space between widgets
 local widgetScrollY = 0
 local targetWidgetScrollY = 0
 
+cursorY = 0
+targetCursorY = 0
+
 function loadWidgets()
     local widgetsPath = "/Shared/FunnyOS2/Widgets/"
     print("Loading widgets from: " .. widgetsPath)
@@ -725,14 +728,28 @@ function drawActions()
 end
 
 function drawCircleCursor(baseX, baseY, spacing, index, maxIndex, scroll)
-	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
-	gfx.fillCircleAtPoint(baseX, baseY-controlCenterProgress+8+spacing*(index-scroll), 4)
-	if index ~= 1 then
-		gfx.fillTriangle(baseX,  baseY-controlCenterProgress+spacing*(index-scroll)-4, baseX+4,  baseY-controlCenterProgress+8+spacing*(index-scroll)-1 , baseX - 4,  baseY-controlCenterProgress+8+spacing*(index-scroll)-1)	
-	end
-	if index ~= maxIndex then
-		gfx.fillTriangle(baseX,  baseY-controlCenterProgress+16+spacing*(index-scroll)+4, baseX+4,  baseY-controlCenterProgress+8+spacing*(index-scroll)+1 , baseX - 4,  baseY-controlCenterProgress+8+spacing*(index-scroll)+1)	
-	end
+    gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
+    
+    targetCursorY = baseY-controlCenterProgress+8+spacing*(index-scroll)
+    
+    cursorY = lerpFloored(cursorY, targetCursorY, snappiness)
+    
+    gfx.fillCircleAtPoint(baseX, cursorY, 4)
+    
+    if index ~= 1 then
+        gfx.fillTriangle(
+            baseX, cursorY-12, 
+            baseX+4, cursorY-5,
+            baseX-4, cursorY-5
+        )
+    end
+    if index ~= maxIndex then
+        gfx.fillTriangle(
+            baseX, cursorY+12,
+            baseX+4, cursorY+5,
+            baseX-4, cursorY+5
+        )
+    end
 end
 
 function OpenApp(bundleId)
