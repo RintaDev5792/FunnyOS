@@ -950,14 +950,14 @@ function doActionsMenuAction(name)
 		alphabetSortLabels()
 		saveLabelOrder()
 	elseif name == "Reset FunnyOS 2" then
-		createInfoPopup("Warning", "*This cannot be reversed. Pressing *"..buttons.A.."* on this prompt will erase your customizaion settings and label setups. Your custom assets in the shared folder will not be deleted.", true, function()
+		createInfoPopup("Warning", "*This cannot be reversed. This prompt will erase your customizaion settings and label setups. Your custom assets in the shared folder will not be deleted.", true, function()
 			fle.delete(savePath.."funnyConfig.json")
 			fle.delete(savePath.."labelOrder.json")
 			if fle.isdir(savePath.."Labels") then
 				fle.delete(savePath.."Labels", true)
 			end
-			local path = funnyOSMetadata.path
-			sys.switchToGame(path)
+			sys.switchToLauncher()
+			
 		end
 		)
 	end	
