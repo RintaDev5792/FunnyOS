@@ -32,7 +32,8 @@ Video tutorial available [here](https://www.youtube.com/watch?v=L6Q6Tsoksgg) for
 1. Name all of the .pdx files in /System/Launchers how you want them to show up in the FunnyLoader list
 
 #### After organizing your PlaydateOS folder according to either of the previous sections
-1. Re-zip the PlaydateOS folder, if on macos open a terminal in the folder (not in System, in the root) and run "zip -r ../PlaydateOS-Patched.zip ."
+1. Re-zip the PlaydateOS folder so that everything in the folder is at the ROOT of your zip.
+1. For example: if on macos open a terminal in the folder (not in System, in the root) and run "zip -r ../PlaydateOS-Patched.zip .", if on Windows go into your folder, press ctrl+a, and then compress the files instead of the folder.
 1. Rename your NEW zip to a .pdos
 1. Download [Playdate Utility](https://download-cdn.panic.com/playdate_utility/)
 1. Open Playdate Utility, and plug in your Playdate to your computer
