@@ -89,7 +89,7 @@ function getGameObject(bundleID)
 	for i,v in ipairs(groups) do
 		if v.name == gameInfo[bundleID].group then
 			for j, w in ipairs(v) do
-				if w:getBundleID() == bundleID then return w end	
+				if betterGetBundleID(w) == bundleID then return w end	
 			end
 		end
 	end	
@@ -163,7 +163,7 @@ function launchRandomGame()
 		if v.name ~= "System" then
 			for j,w in ipairs(v) do
 				local cwpassed = w:getSuppressContentWarning()
-				if not gameInfo[w:getBundleID()].contentwarning then cwpassed = true end
+				if not gameInfo[betterGetBundleID(w)].contentwarning then cwpassed = true end
 				if w:getInstalledState() == kPDGameStateInstalled and cwpassed then
 					table.insert(possibleGames, w)
 				end
@@ -171,7 +171,7 @@ function launchRandomGame()
 		end	
 	end
 	local game = possibleGames[math.random(1, #possibleGames)]
-	openApp(game:getBundleID())
+	openApp(betterGetBundleID(game))
 end
 
 function loadBadges()
@@ -215,6 +215,29 @@ function alphabetSortWidgets()
 	end
 end
 
+function betterGetBundleID(game)
+	if not game then return nil end
+	if game:getBundleID() then return game:getBundleID() end
+	local path
+	if not game:getPath() then return nil else path = game:getPath().."/pdxinfo" end
+	local file = fle.open(path)
+	if not file then return nil end
+	local line = file:readline()
+	while line ~= nil and line:sub(1,8) ~= "bundleID" do 
+		line = file:readline()
+	end
+	if not line then return nil end
+	local index = nil
+	for i=1,#line do
+		local char = line:sub(i,i)
+		if i > 8 and char ~= " " and char ~= "=" then
+			index=i; break
+		end
+	end
+	if not index then return nil end
+	return line:sub(index,#line)
+end
+
 function setupGameInfo()
 	sys.updateGameList()
 	gameInfo = {}
@@ -223,8 +246,10 @@ function setupGameInfo()
 		for j,v2 in ipairs(v) do
 			if gme.getPath(v2) then
 				local gamePath = gme.getPath(v2)
-				if gme.getBundleID(v2) then
-					local props = playdate.system.getMetadata(gamePath .. "/pdxinfo")
+				local props = playdate.system.getMetadata(gamePath .. "/pdxinfo")
+				local bid = betterGetBundleID(v2)
+				if bid then
+					
 					local newprops = {}
 					for k,v in pairs(props) do
 						newprops[string.lower(k)] = v
@@ -252,7 +277,8 @@ function setupGameInfo()
 
 					props["group"] = v.name
 					props["suppresscontentwarning"] = v2:getSuppressContentWarning()
-					gameInfo[gme.getBundleID(v2)] = props
+					props["bundleid"] = bid
+					gameInfo[bid] = props
 				end
 			else
 				return false
@@ -355,13 +381,13 @@ function setupGameInfo()
 end
 
 function placeObjectAtEmpty(objectData, label)
-	local foundEmpty = false
 	local index = nil				
 	if labels[label] == nil then labels[label] = {["displayName"] = label, ["rows"] = 3, ["objects"] = {}, ["collapsed"] = false} end
 
 	for i, data in ipairs(labels[label].objects) do
-		if data.bundleid == ".empty" and not foundEmpty then
+		if data.bundleid == ".empty" then
 			index = i
+			break
 		end
 	end
 -- if there's an empty space, put it there, otherwise put it at the end.
@@ -433,7 +459,7 @@ function gameIsFreshlyInstalled(bundleID, set)
 		if v.name == gameInfo[bundleID]["group"] then
 			gameGroup = i
 			for j,v2 in ipairs(v) do
-				if v2:getBundleID() == bundleID then
+				if betterGetBundleID(v2) == bundleID then
 					gameIndex = j
 					break
 				end

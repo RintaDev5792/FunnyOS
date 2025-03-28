@@ -331,7 +331,7 @@ function drawLabelBackgrounds()
 		gfx.setColor(invertedColors[configVars["invertlabels"]])
 		gfx.setDitherPattern(configVars.labeldither)
 		local label = labels[v]
-		w = labelTextSize*3 + ((1+#label["objects"]/label["rows"])//1)*(objectSizes[label["rows"]] + objectSpacings[label["rows"]]) - objectSpacings[label["rows"]] -6 + (configVars.cornerradius/2)//1
+		w = labelTextSize*3 + ((#label["objects"]/label["rows"])//1)*(objectSizes[label["rows"]] + objectSpacings[label["rows"]]) - objectSpacings[label["rows"]] -6 + (configVars.cornerradius/2)//1
 		if labels[v]["collapsed"] then
 			w = labelTextSize*2	
 		end
@@ -573,9 +573,11 @@ function drawSystemInfo()
 	gfx.setImageDrawMode(invertedDrawModes[configVars.invertcc])
 	
 	funnyIconImg:drawScaled(180, 256-controlCenterProgress, 4)
-	local freeSpace = playdate.system.getFreeDiskSpace()
-	local totalSpace = playdate.system.getTotalDiskSpace()
-	local storagePercent = (totalSpace-freeSpace)/totalSpace
+	if not freeStorage or not totalStorage then
+		freeStorage = playdate.system.getFreeDiskSpace()
+		totalStorage = playdate.system.getTotalDiskSpace()	
+	end
+	local storagePercent = (totalStorage-freeStorage)/totalStorage
 	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 	gfx.setPattern({ 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa })
 	gfx.fillRoundRect(180, 420-controlCenterProgress, 226-24, 20, configVars.cornerradius)
@@ -583,8 +585,8 @@ function drawSystemInfo()
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillRoundRect(180, 420-controlCenterProgress, ((226-24)*storagePercent)//1, 20, configVars.cornerradius)
 	
-	local filledGB = readableBytes(totalSpace-freeSpace, 2)
-	local totalGB = readableBytes(totalSpace, 2)
+	local filledGB = readableBytes(totalStorage-freeStorage, 2)
+	local totalGB = readableBytes(totalStorage, 2)
 	
 	gfx.drawText("*" ..filledGB.. " of " .. totalGB.. " full*", 180, 400-controlCenterProgress)
 	

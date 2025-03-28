@@ -36,6 +36,7 @@ widgetIsActive = false
 
 objectSizes = {[3] = 68, [6] = 34}
 objectSpacings = {[3] = 4, [6] = 2}
+storage, freeStorage = nil, nil
 local homeRows = 3
 
 local firstUpdate = true
@@ -109,6 +110,7 @@ configVarDefaults = {
 	["autocollapselabels"] = false,
 	["transwrapped"] = true,
 	["hidewrapped"] = true,
+	["sysinfoonboot"] = false,
 }
 
 configVarOptions = {
@@ -134,6 +136,7 @@ configVarOptions = {
 	["autocollapselabels"] =  {["name"] = "Auto-Close Labels", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["transwrapped"] =  {["name"] = "Clear Icon Wrap", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["hidewrapped"] =  {["name"] = "Hide New Names", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["sysinfoonboot"] =  {["name"] = "Get Sysinfo on Boot", ["values"] = {true, false}, ["type"] = "BOOL"},
 }
 
 configVarOptionsOrder = {
@@ -158,6 +161,7 @@ configVarOptionsOrder = {
 	"skipcard",
 	"transwrapped",
 	"hidewrapped",
+	"sysinfoonboot",
 }
 
 
@@ -430,7 +434,10 @@ function main()
 	loadConfig()
 	dirSetup()
 	playdate.setAutoLockDisabled(false)
-	loadingImg:draw(0,0)
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+	if loadingImg then
+		loadingImg:draw(0,0)
+	end
 	playdate.display.setRefreshRate(50)
 	playdate.display.flush()
 	changeCursorState(cursorStates.SELECT_LABEL)
@@ -445,9 +452,15 @@ function main()
 	
 	math.randomseed(playdate.getSecondsSinceEpoch())
 	
-	gfx.clear()
-	setupGameInfo()
 	
+	-- give it a tad
+	coroutine.yield()
+	
+	setupGameInfo()
+	if configVars.sysinfoonboot then
+		freeStorage = playdate.system.getFreeDiskSpace()
+		totalStorage = playdate.system.getTotalDiskSpace()		
+	end
 	
 	local menu = playdate.getSystemMenu()
 	menu:removeAllMenuItems()
