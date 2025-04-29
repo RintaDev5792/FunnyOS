@@ -10,8 +10,9 @@ import("system")
 -- fishing rod is crank
 gfx = playdate.graphics
 
+local incFrame = 0
 redrawFrame = true
-defaultRedrawFrame = true
+defaultRedrawFrame = false
 saveFrame = false
 
 buttons = {
@@ -53,26 +54,27 @@ circleCursorRadius = 4
 widgetsScreenWidth = 240
 widgetWidth, widgetHeight = 200, 200
 
+local lastScrollX = 0
 scrollX = 0
-controlCenterProgress, maxControlCenterProgress, controlCenterState = 0, 224, 0 -- 0 close 1 closing 2 opening 3 open
+controlCenterProgress, maxControlCenterProgress, controlCenterState = 0, 222, 0 -- 0 close 1 closing 2 opening 3 open
 
 cursorFrame = 1
 lastObjectCursorDrawX = 0
 
-invertedColors = {[true] = gfx.kColorWhite, [false] = gfx.kColorBlack}
-invertedDrawModes = {[true] = gfx.kDrawModeInverted, [false] = gfx.kDrawModeCopy}
-invertedFillDrawModes = {[true] = gfx.kDrawModeFillWhite, [false] = gfx.kDrawModeFillBlack}
+invertedColors = {[true] = playdate.graphics.kColorWhite, [false] = playdate.graphics.kColorBlack}
+invertedDrawModes = {[true] = playdate.graphics.kDrawModeInverted, [false] = playdate.graphics.kDrawModeCopy}
+invertedFillDrawModes = {[true] = playdate.graphics.kDrawModeFillWhite, [false] = playdate.graphics.kDrawModeFillBlack}
 -- Vertical space between widgets
 widgetScroll = 0
 
 function drawRoutine()
-	gfx.clear(gfx.kColorWhite)
-	gfx.clear(gfx.kColorWhite)
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	snappiness = defaultSnappiness*(20/playdate.getFPS())
 	if snappiness < 0.1 then snappiness = defaultSnappiness*(20/playdate.display.getRefreshRate()) end
 	
 	if redrawFrame then
+		incFrame+=1
+		gfx.clear(gfx.kColorWhite)
 		if saveFrame then
 			iconsImg = gfx.image.new(400,240,gfx.kColorWhite)
 			gfx.pushContext(iconsImg)
@@ -86,7 +88,6 @@ function drawRoutine()
 		end 
 		drawLabelBackgrounds()
 		drawIcons()
-		processAndDrawWidgets()
 		
 		if saveFrame then
 			gfx.popContext()
@@ -97,13 +98,19 @@ function drawRoutine()
 	
 	if iconsImg and ((not redrawFrame) or saveFrame) then iconsImg:draw(0,0) end
 	saveFrame = false
+	processAndDrawWidgets()
 	
+	lastScrollX = scrollX
 	processDrawChanges()
 	doScrolling()
 	--always last
 	local yOffset = 0
 	if scrollX > 0 then
 		yOffset = (scrollX/(widgetsScreenWidth/bottomBarHeight)+1)//1
+	end
+	
+	if scrollX//1 ~= lastScrollX//1 then
+		redrawFrame = true	
 	end
 	drawBottomBar(yOffset)
 	if cursorState == cursorStates.INFO_POPUP then
@@ -207,7 +214,7 @@ function doScrolling()
 	if labels[currentLabel]["drawX"] ~= labelSpacing and cursorState == cursorStates.SELECT_LABEL then
 		scrollX = lerpFloored(scrollX,scrollX-labels[currentLabel]["drawX"]+labelSpacing,snappiness)
 	end
-	if cursorState == cursorStates.SELECT_WIDGET then
+	if cursorState == cursorStates.SELECT_WIDGET and scrollX < widgetsScreenWidth-5 then
 		scrollX = lerpFloored(scrollX, widgetsScreenWidth, snappiness)	
 	end
 	local objectTotalSize = objectSizes[labels[currentLabel].rows]+objectSpacings[labels[currentLabel].rows]
@@ -305,7 +312,8 @@ end
 
 function processDrawChanges()
 	if controlCenterState == 1 then
-		controlCenterProgress = lerp(controlCenterProgress,  0, snappiness)//1
+		controlCenterProgress = lerpFloored(controlCenterProgress,  0, snappiness)//1
+		redrawFrame = true
 		if controlCenterProgress < 2 then 
 			controlCenterProgress = 0
 			controlCenterState = 0
@@ -315,8 +323,10 @@ function processDrawChanges()
 		end
 	end
 	if controlCenterState == 2 then
-		controlCenterProgress = lerp(controlCenterProgress,  maxControlCenterProgress, snappiness)//1
-		if controlCenterProgress > maxControlCenterProgress-2 then 
+		controlCenterProgress = lerpCeiled(controlCenterProgress,  maxControlCenterProgress, snappiness)
+		redrawFrame = true
+		print("2")
+		if controlCenterProgress > maxControlCenterProgress-3 then 
 			controlCenterProgress = maxControlCenterProgress
 			controlCenterState = 3  
 		end
@@ -435,6 +445,8 @@ function drawBottomBar(yOffset)
 	gfx.fillRoundRect(-1,240-bottomBarHeight-controlCenterProgress+yOffset,402,bottomBarHeight*3+controlCenterProgress,configVars["cornerradius"])
 	if controlCenterState ~= 0 then
 		--backgrounds
+		
+		
 		--right text
 		gfx.setColor(color)
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
@@ -538,6 +550,8 @@ function drawControlCenterMenu()
 		drawRecentlyPlayed()
 	elseif controlCenterMenuItem == "Actions Menu" then
 		drawActions()
+	elseif controlCenterMenuItem == "Package Installer" then
+		drawPackageInstallerMenu()
 	else
 		drawComingSoon()	
 	end
@@ -606,6 +620,10 @@ function drawRecentlyPlayed()
 	for i,v in pairs(recentlyPlayed) do
 		local y = 245-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
 		if y < 440-controlCenterProgress and y > 245-controlCenterProgress then
+			local invertedFillDrawModes = invertedFillDrawModes
+			if not invertedFillDrawModes then 
+				invertedFillDrawModes = {[true] = playdate.graphics.kDrawModeFillWhite, [false] = playdate.graphics.kDrawModeFillBlack}
+			end
 			gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
 			gfx.drawText("*"..gameInfo[v].name.."*", 190, y-8)
 			gfx.setImageDrawMode(invertedDrawModes[configVars.invertcc])
@@ -655,6 +673,29 @@ function drawActions()
 		controlCenterInfoScroll -=1
 	end
 	for i,v in ipairs(actionsMenuItems) do
+		if v then
+			local y = 240-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
+			if y < 440-controlCenterProgress and y > 240-controlCenterProgress then
+				gfx.drawText("*"..v.."*", 190, y)
+			end
+		end
+	end
+	if cursorState == cursorStates.CONTROL_CENTER_CONTENT then
+		drawCircleCursor(179, 240, ccOptionsSpacing, controlCenterInfoSelection, controlCenterInfoMaxSelection, controlCenterInfoScroll)
+	end
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+end
+
+function drawPackageInstallerMenu()
+	gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
+	local ccOptionsSpacing = 20
+	if controlCenterInfoSelection-controlCenterInfoScroll > 9 then
+		controlCenterInfoScroll +=1
+	end
+	if controlCenterInfoSelection-controlCenterInfoScroll < 1 then
+		controlCenterInfoScroll -=1
+	end
+	for i,v in ipairs(packageInstallerMenuItems) do
 		if v then
 			local y = 240-controlCenterProgress + ccOptionsSpacing*(i-controlCenterInfoScroll)
 			if y < 440-controlCenterProgress and y > 240-controlCenterProgress then

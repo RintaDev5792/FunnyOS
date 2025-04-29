@@ -3,6 +3,8 @@ import("CoreLibs/keyboard")
 import("CoreLibs/timer")
 import("CoreLibs/object")
 import("utils")
+import("unzip")
+import("reap")
 
 defaultListIcon = playdate.graphics.image.new("images/list_icon_default")
 gameInfo, groups, sortedGameInfo = nil, nil, nil
@@ -34,12 +36,90 @@ season1 = {
 	"net.stfj.snak"
 }
 
+local reaping = false
+local reaper = nil
+
 local kPDGameStateFreshlyInstalled, kPDGameStateInstalled
 if playdate.system ~= nil then
 	kPDGameStateFreshlyInstalled = playdate.system.game.kPDGameStateFreshlyInstalled
 	kPDGameStateInstalled = playdate.system.game.kPDGameStateInstalled
 end
 
+function reapPackage(zipPath,destinationPath)
+	playdate.inputHandlers.push(blockInputHandler)
+	if destinationPath then fle.mkdir(destinationPath) end
+	if not fle.exists(zipPath) then createInfoPopup("Action Failed", "*Invalid file path, please try again.", false); return end
+	reaper = Reap(zipPath,destinationPath)
+	reaping = true
+end
+
+local function drawReapProgress()
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+	gfx.setColor(gfx.kColorWhite)	
+	local w,h = 400-labelSpacing*10, 240-labelSpacing*14
+	local oldFont = gfx.getFont(gfx.font.kVariantNormal)
+	gfx.setFont(gfx.getLargeUIFont())
+	local textWidth, textHeight = gfx.getTextSize("HI")
+	gfx.setFont(oldFont)
+	local x,y = (200-w/2)//1, (120-h/2)//1
+	gfx.fillRoundRect(x,y , w, h, configVars.cornerradius)
+	gfx.setColor(gfx.kColorBlack)
+	gfx.setLineWidth(configVars.linewidth)
+	gfx.drawRoundRect(x,y , w, h, configVars.cornerradius)
+	gfx.setPattern({170,170,170,170,170,170,170,170})
+	local img = gfx.image.new(w-labelSpacing*2,32,gfx.kColorWhite)
+	gfx.pushContext(img)
+	gfx.fillRoundRect(0,0, (w-labelSpacing*2), 32, configVars.cornerradius*100)
+	gfx.popContext()
+	local mimg = gfx.image.new(w-labelSpacing*2,32,gfx.kColorBlack)
+	gfx.pushContext(mimg)
+	gfx.setDitherPattern(0)
+	gfx.setColor(gfx.kColorWhite)
+	gfx.fillRect(0, 0, ((w-labelSpacing*2)*reaper:getPercentComplete()/100)//1, 32)
+	gfx.popContext(mimg)
+	img:setMaskImage(mimg)
+	img:draw(x+labelSpacing,y+h-labelSpacing-32 )
+	gfx.setDitherPattern(0)
+	gfx.drawRoundRect(x+labelSpacing,y+h-labelSpacing-32 , w-labelSpacing*2, 32, configVars.cornerradius*100)
+	gfx.getLargeUIFont():drawTextAligned("Installing...", 200, y+labelSpacing,kTextAlignment.center)
+end
+
+function updateReap()
+	if reaping and reaper then
+		local done, err = reaper:update()
+		drawReapProgress()
+		print(err)
+		if err then 
+			reaper = nil
+			reaping = false
+			createInfoPopup("Action Failed", "*An error was encountered while unzipping. Please verify the integrity of your files.\n\nError: "..tostring(err), false)
+			playdate.inputHandlers.pop()
+			return
+		end
+		if done then
+			reaper = nil
+			reaping = false
+			playdate.inputHandlers.pop()
+		createInfoPopup("Action Succeeded", "*The package has been successfully installed and the system will now restart the launcher.", false, function()
+				sys.switchToLauncher()
+			end
+			)
+		end
+	end	
+end
+
+function installPackage(zipPath,destinationPath)
+	if unzip(zipPath,destinationPath) then
+		createInfoPopup("Action Succeeded", "*The package has been successfully installed and the system will now restart the launcher.", false, function()
+			sys.switchToLauncher()
+		end
+		)
+	else
+		createInfoPopup("Action Failed", "*An error was encountered while unzipping. Please verify the integrity of your files.", false)
+		printTable(sys)
+		
+	end
+end
 
 function openApp(bundleId)
 	if bundleId and gameInfo[bundleId] then

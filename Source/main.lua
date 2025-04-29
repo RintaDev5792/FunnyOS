@@ -19,6 +19,8 @@ heldObject = nil
 heldObjectOriginIndex = 1
 heldObjectOriginLabel = ""
 
+targetFPS = 40
+
 tempVars = {}
 
 iconsCache = {}
@@ -172,6 +174,7 @@ controlCenterMenuItems = {
 	"Badges Menu",
 	"FunnyOS Options",
 	"Screenshots",
+	"Package Installer",
 	"System Info"
 }
 
@@ -180,6 +183,11 @@ actionsMenuItems = {
 	"Alphabet Sort Objects",
 	"Alphabet Sort Labels",
 	"Reset FunnyOS 2",
+}
+
+packageInstallerMenuItems = {
+	"Check for Updates",
+	"Install Package",
 }
 
 configVars = configVarDefaults
@@ -207,6 +215,7 @@ end
 
 function changeCursorState(state)
 	cursorState = state
+	redrawFrame = true
 	while #playdate.inputHandlers > 1 do
 		playdate.inputHandlers.pop()
 	end
@@ -333,6 +342,7 @@ function dirSetup()
 	fle.mkdir(savePath .. "Badges")
 	fle.mkdir(savePath .. "Widgets")
 	fle.mkdir(savePath .. "Labels")
+	fle.mkdir(savePath .. "Package")
 	loadImgs()
 end
 
@@ -345,12 +355,13 @@ function playdate.deviceWillUnlock()
 end
 
 function playdate.keyboard.keyboardAnimatingCallback()
-	
+	redrawFrame = true
 end
 
 function playdate.keyboard.keyboardDidHideCallback()
 	if cursorState == cursorStates.RENAME_LABEL then
 		changeCursorState(cursorStates.SELECT_LABEL)	
+		redrawFrame = true
 	end
 end
 
@@ -407,6 +418,8 @@ function playdate.update()
 		dumpGlobals()
 		dumpFrame = false
 	end
+	
+	updateReap()
 end
 
 function loadMusic()
@@ -438,7 +451,7 @@ function main()
 	if loadingImg then
 		loadingImg:draw(0,0)
 	end
-	playdate.display.setRefreshRate(50)
+	playdate.display.setRefreshRate(targetFPS)
 	playdate.display.flush()
 	changeCursorState(cursorStates.SELECT_LABEL)
 	loadWidgets()

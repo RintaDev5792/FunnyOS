@@ -22,7 +22,7 @@ cursorStates = {
 	CONTROL_CENTER_MENU = 8, 
 	CONTROL_CENTER_CONTENT = 9, 
 	INFO_POPUP = 10,
-	SELECT_WIDGET = 11
+	SELECT_WIDGET = 11,
 }
 
 blockInputHandler = {
@@ -394,6 +394,11 @@ cursorStateInputHandlers = {
 					controlCenterInfoScroll = 0
 					controlCenterInfoSelection = 1
 					controlCenterInfoMaxSelection = #recentlyPlayed
+				elseif selected == "Package Installer" then
+					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
+					controlCenterInfoScroll = 0
+					controlCenterInfoSelection = 1
+					controlCenterInfoMaxSelection = #packageInstallerMenuItems
 				elseif selected == "Actions Menu" then
 					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
 					controlCenterInfoScroll = 0
@@ -473,6 +478,9 @@ cursorStateInputHandlers = {
 				end
 				if selected == "Actions Menu" then
 					doActionsMenuAction(actionsMenuItems[controlCenterInfoSelection])
+				end
+				if selected == "Package Installer" then
+					doPackageInstallerAction(packageInstallerMenuItems[controlCenterInfoSelection])
 				end
 			end
 			delaySetNoShortcut()
@@ -641,12 +649,14 @@ function removeEmptyObject(index,label)
 	end
 	fillLabelEndWithEmpty(label, true)
 	saveLabel(label)
+	redrawFrame = true
 end
 
 function insertEmptyObject(index, label)
 	table.insert(labels[label].objects, index, emptyObject)	
 	fillLabelEndWithEmpty(label, false)	
 	saveLabel(label)
+	redrawFrame = true
 end
 
 function toggleControlCenter()
@@ -657,12 +667,10 @@ function toggleControlCenter()
 		controlCenterMenuSelection = 1
 		controlCenterInfoScroll = 0
 		redrawFrame = true
-		defaultRedrawFrame = false
-		saveFrame = true
+		--saveFrame = true
 		changeCursorState(cursorStates.CONTROL_CENTER_MENU)
 	elseif controlCenterState == 3 or controlCenterState == 2 then
 		redrawFrame = true
-		defaultRedrawFrame = true
 		controlCenterState = 1
 	end	
 end
@@ -674,6 +682,7 @@ function labelSelectMoveLeft(fast)
 		currentLabel = labelOrder[indexOf(labelOrder, currentLabel)-1]	
 		labels[currentLabel]["collapsed"] = false
 		cursorFrame = 1
+		redrawFrame = true
 	elseif cursorState == cursorStates.SELECT_LABEL and not fast then
 		changeCursorState(cursorStates.SELECT_WIDGET)	
 	end
@@ -687,6 +696,7 @@ function labelSelectMoveRight()
 		currentLabel = labelOrder[indexOf(labelOrder, currentLabel)+1]	
 		labels[currentLabel]["collapsed"] = false
 		cursorFrame = 1
+		redrawFrame = true
 	end
 end
 
@@ -708,6 +718,7 @@ function objectSelectMoveLeft()
 			iconsCache[heldObject.bundleid] = nil	
 		end
 	end
+	redrawFrame = true
 end
 
 function objectSelectMoveRight()
@@ -728,18 +739,21 @@ function objectSelectMoveRight()
 			iconsCache[heldObject.bundleid] = nil	
 		end
 	end
+	redrawFrame = true
 end
 
 function objectSelectMoveDown()
 	if currentObject < #labels[currentLabel].objects then
 		currentObject+=1
 	end
+	redrawFrame = true
 end
 
 function objectSelectMoveUp()
 	if currentObject > 1 then
 		currentObject-=1
 	end
+	redrawFrame = true
 end
 
 function moveLabelLeft(label)
@@ -749,6 +763,7 @@ function moveLabelLeft(label)
 		table.insert(labelOrder, oldIndex - 1, label)
 	end	
 	saveLabelOrder()
+	redrawFrame = true
 end
 
 function moveLabelRight(label)
@@ -758,6 +773,7 @@ function moveLabelRight(label)
 		table.insert(labelOrder, oldIndex + 1, label)
 	end	
 	saveLabelOrder()
+	redrawFrame = true
 end
 
 function changeCurrentLabelScale()
@@ -769,7 +785,10 @@ function changeCurrentLabelScale()
 	for i, objectData in ipairs(labels[currentLabel].objects) do
 		iconsCache[objectData.bundleid] = nil
 	end
+	fillLabelEndWithEmpty(currentLabel, true)
+
 	saveLabel(currentLabel)
+	redrawFrame = true
 end
 
 function delaySetNoShortcut()
@@ -807,6 +826,7 @@ function removeLabel(label)
 		end
 	end
 	saveLabelOrder()
+	redrawFrame = true
 end
 
 function addLabel(afterLabel, name)
@@ -820,6 +840,7 @@ function addLabel(afterLabel, name)
 	saveLabel(name)
 	saveLabelOrder()
 	changeCursorState(cursorStates.RENAME_LABEL)
+	redrawFrame = true
 end
 
 
@@ -847,6 +868,7 @@ function placeHeldObject(index, label, swap)
 	if label ~= heldObjectOriginLabel then
 		saveLabel(heldObjectOriginLabel)
 	end
+	redrawFrame = true
 end
 
 function grabObject(label, index) 
@@ -857,6 +879,7 @@ function grabObject(label, index)
 		labels[label].objects[index] = emptyObject
 		changeCursorState(cursorStates.MOVE_OBJECT)
 	end
+	redrawFrame = true
 end
 
 function removeKeyTimer()
@@ -938,7 +961,8 @@ function incrementOptionsValue(selection)
 		iconsCache = {}	
 	end
 	redrawFrame = true
-	saveFrame = true
+	print("OPR")
+	--saveFrame = true
 	saveConfig()
 end
 
@@ -962,5 +986,24 @@ function doActionsMenuAction(name)
 			
 		end
 		)
+	end	
+end
+
+function doPackageInstallerAction(name) 
+	if name == "Check for Updates" then
+		createInfoPopup("Action Failed", "*This item has not been implemented yet as PlaydateOS 2.7 has not officially released.",false)
+	elseif name == "Install Package" then
+		if fle.exists(savePath.."Package/Package.zip") and fle.exists(savePath.."Package/Destination.txt") then
+			createInfoPopup("Confirm Action", "*Please confirm that you wish to install Package.zip to the path in Destination.txt. This will replace any files already at that path.",true,function()
+				local destTxt = fle.open(savePath.."Package/Destination.txt")
+				local destination = destTxt:readline()
+				--installPackage(savePath.."Package/Package.zip", destination)
+				reapPackage(savePath.."Package/Package.zip", destination)
+			end
+			)
+		else
+			print("HI")
+			createInfoPopup("Action Failed", "*Valid Package files not found. Please place a \"Package.zip\" file as well as a \"Destination.txt\" file with a destination path for your package in "..savePath.."Package/",false)
+		end
 	end	
 end

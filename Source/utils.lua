@@ -12,7 +12,9 @@ sys = playdate.system
 
 lerp = playdate.math.lerp
 
-
+invertedColors = {[true] = playdate.graphics.kColorWhite, [false] = playdate.graphics.kColorBlack}
+invertedDrawModes = {[true] = playdate.graphics.kDrawModeInverted, [false] = playdate.graphics.kDrawModeCopy}
+invertedFillDrawModes = {[true] = playdate.graphics.kDrawModeFillWhite, [false] = playdate.graphics.kDrawModeFillBlack}
 
 if sys ~= nil then
 	gme = playdate.system.game
@@ -216,6 +218,12 @@ end
 
 function lerpFloored(a, b, t) 
 	local v =  (a * (1 - t) + b * t) // 1
+	if v ~= v then return 0 else return v end 
+end
+
+function lerpCeiled(a, b, t) 
+	local v =  (a * (1 - t) + b * t) 
+	v = -(-v//1)
 	if v ~= v then return 0 else return v end 
 end
 
