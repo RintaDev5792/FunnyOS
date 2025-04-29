@@ -21,9 +21,9 @@ local function stringsplit(inputstr, sep)
   return t
 end
 
-local function bytes_to_int(str, endian, signed) -- from https://stackoverflow.com/questions/5241799/lua-dealing-with-non-ascii-byte-streams-byteorder-change
+local function bytes_to_int(str, endian) -- from https://stackoverflow.com/questions/5241799/lua-dealing-with-non-ascii-byte-streams-byteorder-change
   local t = { str:byte(1, -1) }
-  if endian == "big" then
+  if endian ~= "big" then
     local tt = {}
     for k = 1, #t do
       tt[#t - k + 1] = t[k]
@@ -32,10 +32,7 @@ local function bytes_to_int(str, endian, signed) -- from https://stackoverflow.c
   end
   local n = 0
   for k = 1, #t do
-    n = n + t[k] * 2 ^ ((k - 1) * 8)
-  end
-  if signed then
-    n = (n > 2 ^ (#t * 8 - 1) - 1) and (n - 2 ^ (#t * 8)) or n
+    n = (n << 8) | t[k]
   end
   return n
 end

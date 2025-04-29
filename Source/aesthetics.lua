@@ -131,7 +131,7 @@ function processAndDrawWidgets()
 		gfx.fillRect(x, 0, widgetsScreenWidth, 240)
 	
 		-- Update widget scroll position with lerp
-		widgetScroll = lerp(widgetScroll, -(currentWidget-1)*(widgetHeight + widgetSpacing), snappiness)//1
+		widgetScroll = lerpMaxed(widgetScroll, -(currentWidget-1)*(widgetHeight + widgetSpacing), snappiness)
 	
 		-- Draw all widgets in a vertical list
 		for i, widget in ipairs(widgets) do
@@ -212,16 +212,16 @@ end
 
 function doScrolling()
 	if labels[currentLabel]["drawX"] ~= labelSpacing and cursorState == cursorStates.SELECT_LABEL then
-		scrollX = lerpFloored(scrollX,scrollX-labels[currentLabel]["drawX"]+labelSpacing,snappiness)
+		scrollX = lerpMaxed(scrollX,scrollX-labels[currentLabel]["drawX"]+labelSpacing,snappiness)
 	end
 	if cursorState == cursorStates.SELECT_WIDGET and scrollX < widgetsScreenWidth-5 then
-		scrollX = lerpFloored(scrollX, widgetsScreenWidth, snappiness)	
+		scrollX = lerpMaxed(scrollX, widgetsScreenWidth, snappiness)	
 	end
 	local objectTotalSize = objectSizes[labels[currentLabel].rows]+objectSpacings[labels[currentLabel].rows]
 	if (lastObjectCursorDrawX > 400-objectTotalSize-labelSpacing) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
-		scrollX = lerpFloored(scrollX,scrollX-(lastObjectCursorDrawX-400)-objectTotalSize-labelSpacing,snappiness)
+		scrollX = lerpMaxed(scrollX,scrollX-(lastObjectCursorDrawX-400)-objectTotalSize-labelSpacing,snappiness)
 	elseif ((lastObjectCursorDrawX < labelSpacing)or (lastObjectCursorDrawX < labelSpacing+labelTextSize*2 and currentObject <= labels[currentLabel].rows)) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
-		scrollX = lerpFloored(scrollX,scrollX-lastObjectCursorDrawX+labelSpacing+labelTextSize*2,snappiness)
+		scrollX = lerpMaxed(scrollX,scrollX-lastObjectCursorDrawX+labelSpacing+labelTextSize*2,snappiness)
 	end
 end
 
