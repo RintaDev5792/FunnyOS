@@ -31,6 +31,8 @@ recentlyPlayed = {}
 
 labels = {}
 labelOrder = {}
+labelsCache = {}
+iconGridCache = {}
 
 badges = {}
 
@@ -299,6 +301,7 @@ function saveLabelOrder()
 end
 
 function saveLabel(label)
+	labelsCache[label] = nil
 	das.write(labels[label],savePath.."Labels/"..label)
 end
 
@@ -370,13 +373,13 @@ end
 function playdate.keyboard.keyboardWillHideCallback(pressedOK)
 	if cursorState == cursorStates.RENAME_LABEL then
 		if pressedOK then
+			if key.text == currentLabel then return end
 			if labels[key.text] then
 				stopAllSounds()
 				sound04DenialTrimmed:play()
 				createInfoPopup("Action Failed", "*A label cannot be created with the same name as an existing label.*", false)
 				return
-			end
-			--set displayname, labels[key], labelOrder, filename (delete old)
+			end			--set displayname, labels[key], labelOrder, filename (delete old)
 			local oldLabelName = currentLabel
 			local newLabelName = key.text
 			fle.delete(savePath.."Labels/"..oldLabelName..".json")

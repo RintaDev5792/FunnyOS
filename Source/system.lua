@@ -88,7 +88,6 @@ function updateReap()
 	if reaping and reaper then
 		local done, err = reaper:update()
 		drawReapProgress()
-		print(err)
 		if err then 
 			reaper = nil
 			reaping = false
@@ -116,7 +115,6 @@ function installPackage(zipPath,destinationPath)
 		)
 	else
 		createInfoPopup("Action Failed", "*An error was encountered while unzipping. Please verify the integrity of your files.", false)
-		printTable(sys)
 		
 	end
 end
@@ -502,6 +500,7 @@ function fillLabelEndWithEmpty(label, removeEmptyColumns)
 						done = true
 					end
 				end
+				if #labels[label].objects%labels[label].rows == 0 then done = true end
 			end	
 			if not done then 
 				for i=1, labels[label].rows do

@@ -46,11 +46,13 @@ wrappedImgs = gfx.imagetable.new("images/trans-wrapped")
 newGame = gfx.image.new("images/newgame")
 newGameMask = gfx.image.new("images/newgame_mask")
 cursorImgs = {gfx.imagetable.new("images/cursor-1"),gfx.imagetable.new("images/cursor-2")}
+behindCursorImg = nil
 
+local cursorFrameDelay = 600
 labelSpacing, labelYMargin, labelTextSize = 10, 4, 15
 widgetPadding, widgetSpacing = 8, 16
 bottomBarHeight = 10 -- usually 22
-snappiness, defaultSnappiness = 0.15,0.15
+snappiness, defaultSnappiness = 0.175,0.17
 circleCursorRadius = 4
 
 widgetsScreenWidth = 240
@@ -72,14 +74,10 @@ widgetScroll = 0
 function drawRoutine()
 	snappiness=defaultSnappiness*targetFPS*delta
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-		
+	if not saveFrame then cachedScreenImg = nil end
 	if redrawFrame then
 		incFrame+=1
 		gfx.clear(gfx.kColorWhite)
-		if saveFrame then
-			cachedScreenImg = gfx.image.new(400,240,gfx.kColorWhite)
-			gfx.pushContext(cachedScreenImg)
-		end
 		
 		if bgDitherImg and configVars.bgdither ~= 1 then 
 			bgDitherImg:draw(0 ,0) 
@@ -88,16 +86,15 @@ function drawRoutine()
 			bgImg:draw(0,0) --bgImg:draw(0,0) 
 		end 
 		drawLabelBackgrounds()
-		drawIcons()
+		--drawIcons()
 		
-		if saveFrame then
-			gfx.popContext()
-			saveFrame = false
-		end
 	end
 	redrawFrame = defaultRedrawFrame
 	
-	if cachedScreenImg and ((not redrawFrame) or saveFrame) then cachedScreenImg:draw(0,0) end
+	if cachedScreenImg and ((not redrawFrame) or saveFrame) then
+		cachedScreenImg:draw(0,0) 
+	end
+	
 	saveFrame = false
 	processAndDrawWidgets()
 	
@@ -113,6 +110,11 @@ function drawRoutine()
 	if scrollX//1 ~= lastScrollX//1 then
 		redrawFrame = true	
 	end
+	
+	if cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT then
+		drawObjectCursor()	
+	end
+	
 	drawBottomBar(yOffset)
 	if cursorState == cursorStates.INFO_POPUP then
 		drawInfoPopup()	
@@ -185,53 +187,54 @@ function drawLabelNameBox(label)
 end
 
 function updateCursorFrame()
-	local rowsNumber = 6/labels[currentLabel].rows
-	cursorFrame+=1
-	if cursorFrame > #cursorImgs[rowsNumber] then
-		cursorFrame = 1	
+	if cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT then
+		redrawFrame = true
+		local rowsNumber = 6/labels[currentLabel].rows
+		cursorFrame+=1
+		if cursorFrame > #cursorImgs[rowsNumber] then
+			cursorFrame = 1	
+		end
 	end
-	playdate.timer.performAfterDelay(500, updateCursorFrame)
+	playdate.timer.performAfterDelay(cursorFrameDelay, updateCursorFrame)
 end
 
 function drawIcons()
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	for i,v in ipairs(labelOrder) do
-		if not labels[v].collapsed and #labels[v].objects > 0 then
-			for j, objectData in ipairs(labels[v].objects) do
-				local x, y = calcIconPositionCentered(j, v)
-				if objectData and x > -objectSizes[labels[v].rows] and x < 450 then
-					local icon = getIcon(objectData.bundleid, v)
-					if icon then icon:drawCentered(x,y) end
-				end
+		drawIconsForLabel(v)
+	end
+end
+
+function drawIconsForLabel(v)
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+	if not labels[v].collapsed and #labels[v].objects > 0 then
+		for j, objectData in ipairs(labels[v].objects) do
+			local x, y = calcIconPositionCentered(j, v)
+			if objectData and x > -objectSizes[labels[v].rows] and x < 450 then
+				local icon = getIcon(objectData.bundleid, v)
+				if icon then icon:drawCentered(x,y) end
 			end
 		end
-	end
-	if cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT then
-		drawObjectCursor()	
-	end
+	end	
 end
 
 function doScrolling()
 	
 	if labels[currentLabel]["drawX"] ~= labelSpacing and cursorState == cursorStates.SELECT_LABEL then
 		scrollX = lerpMaxed(scrollX,scrollX-labels[currentLabel]["drawX"]+labelSpacing,snappiness)
-		print("1")
 	end
 	
 	if cursorState == cursorStates.SELECT_WIDGET and scrollX < widgetsScreenWidth-5 then
 		scrollX = lerpFloored(scrollX, widgetsScreenWidth, snappiness)	
-		print("2")
 	end
 	
 	local objectTotalSize = objectSizes[labels[currentLabel].rows]+objectSpacings[labels[currentLabel].rows]
 	
 	if (lastObjectCursorDrawX > 400-objectTotalSize-labelSpacing) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
 		scrollX = lerpFloored(scrollX,scrollX-(lastObjectCursorDrawX-400)-objectTotalSize-labelSpacing,snappiness)
-		print("3")
 		
 	elseif ((lastObjectCursorDrawX < labelSpacing)or (lastObjectCursorDrawX < labelSpacing+labelTextSize*2 and currentObject <= labels[currentLabel].rows)) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
 		scrollX = lerpFloored(scrollX,scrollX-lastObjectCursorDrawX+labelSpacing+labelTextSize*2,snappiness)
-		print("4")
 	end
 end
 
@@ -335,7 +338,6 @@ function processDrawChanges()
 	if controlCenterState == 2 then
 		controlCenterProgress = lerpCeiled(controlCenterProgress,  maxControlCenterProgress, snappiness)
 		redrawFrame = true
-		print("2")
 		if controlCenterProgress > maxControlCenterProgress-3 then 
 			controlCenterProgress = maxControlCenterProgress
 			controlCenterState = 3  
@@ -347,19 +349,30 @@ function drawLabelBackgrounds()
 	local currentLabelOffset = labelSpacing
 	for i,v in ipairs(labelOrder) do
 		local label = labels[v]
-		x = scrollX + currentLabelOffset
+		labels[v]["drawX"] = scrollX + currentLabelOffset
+		
 		w = labelTextSize*3 + ((#label["objects"]/label["rows"])//1)*(objectSizes[label["rows"]] + objectSpacings[label["rows"]]) - objectSpacings[label["rows"]] -6 + (configVars.cornerradius/2)//1
+		h = 240-bottomBarHeight-(labelYMargin*2)
 		if labels[v]["collapsed"] then
 			w = labelTextSize*2	
 		end
-		currentLabelOffset += w + labelSpacing
-		labels[v]["drawX"] = x
 		
-		if x < 403 and x > -3-w then
+		if labelsCache[v] then
+			x = scrollX + currentLabelOffset
+			
+			if x < 403 and x > -3-w then
+				labelsCache[v]:draw(x,labelYMargin)
+			end
+		else
+			
+			x = 0
+			local limg = gfx.image.new(w,h,gfx.kColorClear)
+			gfx.pushContext(limg)
+			
 			gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
 			gfx.setColor(invertedColors[configVars["invertlabels"]])
 			gfx.setDitherPattern(configVars.labeldither)
-			gfx.fillRoundRect(x, labelYMargin, w, 240-bottomBarHeight-(labelYMargin*2), configVars["cornerradius"])
+			gfx.fillRoundRect(x, 0, w, h, configVars["cornerradius"])
 			local t = "*"..labels[v]["displayName"].."*"
 			local tw,th = gfx.getTextSize(t)
 			tw += 20
@@ -373,20 +386,29 @@ function drawLabelBackgrounds()
 			if configVars.labeltextbgs then
 				gfx.fillRoundRect(dw/2 - tw/2, 1, tw, th-2, 10)
 			end
-			gfx.drawTextAligned(t, (240-bottomBarHeight)/2, 3,kTextAlignment.center)
+			gfx.drawTextAligned(t, (h/2)//1, 3,kTextAlignment.center)
 			gfx.popContext()
 			gfx.setImageDrawMode(gfx.kDrawModeCopy)
 			img = img:rotatedImage(90)
 			img = img:rotatedImage(180)
-			img:draw(x+labelTextSize/2-3,0)
+			img:draw(x+(labelTextSize/2-3)//1,0)
 			
-			if v == currentLabel then
-				gfx.setDitherPattern(0)
-				gfx.setLineWidth(configVars.linewidth)
-				gfx.setColor(invertedColors[configVars.invertcursor])
-				gfx.drawRoundRect(x, labelYMargin, w, 240-bottomBarHeight-(labelYMargin*2), configVars["cornerradius"])
-			end
+			gfx.popContext()
+			labelsCache[v] = limg
+			
+			limg:draw(scrollX+currentLabelOffset,labelYMargin)
 		end
+		
+		if v == currentLabel then
+			gfx.setDitherPattern(0)
+			gfx.setLineWidth(configVars.linewidth)
+			gfx.setColor(invertedColors[configVars.invertcursor])
+			gfx.drawRoundRect(scrollX + currentLabelOffset, labelYMargin, w, h, configVars["cornerradius"])
+		end
+		
+		drawIconsForLabel(v)
+		
+		currentLabelOffset += w + labelSpacing
 	end
 end
 
@@ -723,7 +745,7 @@ end
 
 function updateCircleCursorRadius()
 	if circleCursorRadius == 4 then circleCursorRadius = 5 else circleCursorRadius = 4 end
-	playdate.timer.performAfterDelay(500, updateCircleCursorRadius)
+	playdate.timer.performAfterDelay(cursorFrameDelay, updateCircleCursorRadius)
 end
 
 function drawCircleCursor(baseX, baseY, spacing, index, maxIndex, scroll)

@@ -13,6 +13,7 @@ Reap = {}
 class("Reap").extends()
 
 local function stringsplit(inputstr, sep)
+  print("stringsplit")
   local t = {}
   for str in string.gmatch(inputstr, "([^" .. sep .. "]+)") do
     table.insert(t, str)
@@ -22,6 +23,7 @@ local function stringsplit(inputstr, sep)
 end
 
 local function bytes_to_int(str, endian) -- from https://stackoverflow.com/questions/5241799/lua-dealing-with-non-ascii-byte-streams-byteorder-change
+  print("bytes_to_int")
   local t = { str:byte(1, -1) }
   if endian ~= "big" then
     local tt = {}
@@ -38,6 +40,7 @@ local function bytes_to_int(str, endian) -- from https://stackoverflow.com/quest
 end
 
 local function makedirs(root, dir)
+  print("makedirs")
   local spl = stringsplit(dir, "/")
 
   table.remove(spl, #spl)
@@ -54,10 +57,12 @@ local function makedirs(root, dir)
 end
 
 local function hexencode(str)
+  print("hexencode")
   return (str:gsub(".", function(char) return string.format("%02x", char:byte()) end))
 end
 
 local function readZipEOCD(path)
+  print("readzipeocd")
   local f = pd.file.open(path)
   local fsize = pd.file.getSize(path)
 
@@ -91,6 +96,7 @@ local function readZipEOCD(path)
   -- TODO: doesn't work if comments are placed at the end of zip file
 
   while readingEOCD do
+    print("loopingEOCD")
     local tmp = {}
     local header = f:read(4) -- read header
 
@@ -138,12 +144,13 @@ local function readZipEOCD(path)
       return nil
     end
   end
-
+  print("doneLoopingEOCD")
   return files
 end
 
 
 function Reap:init(path, dir, chunkSize)
+  print("reapinit")
   dir = dir or ""
   chunkSize = chunkSize or 10000
 
@@ -180,6 +187,7 @@ local cur
 
 -- call once every update cycle
 function Reap:update()
+  print("reapUpdate")
   if not self.done then
     if not self.EOCD then return false,"BAD HEADER" end
     cur = self.EOCD[self.step]
@@ -214,6 +222,7 @@ end
 
 -- returns completion status as a percentage (0-100)
 function Reap:getPercentComplete()
+  print("reapgetpercentcomplete")
   if self.step and self.EOCD then
     return (self.step / #self.EOCD) * 100
   end
@@ -223,6 +232,7 @@ end
 
 -- returns progress step, then total
 function Reap:getProgress()
+  print("reapgetprogress")
   if self.step and self.EOCD then
     return self.step, #self.EOCD
   end

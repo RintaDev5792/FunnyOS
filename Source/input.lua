@@ -782,10 +782,16 @@ function changeCurrentLabelScale()
 	else
 		labels[currentLabel].rows = 3	
 	end
+	local empty = true
 	for i, objectData in ipairs(labels[currentLabel].objects) do
+		if objectData.bundleid ~= ".empty" then
+			empty = false
+		end
 		iconsCache[objectData.bundleid] = nil
 	end
-	fillLabelEndWithEmpty(currentLabel, true)
+	--if not empty then
+		fillLabelEndWithEmpty(currentLabel, true)
+	--end
 
 	saveLabel(currentLabel)
 	redrawFrame = true
@@ -921,6 +927,8 @@ function controlCenterContentMoveUp()
 end
 
 function incrementOptionsValue(selection)
+	labelsCache = {}
+	iconGridCache = {}
 	local selected = configVarOptionsOrder[selection]
 	
 	
