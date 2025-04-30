@@ -21,6 +21,8 @@ heldObjectOriginLabel = ""
 
 targetFPS = 40
 
+delta = 1/40
+
 tempVars = {}
 
 iconsCache = {}
@@ -418,7 +420,7 @@ function playdate.update()
 		dumpGlobals()
 		dumpFrame = false
 	end
-	
+	delta = 1/playdate.display.getRefreshRate()--playdate.getFPS()
 	updateReap()
 end
 

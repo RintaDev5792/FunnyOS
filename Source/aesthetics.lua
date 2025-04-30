@@ -11,6 +11,8 @@ import("system")
 gfx = playdate.graphics
 
 local incFrame = 0
+redrawIcons = true
+redrawLabels = true
 redrawFrame = true
 defaultRedrawFrame = false
 saveFrame = false
@@ -32,7 +34,7 @@ buttons = {
 gameIconImgs = {}
 badgeIconImgs = {}
 
-iconsImg = nil
+cachedScreenImg = nil
 blankImg = nil
 bgDitherImg = nil
 bgImg = nil
@@ -48,7 +50,7 @@ cursorImgs = {gfx.imagetable.new("images/cursor-1"),gfx.imagetable.new("images/c
 labelSpacing, labelYMargin, labelTextSize = 10, 4, 15
 widgetPadding, widgetSpacing = 8, 16
 bottomBarHeight = 10 -- usually 22
-snappiness, defaultSnappiness = 0.45,0.45
+snappiness, defaultSnappiness = 0.15,0.15
 circleCursorRadius = 4
 
 widgetsScreenWidth = 240
@@ -68,16 +70,15 @@ invertedFillDrawModes = {[true] = playdate.graphics.kDrawModeFillWhite, [false] 
 widgetScroll = 0
 
 function drawRoutine()
+	snappiness=defaultSnappiness*targetFPS*delta
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	snappiness = defaultSnappiness*(20/playdate.getFPS())
-	if snappiness < 0.1 then snappiness = defaultSnappiness*(20/playdate.display.getRefreshRate()) end
-	
+		
 	if redrawFrame then
 		incFrame+=1
 		gfx.clear(gfx.kColorWhite)
 		if saveFrame then
-			iconsImg = gfx.image.new(400,240,gfx.kColorWhite)
-			gfx.pushContext(iconsImg)
+			cachedScreenImg = gfx.image.new(400,240,gfx.kColorWhite)
+			gfx.pushContext(cachedScreenImg)
 		end
 		
 		if bgDitherImg and configVars.bgdither ~= 1 then 
@@ -96,7 +97,7 @@ function drawRoutine()
 	end
 	redrawFrame = defaultRedrawFrame
 	
-	if iconsImg and ((not redrawFrame) or saveFrame) then iconsImg:draw(0,0) end
+	if cachedScreenImg and ((not redrawFrame) or saveFrame) then cachedScreenImg:draw(0,0) end
 	saveFrame = false
 	processAndDrawWidgets()
 	
@@ -122,7 +123,7 @@ function drawRoutine()
 end
 
 function processAndDrawWidgets()
-	if scrollX > 0 then
+	if scrollX > 1 then
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		gfx.setColor(gfx.kColorBlack)
 		gfx.setPattern({0, 255,0,255,0,255,0,255})
@@ -211,17 +212,26 @@ function drawIcons()
 end
 
 function doScrolling()
+	
 	if labels[currentLabel]["drawX"] ~= labelSpacing and cursorState == cursorStates.SELECT_LABEL then
 		scrollX = lerpMaxed(scrollX,scrollX-labels[currentLabel]["drawX"]+labelSpacing,snappiness)
+		print("1")
 	end
+	
 	if cursorState == cursorStates.SELECT_WIDGET and scrollX < widgetsScreenWidth-5 then
-		scrollX = lerpMaxed(scrollX, widgetsScreenWidth, snappiness)	
+		scrollX = lerpFloored(scrollX, widgetsScreenWidth, snappiness)	
+		print("2")
 	end
+	
 	local objectTotalSize = objectSizes[labels[currentLabel].rows]+objectSpacings[labels[currentLabel].rows]
+	
 	if (lastObjectCursorDrawX > 400-objectTotalSize-labelSpacing) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
-		scrollX = lerpMaxed(scrollX,scrollX-(lastObjectCursorDrawX-400)-objectTotalSize-labelSpacing,snappiness)
+		scrollX = lerpFloored(scrollX,scrollX-(lastObjectCursorDrawX-400)-objectTotalSize-labelSpacing,snappiness)
+		print("3")
+		
 	elseif ((lastObjectCursorDrawX < labelSpacing)or (lastObjectCursorDrawX < labelSpacing+labelTextSize*2 and currentObject <= labels[currentLabel].rows)) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
-		scrollX = lerpMaxed(scrollX,scrollX-lastObjectCursorDrawX+labelSpacing+labelTextSize*2,snappiness)
+		scrollX = lerpFloored(scrollX,scrollX-lastObjectCursorDrawX+labelSpacing+labelTextSize*2,snappiness)
+		print("4")
 	end
 end
 
@@ -336,44 +346,46 @@ end
 function drawLabelBackgrounds()
 	local currentLabelOffset = labelSpacing
 	for i,v in ipairs(labelOrder) do
-		
-		gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
-		gfx.setColor(invertedColors[configVars["invertlabels"]])
-		gfx.setDitherPattern(configVars.labeldither)
 		local label = labels[v]
+		x = scrollX + currentLabelOffset
 		w = labelTextSize*3 + ((#label["objects"]/label["rows"])//1)*(objectSizes[label["rows"]] + objectSpacings[label["rows"]]) - objectSpacings[label["rows"]] -6 + (configVars.cornerradius/2)//1
 		if labels[v]["collapsed"] then
 			w = labelTextSize*2	
 		end
-		x = scrollX + currentLabelOffset
 		currentLabelOffset += w + labelSpacing
 		labels[v]["drawX"] = x
-		gfx.fillRoundRect(x, labelYMargin, w, 240-bottomBarHeight-(labelYMargin*2), configVars["cornerradius"])
-		local t = "*"..labels[v]["displayName"].."*"
-		local tw,th = gfx.getTextSize(t)
-		tw += 20
-		th = (th*1.2)//1
-		local dw = 240-bottomBarHeight
-		local img = gfx.image.new(dw,th)
-		gfx.pushContext(img)
 		
-		gfx.setColor(invertedColors[not configVars.invertlabeltext])
-		gfx.setImageDrawMode(invertedDrawModes[configVars.invertlabeltext])
-		if configVars.labeltextbgs then
-			gfx.fillRoundRect(dw/2 - tw/2, 1, tw, th-2, 10)
-		end
-		gfx.drawTextAligned(t, (240-bottomBarHeight)/2, 3,kTextAlignment.center)
-		gfx.popContext()
-		gfx.setImageDrawMode(gfx.kDrawModeCopy)
-		img = img:rotatedImage(90)
-		img = img:rotatedImage(180)
-		img:draw(x+labelTextSize/2-3,0)
-		
-		if v == currentLabel then
-			gfx.setDitherPattern(0)
-			gfx.setLineWidth(configVars.linewidth)
-			gfx.setColor(invertedColors[configVars.invertcursor])
-			gfx.drawRoundRect(x, labelYMargin, w, 240-bottomBarHeight-(labelYMargin*2), configVars["cornerradius"])
+		if x < 403 and x > -3-w then
+			gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
+			gfx.setColor(invertedColors[configVars["invertlabels"]])
+			gfx.setDitherPattern(configVars.labeldither)
+			gfx.fillRoundRect(x, labelYMargin, w, 240-bottomBarHeight-(labelYMargin*2), configVars["cornerradius"])
+			local t = "*"..labels[v]["displayName"].."*"
+			local tw,th = gfx.getTextSize(t)
+			tw += 20
+			th = (th*1.2)//1
+			local dw = 240-bottomBarHeight
+			local img = gfx.image.new(dw,th)
+			gfx.pushContext(img)
+			
+			gfx.setColor(invertedColors[not configVars.invertlabeltext])
+			gfx.setImageDrawMode(invertedDrawModes[configVars.invertlabeltext])
+			if configVars.labeltextbgs then
+				gfx.fillRoundRect(dw/2 - tw/2, 1, tw, th-2, 10)
+			end
+			gfx.drawTextAligned(t, (240-bottomBarHeight)/2, 3,kTextAlignment.center)
+			gfx.popContext()
+			gfx.setImageDrawMode(gfx.kDrawModeCopy)
+			img = img:rotatedImage(90)
+			img = img:rotatedImage(180)
+			img:draw(x+labelTextSize/2-3,0)
+			
+			if v == currentLabel then
+				gfx.setDitherPattern(0)
+				gfx.setLineWidth(configVars.linewidth)
+				gfx.setColor(invertedColors[configVars.invertcursor])
+				gfx.drawRoundRect(x, labelYMargin, w, 240-bottomBarHeight-(labelYMargin*2), configVars["cornerradius"])
+			end
 		end
 	end
 end

@@ -237,6 +237,16 @@ function lerpMaxed(a, b, t)
 	if v ~= v then return 0 else return v end 
 end
 
+function lerpMinned(a, b, t) 
+	local v =  (a * (1 - t) + b * t) 
+	if a > b then
+		v = -(-v//1)
+	else
+		v = v//1
+	end
+	if v ~= v then return 0 else return v end 
+end
+
 function getListSize(list)
 	local l = 0
 	for i,v in pairs(list) do
