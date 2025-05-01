@@ -625,7 +625,7 @@ cursorStateInputHandlers = {
 			delaySetNoShortcut()
 		end,
 		rightButtonUp = function()
-			removeKeyTimer()
+			removeKeyTimer(); scrollRightFast = false
 		end,
 	
 		leftButtonDown = function()
@@ -638,7 +638,7 @@ cursorStateInputHandlers = {
 			delaySetNoShortcut()
 		end,
 		leftButtonUp = function()
-			removeKeyTimer()
+			removeKeyTimer(); scrollLeftFast = false
 		end
 	},
 }
@@ -683,8 +683,8 @@ function labelSelectMoveLeft(fast)
 		labels[currentLabel]["collapsed"] = false
 		cursorFrame = 1
 		redrawFrame = true
-	elseif cursorState == cursorStates.SELECT_LABEL and not fast then
-		changeCursorState(cursorStates.SELECT_WIDGET)	
+	elseif cursorState == cursorStates.SELECT_LABEL and fast~=true then
+		changeCursorState(cursorStates.SELECT_WIDGET)
 	end
 	scrollLeftFast = true
 end
@@ -973,7 +973,6 @@ function incrementOptionsValue(selection)
 		iconsCache = {}	
 	end
 	redrawFrame = true
-	print("OPR")
 	--saveFrame = true
 	saveConfig()
 end
@@ -1014,7 +1013,6 @@ function doPackageInstallerAction(name)
 			end
 			)
 		else
-			print("HI")
 			createInfoPopup("Action Failed", "*Valid Package files not found. Please place a \"Package.zip\" file as well as a \"Destination.txt\" file with a destination path for your package in "..savePath.."Package/",false)
 		end
 	end	
