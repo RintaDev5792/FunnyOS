@@ -237,18 +237,23 @@ function doScrolling()
 	
 	local objectTotalSize = objectSizes[labels[currentLabel].rows]+objectSpacings[labels[currentLabel].rows]
 	
-	if (lastObjectCursorDrawX > 400-objectTotalSize-labelSpacing) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
-		print("S1")
+	
+	if (lastObjectCursorDrawX > 400-objectTotalSize-labelSpacing-configVars.cornerradius) and (currentObject > #labels[currentLabel].objects-labels[currentLabel].rows) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
+		
+		scrollX = lerpFloored(scrollX,scrollX-(lastObjectCursorDrawX-400)-objectTotalSize-labelSpacing-configVars.cornerradius,snappiness)
+		
+	elseif (lastObjectCursorDrawX > 400-objectTotalSize-labelSpacing) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
+		
 		scrollX = lerpFloored(scrollX,scrollX-(lastObjectCursorDrawX-400)-objectTotalSize-labelSpacing,snappiness)
 		
-	elseif labels[currentLabel]["drawX"] > labelSpacing and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
-	
-		print("S3")
-		scrollX = lerpMaxed(scrollX,scrollX-labels[currentLabel]["drawX"]+labelSpacing,snappiness)
 	elseif (lastObjectCursorDrawX < labelSpacing+labelTextSize*2 and currentObject <= labels[currentLabel].rows) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
+		
 		scrollX = lerpFloored(scrollX,scrollX-lastObjectCursorDrawX+labelSpacing+labelTextSize*2,snappiness)
+		
 	elseif (lastObjectCursorDrawX < labelSpacing) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
+		
 		scrollX = lerpFloored(scrollX,scrollX-lastObjectCursorDrawX+labelSpacing,snappiness)
+		
 	end
 end
 

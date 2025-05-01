@@ -872,9 +872,11 @@ function placeHeldObject(index, label, swap)
 	changeCursorState(cursorStates.SELECT_OBJECT)	
 	
 	labelsCache[label] = nil
-	if label ~= heldObjectOriginLabel then
-		saveLabel(heldObjectOriginLabel)
+	saveLabel(currentLabel)
+	if currentLabel~=heldObjectOriginLabel then 
+		saveLabel(heldObjectOriginLabel) 
 	end
+	
 	redrawFrame = true
 end
 
