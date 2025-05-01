@@ -113,6 +113,8 @@ function drawRoutine()
 	
 	if cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT then
 		drawObjectCursor()	
+	else
+		lastObjectCursorDrawX = labels[currentLabel].drawX+labelTextSize*2
 	end
 	
 	drawBottomBar(yOffset)
@@ -126,7 +128,6 @@ end
 
 function processAndDrawWidgets()
 	if scrollX > 1 then
-		print("PROCESSING")
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		gfx.setColor(gfx.kColorBlack)
 		gfx.setPattern({0, 255,0,255,0,255,0,255})
@@ -216,7 +217,7 @@ function drawIconsForLabel(v,xoffset,yoffset)
 			local x, y = calcIconPositionCentered(j, v)
 			x += xoffset
 			y+= yoffset
-			if objectData and x > -objectSizes[labels[v].rows] and x < 450 then
+			if objectData then--and x > -objectSizes[labels[v].rows] and x < 450 then
 				local icon = getIcon(objectData.bundleid, v)
 				if icon then icon:drawCentered(x,y) end
 			end
@@ -237,12 +238,17 @@ function doScrolling()
 	local objectTotalSize = objectSizes[labels[currentLabel].rows]+objectSpacings[labels[currentLabel].rows]
 	
 	if (lastObjectCursorDrawX > 400-objectTotalSize-labelSpacing) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
+		print("S1")
 		scrollX = lerpFloored(scrollX,scrollX-(lastObjectCursorDrawX-400)-objectTotalSize-labelSpacing,snappiness)
 		
-	elseif ((lastObjectCursorDrawX < labelSpacing)or (lastObjectCursorDrawX < labelSpacing+labelTextSize*2 and currentObject <= labels[currentLabel].rows)) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
-		scrollX = lerpFloored(scrollX,scrollX-lastObjectCursorDrawX+labelSpacing+labelTextSize*2,snappiness)
 	elseif labels[currentLabel]["drawX"] > labelSpacing and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
+	
+		print("S3")
 		scrollX = lerpMaxed(scrollX,scrollX-labels[currentLabel]["drawX"]+labelSpacing,snappiness)
+	elseif (lastObjectCursorDrawX < labelSpacing+labelTextSize*2 and currentObject <= labels[currentLabel].rows) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
+		scrollX = lerpFloored(scrollX,scrollX-lastObjectCursorDrawX+labelSpacing+labelTextSize*2,snappiness)
+	elseif (lastObjectCursorDrawX < labelSpacing) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
+		scrollX = lerpFloored(scrollX,scrollX-lastObjectCursorDrawX+labelSpacing,snappiness)
 	end
 end
 

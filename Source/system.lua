@@ -490,6 +490,7 @@ function fillLabelEndWithEmpty(label, removeEmptyColumns)
 	while #labels[label].objects % labels[label].rows ~= 0 do
 		table.insert(labels[label].objects, #labels[label].objects+1, emptyObject)	
 	end	
+	
 	if removeEmptyColumns then
 		local done = false
 		while not done do
@@ -500,7 +501,7 @@ function fillLabelEndWithEmpty(label, removeEmptyColumns)
 						done = true
 					end
 				end
-				if #labels[label].objects%labels[label].rows == 0 then done = true end
+				--if #labels[label].objects%labels[label].rows == 0 then done = true end
 			end	
 			if not done then 
 				for i=1, labels[label].rows do

@@ -789,9 +789,10 @@ function changeCurrentLabelScale()
 		end
 		iconsCache[objectData.bundleid] = nil
 	end
-	--if not empty then
-		fillLabelEndWithEmpty(currentLabel, true)
-	--end
+	fillLabelEndWithEmpty(currentLabel, not empty)
+	while empty and #labels[currentLabel].objects > labels[currentLabel].rows do
+		table.remove(labels[currentLabel].objects,#labels[currentLabel].objects)
+	end
 
 	saveLabel(currentLabel)
 	redrawFrame = true
@@ -870,7 +871,7 @@ function placeHeldObject(index, label, swap)
 	end	
 	changeCursorState(cursorStates.SELECT_OBJECT)	
 	
-	saveLabel(label,true)
+	labelsCache[label] = nil
 	if label ~= heldObjectOriginLabel then
 		saveLabel(heldObjectOriginLabel)
 	end
@@ -885,6 +886,7 @@ function grabObject(label, index)
 		labels[label].objects[index] = emptyObject
 		changeCursorState(cursorStates.MOVE_OBJECT)
 	end
+	labelsCache[label] = nil
 	redrawFrame = true
 end
 
