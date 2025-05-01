@@ -300,8 +300,10 @@ function saveLabelOrder()
 	das.write(labelOrder,savePath.."labelOrder")	
 end
 
-function saveLabel(label)
-	labelsCache[label] = nil
+function saveLabel(label,skipReload)
+	if not skipReload then
+		labelsCache[label] = nil
+	end
 	das.write(labels[label],savePath.."Labels/"..label)
 end
 

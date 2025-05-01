@@ -870,7 +870,7 @@ function placeHeldObject(index, label, swap)
 	end	
 	changeCursorState(cursorStates.SELECT_OBJECT)	
 	
-	saveLabel(label)
+	saveLabel(label,true)
 	if label ~= heldObjectOriginLabel then
 		saveLabel(heldObjectOriginLabel)
 	end

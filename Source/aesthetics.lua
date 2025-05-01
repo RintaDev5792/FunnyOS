@@ -126,6 +126,7 @@ end
 
 function processAndDrawWidgets()
 	if scrollX > 1 then
+		print("PROCESSING")
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		gfx.setColor(gfx.kColorBlack)
 		gfx.setPattern({0, 255,0,255,0,255,0,255})
@@ -198,18 +199,23 @@ function updateCursorFrame()
 	playdate.timer.performAfterDelay(cursorFrameDelay, updateCursorFrame)
 end
 
-function drawIcons()
+function drawIconsDeprecated()
+	
+	-- DO NOT USE, NOT OPTIMIZED
+	
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	for i,v in ipairs(labelOrder) do
 		drawIconsForLabel(v)
 	end
 end
 
-function drawIconsForLabel(v)
+function drawIconsForLabel(v,xoffset,yoffset)
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	if not labels[v].collapsed and #labels[v].objects > 0 then
 		for j, objectData in ipairs(labels[v].objects) do
 			local x, y = calcIconPositionCentered(j, v)
+			x += xoffset
+			y+= yoffset
 			if objectData and x > -objectSizes[labels[v].rows] and x < 450 then
 				local icon = getIcon(objectData.bundleid, v)
 				if icon then icon:drawCentered(x,y) end
@@ -235,6 +241,8 @@ function doScrolling()
 		
 	elseif ((lastObjectCursorDrawX < labelSpacing)or (lastObjectCursorDrawX < labelSpacing+labelTextSize*2 and currentObject <= labels[currentLabel].rows)) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
 		scrollX = lerpFloored(scrollX,scrollX-lastObjectCursorDrawX+labelSpacing+labelTextSize*2,snappiness)
+	elseif labels[currentLabel]["drawX"] > labelSpacing and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
+		scrollX = lerpMaxed(scrollX,scrollX-labels[currentLabel]["drawX"]+labelSpacing,snappiness)
 	end
 end
 
@@ -357,22 +365,20 @@ function drawLabelBackgrounds()
 			w = labelTextSize*2	
 		end
 		
-		if labelsCache[v] then
-			x = scrollX + currentLabelOffset
-			
+		x = scrollX + currentLabelOffset
+		local ditherMod = (x//1)%2
+		found = labelsCache[v] ~= nil
+		if found then found = found and labelsCache[v][ditherMod] end
+		if found then
 			if x < 403 and x > -3-w then
-				labelsCache[v]:draw(x,labelYMargin)
+				labelsCache[v][ditherMod]:draw(x-ditherMod,labelYMargin)
 			end
 		else
-			
-			x = 0
 			local limg = gfx.image.new(w,h,gfx.kColorClear)
 			gfx.pushContext(limg)
-			
-			gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
 			gfx.setColor(invertedColors[configVars["invertlabels"]])
 			gfx.setDitherPattern(configVars.labeldither)
-			gfx.fillRoundRect(x, 0, w, h, configVars["cornerradius"])
+			gfx.fillRoundRect(ditherMod, 0, w, h, configVars["cornerradius"])
 			local t = "*"..labels[v]["displayName"].."*"
 			local tw,th = gfx.getTextSize(t)
 			tw += 20
@@ -391,12 +397,16 @@ function drawLabelBackgrounds()
 			gfx.setImageDrawMode(gfx.kDrawModeCopy)
 			img = img:rotatedImage(90)
 			img = img:rotatedImage(180)
-			img:draw(x+(labelTextSize/2-3)//1,0)
+			img:draw((labelTextSize/2-3)//1 + ditherMod,0)
+			
+			
+			drawIconsForLabel(v,-x,-labelYMargin)
 			
 			gfx.popContext()
-			labelsCache[v] = limg
+			if not labelsCache[v] then labelsCache[v] = {} end
+			labelsCache[v][ditherMod] = limg
 			
-			limg:draw(scrollX+currentLabelOffset,labelYMargin)
+			limg:draw(scrollX+currentLabelOffset - ditherMod,labelYMargin)
 		end
 		
 		if v == currentLabel then
@@ -406,7 +416,6 @@ function drawLabelBackgrounds()
 			gfx.drawRoundRect(scrollX + currentLabelOffset, labelYMargin, w, h, configVars["cornerradius"])
 		end
 		
-		drawIconsForLabel(v)
 		
 		currentLabelOffset += w + labelSpacing
 	end
