@@ -13,16 +13,23 @@ widget.metadata = {
 widget.image = nil
 
 -- Fill these out with your inputs
-function widget:AButtonDown()
+function widget:AButtonUp()
 	-- Open the bundle id listed in Metadata
 	openApp(self.metadata.game)
 end
 
 -- If a B button function isn't provided, this is the default action for it.
-function widget:BButtonDown()
+function widget:BButtonUp()
 	-- Removes focus from the widget so others can be selected
 	-- Need this line somewhere if you use the B button.
 	widgetIsActive = false
+end
+
+function widget:AButtonDown()
+end
+
+function widget:BButtonDown()
+	
 end
 
 function widget:upButtonDown()
@@ -38,6 +45,22 @@ function widget:leftButtonDown()
 end
 
 function widget:rightButtonDown()
+	
+end
+
+function widget:upButtonUp()
+	
+end
+
+function widget:downButtonUp()
+	
+end
+
+function widget:leftButtonUp()
+	
+end
+
+function widget:rightButtonUp()
 	
 end
 

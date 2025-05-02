@@ -137,7 +137,7 @@ function loadWidgets()
 
 	local folders = playdate.file.listFiles(widgetsPath)
 	for _, folder in ipairs(folders) do
-		local folderPath = widgetsPath .. folder .. "/"
+		local folderPath = widgetsPath .. folder
 		if playdate.file.isdir(folderPath) then
 			if playdate.file.exists(folderPath .. "main.pdz") then
 				local success, widget = pcall(function()

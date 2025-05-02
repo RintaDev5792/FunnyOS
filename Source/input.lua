@@ -548,7 +548,7 @@ cursorStateInputHandlers = {
 		end
 	},
 	[cursorStates.SELECT_WIDGET] = {
-		AButtonUp = function()
+		AButtonDown = function()
 			
 			sound03ActionTrimmed:play()
 			if not didShortcut then
@@ -556,12 +556,19 @@ cursorStateInputHandlers = {
 					if widgets[currentWidget].AButtonDown then
 						widgets[currentWidget]:AButtonDown()
 					end
-				else
-					widgetIsActive = true
 				end
 			end
 			removeKeyTimer()
 			delaySetNoShortcut()
+		end,
+		
+		AButtonUp = function()
+			if widgetIsActive and widgets[currentWidget].AButtonUp then
+				widgets[currentWidget]:AButtonUp()
+			elseif not didShortcut and not widgetIsActive then 
+				widgetIsActive = true 
+				widgets[currentWidget]:loadWidgetImage()
+			end
 		end,
 	
 		BButtonDown = function()
@@ -572,13 +579,19 @@ cursorStateInputHandlers = {
 					
 					if widgets[currentWidget].BButtonDown then
 						widgets[currentWidget]:BButtonDown()
-					else
-						widgetIsActive = false
 					end
 				end
 			end
 			removeKeyTimer()
 			delaySetNoShortcut()
+		end,
+		
+		BButtonUp = function()
+			if widgetIsActive and widgets[currentWidget].BButtonUp then
+				widgets[currentWidget]:BButtonUp()
+			elseif (not didShortcut) and widgetIsActive and (not widgets[currentWidget].BButtonUp) then
+				widgetIsActive = false 
+			end
 		end,
 	
 		upButtonDown = function()
@@ -595,6 +608,9 @@ cursorStateInputHandlers = {
 		end,
 		
 		upButtonUp = function()
+			if widgetIsActive and widgets[currentWidget].upButtonUp then
+				widgets[currentWidget]:upButtonUp()
+			end
 			removeKeyTimer()
 		end,
 	
@@ -610,6 +626,9 @@ cursorStateInputHandlers = {
 			delaySetNoShortcut()
 		end,
 		downButtonUp = function()
+			if widgetIsActive and widgets[currentWidget].downButtonUp then
+				widgets[currentWidget]:downButtonUp()
+			end
 			removeKeyTimer()
 		end,
 	
@@ -625,6 +644,9 @@ cursorStateInputHandlers = {
 			delaySetNoShortcut()
 		end,
 		rightButtonUp = function()
+			if widgetIsActive and widgets[currentWidget].rightButtonUp then
+				widgets[currentWidget]:rightButtonUp()
+			end
 			removeKeyTimer(); scrollRightFast = false
 		end,
 	
@@ -638,6 +660,9 @@ cursorStateInputHandlers = {
 			delaySetNoShortcut()
 		end,
 		leftButtonUp = function()
+			if widgetIsActive and widgets[currentWidget].leftButtonUp then
+				widgets[currentWidget]:leftButtonUp()
+			end
 			removeKeyTimer(); scrollLeftFast = false
 		end
 	},
@@ -961,6 +986,12 @@ function incrementOptionsValue(selection)
 	elseif selected == "transwrapped" then
 		makeWrappedImgs()
 		iconsCache = {}
+	elseif selected == "cornerradius" then
+		labelsCache = {}
+		widgetMaskImg = nil
+		for i,widget in ipairs(widgets) do
+			widget:loadWidgetImage()
+		end
 	elseif selected == "musicon" then
 		if configVars.musicon then 
 			loadMusic() 

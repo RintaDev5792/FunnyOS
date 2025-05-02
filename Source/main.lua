@@ -34,6 +34,8 @@ labelOrder = {}
 labelsCache = {}
 iconGridCache = {}
 
+widgetMaskImg = nil
+
 badges = {}
 
 widgets = {}
@@ -67,6 +69,8 @@ sound02SelectionReverseTrimmed = playdate.sound.fileplayer.new("systemsfx/02-sel
 sound03ActionTrimmed = playdate.sound.fileplayer.new("systemsfx/03-action-trimmed")
 sound04DenialTrimmed = playdate.sound.fileplayer.new("systemsfx/04-denial-trimmed")
 soundUnwrap = playdate.sound.fileplayer.new("systemsfx/unwrap")
+
+roobert10Bold = gfx.font.new("fonts/Roobert-10-Bold")
 
 controlCenterMenuSelection = 0
 controlCenterInfoSelection = 0
@@ -458,6 +462,7 @@ function main()
 	if loadingImg then
 		loadingImg:draw(0,0)
 	end
+	gfx.setFont(roobert10Bold)
 	playdate.display.setRefreshRate(targetFPS)
 	playdate.display.flush()
 	changeCursorState(cursorStates.SELECT_LABEL)

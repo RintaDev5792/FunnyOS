@@ -126,6 +126,15 @@ function drawRoutine()
 	playdate.drawFPS(383,0)
 end
 
+function generateWidgetMask()
+	widgetMaskImg = gfx.image.new(200,200,gfx.kColorBlack)	
+	gfx.pushContext(widgetMaskImg)
+	gfx.setColor(gfx.kColorWhite)
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+	gfx.fillRoundRect(0, 0, 200, 200, configVars.cornerradius)
+	gfx.popContext()
+end
+
 function processAndDrawWidgets()
 	if scrollX > 1 then
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
@@ -151,6 +160,8 @@ function processAndDrawWidgets()
 				-- Draw widget content first
 				local widgetImage = widget:getWidgetImage()  -- Always run main()
 				if widgetImage then
+					if not widgetMaskImg then generateWidgetMask() end
+					widgetImage:setMaskImage(widgetMaskImg)
 					widgetImage:draw(widgetX, widgetY)
 				end
 	
@@ -185,7 +196,7 @@ function drawLabelNameBox(label)
 	gfx.setColor(gfx.kColorBlack)
 	gfx.setLineWidth(configVars.linewidth)
 	gfx.drawRoundRect(labelSpacing/2, (120-h/2)//1, w, h, configVars.cornerradius)
-	gfx.drawTextAligned("*"..key.text.."*", (w/2+labelSpacing/2)//1, (120-h/2+labelSpacing/2)//1+2, kTextAlignment.center)
+	gfx.drawTextAligned("*"..key.text.."*", (w/2+labelSpacing/2)//1, (120-h/2+labelSpacing/2)//1-1, kTextAlignment.center)
 end
 
 function updateCursorFrame()
@@ -679,7 +690,7 @@ function drawRecentlyPlayed()
 				invertedFillDrawModes = {[true] = playdate.graphics.kDrawModeFillWhite, [false] = playdate.graphics.kDrawModeFillBlack}
 			end
 			gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
-			gfx.drawText("*"..gameInfo[v].name.."*", 190, y-8)
+			gfx.drawTextInRect("*"..gameInfo[v].name.."*", 190, y-8,155,30,nil,"...")
 			gfx.setImageDrawMode(invertedDrawModes[configVars.invertcc])
 			local icon = getIcon(v, "recentlyPlayed", "recentlyPlayed")
 			if icon then
