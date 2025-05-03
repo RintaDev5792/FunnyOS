@@ -70,8 +70,6 @@ sound03ActionTrimmed = playdate.sound.fileplayer.new("systemsfx/03-action-trimme
 sound04DenialTrimmed = playdate.sound.fileplayer.new("systemsfx/04-denial-trimmed")
 soundUnwrap = playdate.sound.fileplayer.new("systemsfx/unwrap")
 
-roobert10Bold = gfx.font.new("fonts/Roobert-10-Bold")
-
 controlCenterMenuSelection = 0
 controlCenterInfoSelection = 0
 controlCenterInfoMaxSelection = 0
@@ -279,9 +277,6 @@ function deepStringCopy(table, depth, save)
 			end
 			playdate.resetElapsedTime()
 			coroutine.yield()
-			
-		else
-			print(#s)	
 		end
 	end
 	if save then das.write(s.."}", savePath.."Dump/globals_"..tostring(dumpCount)); dumpCount += 1 end
@@ -290,7 +285,8 @@ end
 
 function saveConfig()
 	das.write(configVars,savePath.."funnyConfig")
-	das.write(labelOrder,savePath.."labelOrder")
+	saveLabelOrder()
+	saveWidgetOrder()
 	for k,v in pairs(labels) do
 		das.write(v,savePath.."Labels/"..k)
 	end
@@ -302,6 +298,14 @@ end
 
 function saveLabelOrder()
 	das.write(labelOrder,savePath.."labelOrder")	
+end
+
+function saveWidgetOrder()
+	local widgetOrder = {}
+	for i,widget in ipairs(widgets) do
+		widgetOrder[i] = widget.metadata.name
+	end
+	das.write(widgetOrder,savePath.."widgetOrder")	
 end
 
 function saveLabel(label,skipReload)
@@ -334,12 +338,13 @@ function loadConfig()
 	if fle.isdir(savePath .. "Labels/") then
 		local labelFiles = fle.listFiles(savePath .. "Labels/")
 		labels = {}
-
+	
 		for _, labelFile in ipairs(labelFiles) do
 			labels[labelFile:sub(1,-6)] = das.read(savePath .. "Labels/" .. labelFile:sub(1,-6))
 			labels[labelFile:sub(1,-6)]["collapsed"] = configVars.autocollapselabels
 		end
 	end
+	
 	local datastore = das.read(savePath .. "recentlyPlayed")
 	if not datastore then recentlyPlayed = {} else recentlyPlayed = datastore end
 	while #recentlyPlayed > 6 do
@@ -367,6 +372,18 @@ end
 
 function playdate.keyboard.keyboardAnimatingCallback()
 	redrawFrame = true
+end
+
+function playdate.keyboard.keyboardAnimatingCallback()
+	redrawFrame = true
+end
+
+function playdate.keyboard.textChangedCallback()
+	if cursorState == cursorStates.SELECT_WIDGET then
+		if widgetIsActive and widgets[currentWidget].textChangedCallback then
+			widgets[currentWidget]:textChangedCallback()	
+		end
+	end
 end
 
 function playdate.keyboard.keyboardDidHideCallback()
@@ -403,11 +420,11 @@ function playdate.keyboard.keyboardWillHideCallback(pressedOK)
 			saveLabel(newLabelName)
 			saveLabelOrder()
 		end
+	elseif cursorState == cursorStates.SELECT_WIDGET then
+		if widgetIsActive and widgets[currentWidget].keyboardWillHideCallback then
+			widgets[currentWidget]:keyboardWillHideCallback(pressedOK)	
+		end
 	end
-end
-
-function playdate.keyboard.textChangedCallback()
-	
 end
 
 function playdate.update()
@@ -459,10 +476,15 @@ function main()
 	dirSetup()
 	playdate.setAutoLockDisabled(false)
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	if loadingImg then
-		loadingImg:draw(0,0)
+	if configVars.bgon then
+		loadBgImg()
 	end
-	gfx.setFont(roobert10Bold)
+	if loadingImg then
+		if configVars.bgon and bgImg ~= nil then
+			bgImg:draw(0,0)	
+		end
+		loadingImg:drawCentered(200,120)
+	end
 	playdate.display.setRefreshRate(targetFPS)
 	playdate.display.flush()
 	changeCursorState(cursorStates.SELECT_LABEL)
@@ -470,9 +492,6 @@ function main()
 	loadBadges()
 	if configVars.musicon then
 		loadMusic()
-	end
-	if configVars.bgon then
-		loadBgImg()
 	end
 	
 	math.randomseed(playdate.getSecondsSinceEpoch())

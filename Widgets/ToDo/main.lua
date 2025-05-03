@@ -35,7 +35,8 @@ function addItem()
 	renameSelectedItem()
 end
 
-function playdate.keyboard.keyboardWillHideCallback(pressedOK)
+function widget:keyboardWillHideCallback(pressedOK)
+	rename = false
 	if rename then
 		rename = false
 		--if playdate.keyboard.text == "" then return end 
@@ -45,7 +46,7 @@ function playdate.keyboard.keyboardWillHideCallback(pressedOK)
 	end
 end
 
-function playdate.keyboard.textChangedCallback()
+function widget:textChangedCallback()
 	if rename then
 		if gfx.getTextSize(playdate.keyboard.text) > 190 then
 			playdate.keyboard.text = string.sub(playdate.keyboard.text,1,#playdate.keyboard.text - 1)
@@ -78,6 +79,7 @@ function widget:upButtonDown()
 		removeScrollTimer()
 		scrollRepeatTimer = playdate.timer.keyRepeatTimerWithDelay(timerInitialDelay,timerRepeatDelay, moveSelectedItemUp)
 	else
+		removeScrollTimer()
 		scrollRepeatTimer = playdate.timer.keyRepeatTimerWithDelay(timerInitialDelay,timerRepeatDelay, moveUp)
 	end
 end
@@ -91,6 +93,10 @@ function moveSelectedItemUp()
 end
 
 function moveUp()
+	if rename then
+		removeScrollTimer()
+		return	
+	end
 	selected=math.max(selected-1,1)
 	if selected < scroll+1 then
 		scroll=scroll-1
@@ -108,6 +114,7 @@ function widget:downButtonDown()
 		removeScrollTimer()
 		scrollRepeatTimer = playdate.timer.keyRepeatTimerWithDelay(timerInitialDelay,timerRepeatDelay, moveSelectedItemDown)
 	else
+		removeScrollTimer()
 		scrollRepeatTimer = playdate.timer.keyRepeatTimerWithDelay(timerInitialDelay,timerRepeatDelay, moveDown)
 	end
 end
@@ -121,6 +128,10 @@ function moveSelectedItemDown()
 end
 
 function moveDown()
+	if rename then
+		removeScrollTimer()
+		return	
+	end
 	selected=math.min(selected+1,#list+1)
 	if selected > (200/itemHeight)-2+scroll then
 		scroll=scroll+1
@@ -158,6 +169,7 @@ function widget:rightButtonDown()
 end
 
 function renameSelectedItem()
+	removeScrollTimer()
 	if selected <= #list then
 		playdate.keyboard.show()	
 		playdate.keyboard.text = list[selected]
@@ -196,17 +208,17 @@ function widget:loadWidgetImage()
 				gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
 			end
 			if y > 15 and y < 200 then
-				gfx.drawText(v,5,y+3)
+				gfx.drawText("*"..v,5,y+2)
 			end
 			gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
 		end
-		gfx.drawTextAligned("To-Do List",100, 7,kTextAlignment.center)
+		gfx.drawTextAligned("*To-Do List*",100, 7,kTextAlignment.center)
 		local y = (#list+1)*itemHeight - scroll*itemHeight + 5
 		if #list+1 == selected and widgetIsActive then
 			gfx.fillRect(0, y, 200, itemHeight)
 			gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
 		end
-		gfx.drawText("+ Add Item",5, y+3)
+		gfx.drawText("*+ Add Item*",5, y+2)
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		
 	playdate.graphics.popContext()

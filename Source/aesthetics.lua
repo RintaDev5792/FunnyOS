@@ -6,7 +6,7 @@ import("utils")
 import("system")
 
 -- pd symbols:
--- ⬆️➡️⬇️⬅️🟨 ⊙ 🔒 🎣 ✛ Ⓐ Ⓑ
+-- ⬆️➡️⬇️⬅️🟨 ⊙ 🔒 🎣 ✛ 🅐 🅑
 -- fishing rod is crank
 gfx = playdate.graphics
 
@@ -34,6 +34,7 @@ buttons = {
 gameIconImgs = {}
 badgeIconImgs = {}
 
+widgetsBackground = nil
 cachedScreenImg = nil
 blankImg = nil
 bgDitherImg = nil
@@ -138,11 +139,19 @@ end
 function processAndDrawWidgets()
 	if scrollX > 1 then
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
-		gfx.setColor(gfx.kColorBlack)
-		gfx.setPattern({0, 255,0,255,0,255,0,255})
+		if not widgetsBackground then
+			widgetsBackground = gfx.image.new(widgetsScreenWidth,widgetsScreenWidth,gfx.kColorWhite)
+			gfx.pushContext(widgetsBackground)
+			gfx.setColor(gfx.kColorBlack)
+			gfx.setPattern({0, 255,0,255,0,255,0,255})
+			gfx.fillRect(0, 0, widgetsScreenWidth, 240)
+			gfx.popContext()
+		end
+		
 		local x = -widgetsScreenWidth+scrollX
 		local baseY = (((240-widgetHeight)/2))//1
-		gfx.fillRect(x, 0, widgetsScreenWidth, 240)
+		
+		widgetsBackground:draw(x,0)
 	
 		-- Update widget scroll position with lerp
 		widgetScroll = lerpMaxed(widgetScroll, -(currentWidget-1)*(widgetHeight + widgetSpacing), snappiness)
@@ -238,6 +247,8 @@ end
 
 function doScrolling()
 	
+	local objectTotalSize = objectSizes[labels[currentLabel].rows]+objectSpacings[labels[currentLabel].rows]
+	
 	if labels[currentLabel]["drawX"] ~= labelSpacing and cursorState == cursorStates.SELECT_LABEL then
 		scrollX = lerpMaxed(scrollX,scrollX-labels[currentLabel]["drawX"]+labelSpacing,snappiness)
 	end
@@ -245,10 +256,7 @@ function doScrolling()
 	if cursorState == cursorStates.SELECT_WIDGET and scrollX < widgetsScreenWidth-5 then
 		scrollX = lerpFloored(scrollX, widgetsScreenWidth, snappiness)	
 	end
-	
-	local objectTotalSize = objectSizes[labels[currentLabel].rows]+objectSpacings[labels[currentLabel].rows]
-	
-	
+		
 	if (lastObjectCursorDrawX > 400-objectTotalSize-labelSpacing-configVars.cornerradius) and (currentObject > #labels[currentLabel].objects-labels[currentLabel].rows) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
 		
 		scrollX = lerpFloored(scrollX,scrollX-(lastObjectCursorDrawX-400)-objectTotalSize-labelSpacing-configVars.cornerradius,snappiness)
@@ -414,15 +422,15 @@ function drawLabelBackgrounds()
 			if configVars.labeltextbgs then
 				gfx.fillRoundRect(dw/2 - tw/2, 1, tw, th-2, 10)
 			end
-			gfx.drawTextAligned(t, (h/2)//1, 3,kTextAlignment.center)
+			gfx.drawTextAligned(t, (h/2)//1+3, 3,kTextAlignment.center)
 			gfx.popContext()
 			gfx.setImageDrawMode(gfx.kDrawModeCopy)
 			img = img:rotatedImage(90)
 			img = img:rotatedImage(180)
-			img:draw((labelTextSize/2-3)//1 + ditherMod,0)
+			img:draw(4 + ditherMod,0)
 			
 			
-			drawIconsForLabel(v,-x,-labelYMargin)
+			drawIconsForLabel(v,0-x+ditherMod,-labelYMargin)
 			
 			gfx.popContext()
 			if not labelsCache[v] then labelsCache[v] = {} end

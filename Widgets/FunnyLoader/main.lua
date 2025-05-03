@@ -135,7 +135,6 @@ end
 
 function widget:update(isActive)
     if isActive then
-        counter+=1
         widget:getWidgetImage()
     end
 end

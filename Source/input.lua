@@ -576,7 +576,6 @@ cursorStateInputHandlers = {
 			sound03ActionTrimmed:play()
 			if not didShortcut then
 				if widgetIsActive then
-					
 					if widgets[currentWidget].BButtonDown then
 						widgets[currentWidget]:BButtonDown()
 					end
@@ -600,6 +599,10 @@ cursorStateInputHandlers = {
 					widgets[currentWidget]:upButtonDown()
 				end
 			else
+				if playdate.buttonIsPressed("B") then
+					moveWidgetUp(currentWidget)	
+					didShortcut = true
+				end
 				currentWidget = math.max(currentWidget - 1, 1)
 			end
 			
@@ -620,6 +623,10 @@ cursorStateInputHandlers = {
 					widgets[currentWidget]:downButtonDown()
 				end
 			else
+				if playdate.buttonIsPressed("B") then
+					moveWidgetDown(currentWidget)	
+					didShortcut = true
+				end
 				currentWidget = math.min(currentWidget + 1, #widgets)
 			end
 			sound01SelectionTrimmed:play()
@@ -711,6 +718,9 @@ function labelSelectMoveLeft(fast)
 	elseif cursorState == cursorStates.SELECT_LABEL and fast~=true then
 		changeCursorState(cursorStates.SELECT_WIDGET)
 	end
+	if heldObject then
+		iconsCache[heldObject.bundleid] = nil	
+	end
 	scrollLeftFast = true
 end
 
@@ -722,6 +732,9 @@ function labelSelectMoveRight()
 		labels[currentLabel]["collapsed"] = false
 		cursorFrame = 1
 		redrawFrame = true
+	end
+	if heldObject then
+		iconsCache[heldObject.bundleid] = nil	
 	end
 end
 
@@ -798,6 +811,26 @@ function moveLabelRight(label)
 		table.insert(labelOrder, oldIndex + 1, label)
 	end	
 	saveLabelOrder()
+	redrawFrame = true
+end
+
+function moveWidgetUp(index)
+	if index > 1 then
+		local oldIndex = index
+		local widget = table.remove(widgets, oldIndex)
+		table.insert(widgets, oldIndex - 1, widget)
+	end	
+	saveWidgetOrder()
+	redrawFrame = true
+end
+
+function moveWidgetDown(index)
+	if index < #widgets then
+		local oldIndex = index
+		local widget = table.remove(widgets, oldIndex)
+		table.insert(widgets, oldIndex + 1, widget)
+	end	
+	saveWidgetOrder()
 	redrawFrame = true
 end
 

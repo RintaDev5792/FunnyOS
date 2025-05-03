@@ -132,10 +132,12 @@ end
 
 function loadWidgets()
 	local widgetsPath = savePath.."Widgets/"
+	local widgetsOrder = playdate.datastore.read(savePath.."widgetOrder")
 
 	widgets = {}
-
+	if widgetsOrder then for i=1,#widgetsOrder do widgets[i] = 0 end end
 	local folders = playdate.file.listFiles(widgetsPath)
+	
 	for _, folder in ipairs(folders) do
 		local folderPath = widgetsPath .. folder
 		if playdate.file.isdir(folderPath) then
@@ -146,11 +148,27 @@ function loadWidgets()
 				
 				if success and widget and widget.metadata and widget.update and widget.getWidgetImage and widget.loadWidgetImage then
 					widget.metadata.path = folderPath
-					table.insert(widgets, widget)
+					if widgetsOrder then
+						if indexOf(widgetsOrder, widget.metadata.name) then
+							widgets[indexOf(widgetsOrder, widget.metadata.name)] = widget
+						else
+							table.insert(widgets, widget)
+							
+						end
+					else
+						table.insert(widgets, widget)
+					end
 				end
 			end
 		end
 	end
+	
+	local newWidgets = {}
+	for i,v in ipairs(widgets) do
+		if v ~= 0 then table.insert(newWidgets, v) end
+	end
+	widgets = newWidgets
+	newWidgets = nil
 
 	if #widgets > 0 then
 		selectedWidget = 1
@@ -159,7 +177,7 @@ function loadWidgets()
 			widget:init()
 		end
 	end
-	alphabetSortWidgets()
+	--alphabetSortWidgets()
 end
 
 function getGameObject(bundleID) 
