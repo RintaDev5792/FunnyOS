@@ -603,7 +603,11 @@ cursorStateInputHandlers = {
 					moveWidgetUp(currentWidget)	
 					didShortcut = true
 				end
-				currentWidget = math.max(currentWidget - 1, 1)
+				if currentWidget > 1 then
+					currentWidget -= 1
+				else
+					currentWidget = #widgets
+				end
 			end
 			
 			sound02SelectionReverseTrimmed:play()
@@ -627,7 +631,12 @@ cursorStateInputHandlers = {
 					moveWidgetDown(currentWidget)	
 					didShortcut = true
 				end
-				currentWidget = math.min(currentWidget + 1, #widgets)
+				
+				if currentWidget < #widgets then
+					currentWidget += 1
+				else
+					currentWidget = 1
+				end
 			end
 			sound01SelectionTrimmed:play()
 			delaySetNoShortcut()

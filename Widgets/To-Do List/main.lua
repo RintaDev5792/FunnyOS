@@ -1,5 +1,5 @@
-local TemplateWidget = {}
-local widget = TemplateWidget
+local FunnyListWidget = {}
+local widget = FunnyListWidget
 
 local list = {}
 local listPath = savePath.."Widgets/Save/ToDoList/"
@@ -13,7 +13,7 @@ local rename = false
 local timerInitialDelay,timerRepeatDelay = 300,40
 -- path is filled out when loaded by system
 widget.metadata = {
-	name = "To-do List",
+	name = "FunnyList",
 	game = "com.hydrasoftworks.pocketplanner",
 	path = nil
 }
@@ -25,14 +25,14 @@ function widget:AButtonDown()
 	didAction = false
 	if selected > #list then
 		didAction = true
-		addItem()
+		widget:addItem()
 	end
 end
 
-function addItem()
+function widget:addItem()
 	table.insert(list,"")
 	selected = #list
-	renameSelectedItem()
+	widget:renameSelectedItem()
 end
 
 function widget:keyboardWillHideCallback(pressedOK)
@@ -42,7 +42,7 @@ function widget:keyboardWillHideCallback(pressedOK)
 		--if playdate.keyboard.text == "" then return end 
 		if pressedOK then list[selected] = playdate.keyboard.text end
 		widget:loadWidgetImage()
-		saveList()
+		widget:saveList()
 	end
 end
 
@@ -68,33 +68,32 @@ function widget:BButtonUp()
 	-- Removes focus from the widget so others can be selected
 	-- Need this line somewhere if you use the B button.
 	widgetIsActive = false
-	selected = 1
-	scroll = 0
+	widget:saveList()
 	widget:loadWidgetImage()
 end
 
 function widget:upButtonDown()
 	if playdate.buttonIsPressed("A") then
 		didAction = true
-		removeScrollTimer()
-		scrollRepeatTimer = playdate.timer.keyRepeatTimerWithDelay(timerInitialDelay,timerRepeatDelay, moveSelectedItemUp)
+		widget:removeScrollTimer()
+		scrollRepeatTimer = playdate.timer.keyRepeatTimerWithDelay(timerInitialDelay,timerRepeatDelay, widget.moveSelectedItemUp)
 	else
-		removeScrollTimer()
-		scrollRepeatTimer = playdate.timer.keyRepeatTimerWithDelay(timerInitialDelay,timerRepeatDelay, moveUp)
+		widget:removeScrollTimer()
+		scrollRepeatTimer = playdate.timer.keyRepeatTimerWithDelay(timerInitialDelay,timerRepeatDelay, widget.moveUp)
 	end
 end
 
-function moveSelectedItemUp()
+function widget:moveSelectedItemUp()
 	if selected == 1 then return end
 	local item = table.remove(list,selected)
 	table.insert(list,selected-1,item)
-	moveUp()
-	saveList()
+	widget:moveUp()
+	widget:saveList()
 end
 
-function moveUp()
+function widget:moveUp()
 	if rename then
-		removeScrollTimer()
+		widget:removeScrollTimer()
 		return	
 	end
 	selected=math.max(selected-1,1)
@@ -105,21 +104,21 @@ function moveUp()
 end
 
 function widget:upButtonUp()
-	removeScrollTimer()
+	widget:removeScrollTimer()
 end
 
 function widget:downButtonDown()
 	if playdate.buttonIsPressed("A") then
 		didAction = true
-		removeScrollTimer()
-		scrollRepeatTimer = playdate.timer.keyRepeatTimerWithDelay(timerInitialDelay,timerRepeatDelay, moveSelectedItemDown)
+		widget:removeScrollTimer()
+		scrollRepeatTimer = playdate.timer.keyRepeatTimerWithDelay(timerInitialDelay,timerRepeatDelay, widget.moveSelectedItemDown)
 	else
-		removeScrollTimer()
-		scrollRepeatTimer = playdate.timer.keyRepeatTimerWithDelay(timerInitialDelay,timerRepeatDelay, moveDown)
+		widget:removeScrollTimer()
+		scrollRepeatTimer = playdate.timer.keyRepeatTimerWithDelay(timerInitialDelay,timerRepeatDelay, widget.moveDown)
 	end
 end
 
-function moveSelectedItemDown()
+function widget:moveSelectedItemDown()
 	if selected >= #list  then return end
 	local item = table.remove(list,selected)
 	table.insert(list,selected+1,item)
@@ -127,13 +126,13 @@ function moveSelectedItemDown()
 	saveList()
 end
 
-function moveDown()
+function widget:moveDown()
 	if rename then
-		removeScrollTimer()
+		widget:removeScrollTimer()
 		return	
 	end
 	selected=math.min(selected+1,#list+1)
-	if selected > (200/itemHeight)-2+scroll then
+	if selected > (200/itemHeight)-3+scroll then
 		scroll=scroll+1
 	end
 	widget:loadWidgetImage()
@@ -141,10 +140,10 @@ end
 
 
 function widget:downButtonUp()
-	removeScrollTimer()
+	widget:removeScrollTimer()
 end
 
-function removeScrollTimer()
+function widget:removeScrollTimer()
 	if scrollRepeatTimer ~= nil then
 		scrollRepeatTimer:pause()
 		scrollRepeatTimer:remove()
@@ -153,23 +152,15 @@ function removeScrollTimer()
 end
 
 function widget:leftButtonDown()
-
-	if playdate.buttonIsPressed("A") then
-		didAction = true	
-		removeSelectedItem()
-	end
+	widget:removeSelectedItem()
 end
 
 function widget:rightButtonDown()
-
-	if playdate.buttonIsPressed("A") then
-		didAction = true	
-		renameSelectedItem()
-	end
+	widget:renameSelectedItem()
 end
 
-function renameSelectedItem()
-	removeScrollTimer()
+function widget:renameSelectedItem()
+	widget:removeScrollTimer()
 	if selected <= #list then
 		playdate.keyboard.show()	
 		playdate.keyboard.text = list[selected]
@@ -178,11 +169,11 @@ function renameSelectedItem()
 	end
 end
 
-function removeSelectedItem()
+function widget:removeSelectedItem()
 	if selected <= #list then
 		table.remove(list,selected)
 		widget:loadWidgetImage()
-		saveList()
+		widget:saveList()
 	end	
 end
 
@@ -221,6 +212,26 @@ function widget:loadWidgetImage()
 		gfx.drawText("*+ Add Item*",5, y+2)
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		
+		if widgetIsActive then
+			gfx.setColor(gfx.kColorBlack)
+			gfx.fillRect(0, 200-24, 200, 24)
+			gfx.setImageDrawMode(gfx.kDrawModeCopy)
+			--curveLeftImg:draw(0,200-36)
+			--curveRightImg:draw(200-13,200-36)
+			local curveImg = gfx.image.new(200,configVars.cornerradius,gfx.kColorBlack)
+			local maskImg = gfx.image.new(200,configVars.cornerradius,gfx.kColorWhite)
+			gfx.pushContext(maskImg)
+			gfx.setColor(gfx.kColorBlack)
+			gfx.fillRoundRect(0, -configVars.cornerradius*2, 200, configVars.cornerradius*3, configVars.cornerradius)
+			gfx.popContext()
+			curveImg:setMaskImage(maskImg)
+			curveImg:draw(0,200-24-configVars.cornerradius)
+			
+			gfx.setImageDrawMode(gfx.kDrawModeNXOR)
+			gfx.drawTextAligned(buttons.A.."    " ..buttons.LEFT.."    "..buttons.RIGHT,100, 200-21,kTextAlignment.center)
+			
+		end
+		
 	playdate.graphics.popContext()
 
 	return widget.image
@@ -237,12 +248,9 @@ end
 
 -- Called every frame, put main loop here
 function widget:update(isActive)
-	if isActive then
-		
-	end
 end
 
-function saveList()
+function widget:saveList()
 	playdate.file.mkdir(listPath)
 	playdate.datastore.write(list,listPath..listFilename)	
 end
@@ -252,7 +260,7 @@ function widget:init()
 	list = playdate.datastore.read(listPath..listFilename)
 	if not list then 
 		list = {}
-		saveList()
+		widget:saveList()
 	end
 	widget:getWidgetImage()	
 end
