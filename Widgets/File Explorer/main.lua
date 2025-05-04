@@ -249,7 +249,9 @@ end
 
 function widget:copy(ogPath,newPath,dontRename,forceOverWrite,finishCallback)
 	widget:recreateFileStructure(ogPath, newPath,dontRename,forceOverWrite)
-	finishCallback()
+	if finishCallback then
+		finishCallback()
+	end
 	copied = false
 	redrawFrame = true
 	copyProgress = 0
