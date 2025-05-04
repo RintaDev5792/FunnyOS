@@ -128,7 +128,7 @@ function widget:moveSelectedItemDown()
 	local item = table.remove(list,selected)
 	table.insert(list,selected+1,item)
 	widget:moveDown()
-	saveList()
+	widget:saveList()
 end
 
 function widget:moveDown()
