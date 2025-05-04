@@ -124,7 +124,7 @@ function drawRoutine()
 	elseif cursorState == cursorStates.RENAME_LABEL then
 		drawLabelNameBox(currentLabel)	
 	end
-	playdate.drawFPS(383,0)
+	--playdate.drawFPS(383,0)
 end
 
 function generateWidgetMask()

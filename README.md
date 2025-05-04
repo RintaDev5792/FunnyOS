@@ -22,27 +22,27 @@ Made for playdateOS 2.6.2 and up, 2.7.0 required for networking features.
 - While the first label on your home screen is selected, press LEFT to access the widgets list! If you have no widgets this will show up blank, but if you place some into the shared folder it will show them all there.
 
 ## Instructions
-### Installing on hardware
+### Installing on Hardware
 
 Video tutorial available [here](https://www.youtube.com/watch?v=L6Q6Tsoksgg) for installations not utilising FunnyLoader.
   
-1. Download FunnyOS-2.pdx and os-download-x.x.x.py from the [releases](https://github.com/RintaDev5792/FunnyOS/releases) page
+1. Download FunnyOS-2.pdx and os-download.py from the [releases](https://github.com/RintaDev5792/FunnyOS/releases) page
 1. Run os-download and follow the instructions. After it is complete, you should have a .pdos and a .pdkey file in the same directory
 1. Rename the PlaydateOS.pdos file to a .zip and unzip it
 
-#### If installing only FunnyOS
+#### If Installing only FunnyOS
 1. Go into the new folder and then /System, and rename Launcher.pdx to StockLauncher.pdx
 1. Copy your FunnyOS.pdx file into the System folder and rename it to Launcher.pdx
 1. If you intend to use the FunnyLoader widget as given in the Widgets section, follow the FunnyLoader instructions for directory setup, just using FunnyOS2.pdx swapped for FunnyLoader.pdx.  
 
-#### If utilising FunnyLoader to have multiple launchers
+#### If Utilising FunnyLoader to Have Multiple Launchers
 1. Go into the new folder and then /System, and create a folder named "Launchers" inside of it with that exact capitalisation
 1. Copy the default Launcher.pdx from /System to /System/Launchers and rename it to whatever you want (usually "StockLauncher.pdx")
 1. Copy your FunnyLoader.pdx (available from the releases page of [this](https://github.com/RintaDev5792/FunnyLoader/releases) repo) into /System (NOT /LAUNCHERS) and rename it to "Launcher.pdx"
 1. Copy your FunnyOS.pdx and the .pdx files of whichever other launchers you are using into /System/Launchers
 1. Name all of the .pdx files in /System/Launchers how you want them to show up in the FunnyLoader list
 
-#### After organizing your PlaydateOS folder according to either of the previous sections
+#### After Organizing Your PlaydateOS Folder According to Either of the Previous Sections
 1. Re-zip the PlaydateOS folder so that everything in the folder is at the ROOT of your zip.
 1. For example: if on macos open a terminal in the folder (not in System, in the root) and run "zip -r ../PlaydateOS-Patched.zip .", if on Windows go into your folder, press ctrl+a, and then compress the files instead of the folder.
 1. Rename your NEW zip to a .pdos
@@ -59,6 +59,9 @@ If this at any point freezes or errors out during installation, especially multi
 1. Rename the existing application `Launcher.pdx` to somthing else, like `StockLauncher.pdx`
 1. Drag the `Launcher.pdx` you created in step 1 into the `System` folder
   
+### Updating  
+- If a new PlaydateOS version has released or you do not have the Explorer widget, follow the install instructions again. If you are staying on the same PlaydateOS version and the same device, you do not have to re-download the .pdos and .pdkey.
+- If you are using the Explorer widget, simply rename the new release from a .pdx to .fosl after unzipping it. Then transfer the file anywhere on your playdate, and install it with the Explorer widget. 
 
 ## Setup  
 Before any of these actions can be completed, run the launcher on-device after installing.  
