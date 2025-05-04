@@ -11,6 +11,8 @@ Made for playdateOS 2.6.2 and up, 2.7.0 required for networking features.
 - labels system, letting you create and name "labels" (sections of objects) on the grid that allow organisation and faster movement
 - button combinations letting you do anything without ever opening a menu or holding a button
 - alphabetical organization by default to make it easier to find games when you first install it
+- tons of customization settings so you can make your home screen home
+- widgets system for small applets on the side that can even perform system operations
 
 ## Navigation
 - FOS2 is based almost entirely on button combinations to do most major actions
