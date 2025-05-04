@@ -91,6 +91,9 @@ Lists every launcher in /System and /Launchers so you can switch to a different 
 A fully featured file explorer with copy,paste,rename,delete,new folder,preview, and launcher installation built in! Allows the user to preview specific file formats such as .pda and .pdi in the widget.  
   
 This widget enables the use of ".fosl" files. In order to install a launcher with the Explorer, rename a .pdx file to .fosl. Then locate the file in the Explorer on device, click right to enter the context menu, and select "install as launcher."  
+
+#### FunnyBadgeExplorer
+This is a WIP badge downloader so you can bedazzle your home screen without a computer! Sadly, it is currently non-functional.
   
   
 If you want to develop your own widgets, some example code is availale [Here](https://github.com/RintaDev5792/FunnyOS/tree/main/Widgets).  
