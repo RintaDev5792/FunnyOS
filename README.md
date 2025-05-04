@@ -79,10 +79,10 @@ It is highly recommended if you have multiple launchers to install the FunnyLoad
 #### To-Do List  
 Lets you keep a list of strings right on your home screen!  
   
-### FunnyLoader  
+#### FunnyLoader  
 Lists every launcher in /System and /Launchers so you can switch to a different launcher from the FOS2 home screen!  
   
-### FunnyExplorer  
+#### FunnyExplorer  
 A fully featured file explorer with copy,paste,rename,delete,new folder,preview, and launcher installation built in! Allows the user to preview specific file formats such as .pda and .pdi in the widget.  
   
 This widget enables the use of ".fosl" files. In order to install a launcher with the Explorer, rename a .pdx file to .fosl. Then locate the file in the Explorer on device, click right to enter the context menu, and select "install as launcher."  
