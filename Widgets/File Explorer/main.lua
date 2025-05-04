@@ -316,9 +316,9 @@ function widget:openContextMenu()
 	local selectedFile = currentFiles[currentSelection]
 	if selectedFile ~= "../" then
 		local suffix = selectedFile:sub(#selectedFile-5,#selectedFile)
-		while suffix:sub(1,1) ~= "." do
+		while suffix:sub(1,1) ~= "." and #suffix > 1 do
 			suffix = suffix:sub(2,#suffix)
-			if #suffix == 1 then break end
+			if #suffix < 2 then break end
 		end
 		if suffix == ".pda" or suffix == ".pdi" or suffix == ".pdx/" or suffix == ".pdz" or suffix:sub(1,1) == "/" then
 			contextMenuItems = {
@@ -715,7 +715,7 @@ function widget:loadWidgetImage()
 				drawText = drawText:gsub("_","__")
 				drawText = drawText:gsub("*","**")
 				
-				if v:sub(#v,#v) == "/" then drawText = drawText:sub(1,#drawText-1) end
+				--if v:sub(#v,#v) == "/" then drawText = drawText:sub(1,#drawText-1) end
 				gfx.drawText("*"..drawText,40,y+9)
 				gfx.setImageDrawMode(gfx.kDrawModeNXOR)
 				widget:drawFileIconAt(v,4,y)
