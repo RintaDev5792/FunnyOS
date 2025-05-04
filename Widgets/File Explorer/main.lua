@@ -192,6 +192,9 @@ function widget:recreateFileStructure(originalPath, newPath,dontRename,forceOver
 	copySize = 0
 	local lastDir = "copy of "..originalPath:gsub(widget:removeLastFolder(originalPath),"")
 	if dontRename then lastDir = originalPath:gsub(widget:removeLastFolder(originalPath),"") end
+	if originalPath:sub(-1,-1) == "/" and lastDir:sub(-1,-1) ~= "/" then
+		lastDir = lastDir.."/"
+	end
 	local isFolder = lastDir:sub(-1,-1) == "/"
 	if indexOf(fle.listFiles(newPath), lastDir) and not forceOverWrite then 
 		createInfoPopup("Action Failed", "*The specified file or folder already exists at the destination.", false)
@@ -233,7 +236,6 @@ function widget:recreateFileStructure(originalPath, newPath,dontRename,forceOver
 		fle.mkdir(newPath..lastDir)
 		pasteFileStructure(fileStructure, newPath..lastDir)
 	else
-		print(originalPath, newPath..lastDir)
 		if not widget:copyFile(originalPath, newPath..lastDir) then
 			return false
 		end
@@ -326,7 +328,6 @@ function widget:openContextMenu()
 			"Copy",
 			"Paste",
 			"Rename",
-			--"Unzip"
 			"New Folder",
 			"Delete",
 			}
@@ -345,7 +346,6 @@ function widget:openContextMenu()
 			"Copy",
 			"Paste",
 			"Rename",
-			--"Unzip"
 			"New Folder",
 			"Delete",
 			}
@@ -638,8 +638,6 @@ function widget:drawBottomBar()
 		gfx.setColor(gfx.kColorBlack)
 		gfx.fillRect(0, 200-24, 200, 24)
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
-		--curveLeftImg:draw(0,200-36)
-		--curveRightImg:draw(200-13,200-36)
 		local curveImg = gfx.image.new(200,configVars.cornerradius,gfx.kColorBlack)
 		local maskImg = gfx.image.new(200,configVars.cornerradius,gfx.kColorWhite)
 		gfx.pushContext(maskImg)
@@ -715,7 +713,7 @@ function widget:loadWidgetImage()
 				drawText = drawText:gsub("_","__")
 				drawText = drawText:gsub("*","**")
 				
-				--if v:sub(#v,#v) == "/" then drawText = drawText:sub(1,#drawText-1) end
+				if v:sub(#v,#v) == "/" then drawText = drawText:sub(1,#drawText-1) end
 				gfx.drawText("*"..drawText,40,y+9)
 				gfx.setImageDrawMode(gfx.kDrawModeNXOR)
 				widget:drawFileIconAt(v,4,y)
