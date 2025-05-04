@@ -675,6 +675,7 @@ function drawSystemInfo()
 	gfx.fillRoundRect(180, 420-controlCenterProgress, 226-24, 20, configVars.cornerradius)
 	gfx.setDitherPattern(0)
 	gfx.setColor(gfx.kColorWhite)
+	if storagePercent ~= 1/0 then storagePercent = 0.1 end
 	gfx.fillRoundRect(180, 420-controlCenterProgress, ((226-24)*storagePercent)//1, 20, configVars.cornerradius)
 	
 	local filledGB = readableBytes(totalStorage-freeStorage, 2)

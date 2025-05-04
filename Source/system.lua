@@ -612,7 +612,15 @@ function loadIcon(bundleID, labelName, imageName)
 				iconsCache[bundleID][imageName] = badgeIcon
 				return badgeIcon
 			else
-				iconsCache[bundleID][imageName] = iconImg
+				for k,v in pairs(labels) do
+					for i,v2 in ipairs(v.objects) do
+						if v2.bundleid == bundleID then
+							labels[k].objects[i] = emptyObject
+							print("REMOVED")
+						end
+					end
+				end
+				iconsCache[bundleID][imageName] = loadIcon(".empty")
 				return iconImg	
 			end
 		else
