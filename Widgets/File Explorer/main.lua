@@ -12,6 +12,7 @@ local extensionImgs = {
 	["pft"] = 0,
 	["pdt"] = 0,
 	["pds"] = 0,
+	["fosl"] = 0,
 	["json"] = 0,
 }
 local currentPath = "/Shared/FunnyOS2/"
@@ -121,7 +122,7 @@ end
 function widget:drawProgress(value,outOfValue, text)
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	gfx.setColor(gfx.kColorWhite)	
-	local w,h = 400-labelSpacing*10, 240-labelSpacing*14
+	local w,h = 400-labelSpacing*10+configVars.linewidth, 240-labelSpacing*14+configVars.linewidth
 	local oldFont = gfx.getFont(gfx.font.kVariantNormal)
 	gfx.setFont(gfx.getLargeUIFont())
 	local textWidth, textHeight = gfx.getTextSize("HI")
@@ -130,17 +131,17 @@ function widget:drawProgress(value,outOfValue, text)
 	gfx.fillRoundRect(x,y , w, h, configVars.cornerradius)
 	gfx.setColor(gfx.kColorBlack)
 	gfx.setLineWidth(configVars.linewidth)
-	gfx.drawRoundRect(x,y , w, h, configVars.cornerradius)
+	gfx.drawRoundRect(x,y+2, w, h-4, configVars.cornerradius)
 	gfx.setPattern({170,170,170,170,170,170,170,170})
-	local img = gfx.image.new(w-labelSpacing*2,34,gfx.kColorWhite)
+	local img = gfx.image.new(w-labelSpacing*2,32,gfx.kColorWhite)
 	gfx.pushContext(img)
-	gfx.fillRoundRect(0,0, (w-labelSpacing*2), 34, configVars.cornerradius*100)
+	gfx.fillRoundRect(0,0, (w-labelSpacing*2), 32, configVars.cornerradius*100)
 	gfx.popContext()
-	local mimg = gfx.image.new(w-labelSpacing*2,34,gfx.kColorBlack)
+	local mimg = gfx.image.new(w-labelSpacing*2,32,gfx.kColorBlack)
 	gfx.pushContext(mimg)
 	gfx.setDitherPattern(0)
 	gfx.setColor(gfx.kColorWhite)
-	gfx.fillRect(0, 0, ((w-labelSpacing*2)*(value/outOfValue))//1, 34)
+	gfx.fillRect(0, 0, ((w-labelSpacing*2)*(value/outOfValue))//1, 32)
 	gfx.popContext(mimg)
 	img:setMaskImage(mimg)
 	img:draw(x+labelSpacing,y+h-labelSpacing-32 )
@@ -186,12 +187,13 @@ function widget:copyFile(from,to,blockSize)
 	return true
 end
 
-function widget:recreateFileStructure(originalPath, newPath)
+function widget:recreateFileStructure(originalPath, newPath,dontRename,forceOverWrite)
 	copyProgress = 0
 	copySize = 0
 	local lastDir = "copy of "..originalPath:gsub(widget:removeLastFolder(originalPath),"")
+	if dontRename then lastDir = originalPath:gsub(widget:removeLastFolder(originalPath),"") end
 	local isFolder = lastDir:sub(-1,-1) == "/"
-	if indexOf(currentFiles, lastDir) then 
+	if indexOf(fle.listFiles(newPath), lastDir) and not forceOverWrite then 
 		createInfoPopup("Action Failed", "*The specified file or folder already exists at the destination.", false)
 		widget:closeContextMenu()
 		return false
@@ -237,14 +239,17 @@ function widget:recreateFileStructure(originalPath, newPath)
 		end
 		
 	end
-	table.insert(currentFiles, currentSelection+1, lastDir)
-	widget:moveDown()
+	if newPath == currentPath then
+		table.insert(currentFiles, currentSelection+1, lastDir)
+		widget:moveDown()
+	end
 	widget:loadWidgetImage()
 	return fileStructure
 end
 
-function widget:copy(ogPath,newPath)
-	local fs = widget:recreateFileStructure(copiedPath, currentPath)
+function widget:copy(ogPath,newPath,dontRename,forceOverWrite,finishCallback)
+	widget:recreateFileStructure(ogPath, newPath,dontRename,forceOverWrite)
+	finishCallback()
 	copied = false
 	redrawFrame = true
 	copyProgress = 0
@@ -268,6 +273,25 @@ function widget:performContextMenuAction()
 		copiedPath = currentPath..currentFiles[currentSelection]
 		copied = true
 		widget:closeContextMenu()
+	elseif selected == "Install as Launcher" then
+		copiedPath = currentPath..currentFiles[currentSelection]
+		copied = true
+		widget:closeContextMenu()
+		playdate.frameTimer.performAfterDelay(1, function() widget:copy(copiedPath,"/System/Launchers/",true,true,function()
+				if fle.exists("/System/Launchers/"..currentFiles[currentSelection]) then
+					if fle.exists("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
+						fle.delete("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"),true)
+					end
+					playdate.file.rename("/System/Launchers/"..currentFiles[currentSelection],"/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"))
+					createInfoPopup("Action Success", "*The .fosl installation has finished. The system will now restart in order to properly load the new software.", false, function()
+						sys.switchToLauncher()
+					end
+					)
+				else
+					createInfoPopup("Action Failed", "*The file "..currentFiles[currentSelection].." was not copied to /System/Launchers/ properly",false)
+				end
+			end)
+		end)	
 	elseif selected == "Paste" then
 		widget:closeContextMenu()
 		playdate.frameTimer.performAfterDelay(1, function() widget:copy(copiedPath,currentPath) end)	
@@ -289,9 +313,10 @@ function widget:openContextMenu()
 	contextMenuScroll = 0
 	local selectedFile = currentFiles[currentSelection]
 	if selectedFile ~= "../" then
-		local suffix = selectedFile:sub(#selectedFile-4,#selectedFile)
-		if suffix:sub(1,1) ~= "." then
+		local suffix = selectedFile:sub(#selectedFile-5,#selectedFile)
+		while suffix:sub(1,1) ~= "." do
 			suffix = suffix:sub(2,#suffix)
+			if #suffix == 1 then break end
 		end
 		if suffix == ".pda" or suffix == ".pdi" or suffix == ".pdx/" or suffix == ".pdz" or suffix:sub(1,1) == "/" then
 			contextMenuItems = {
@@ -304,6 +329,15 @@ function widget:openContextMenu()
 			"Delete",
 			}
 			
+		elseif suffix == ".fosl/" then
+			contextMenuItems = {
+			"Install as Launcher",
+			"Copy",
+			"Paste",
+			"Rename",
+			"New Folder",
+			"Delete",
+			}
 		else
 			contextMenuItems = {
 			"Copy",
@@ -502,6 +536,7 @@ function widget:upButtonDown()
 end
 
 function widget:moveUp()
+	if inFileContent then return end
 	if rename then
 		widget:removeScrollTimer()
 		return	
@@ -531,6 +566,7 @@ function widget:downButtonDown()
 end
 
 function widget:moveDown()
+	if inFileContent then return end
 	if rename then
 		widget:removeScrollTimer()
 		return	
@@ -567,6 +603,8 @@ function widget:drawFileIconAt(v,x,y)
 	if v:sub(#v,#v) == "/" then
 		if v:sub(#v-4,#v) == ".pdx/" then
 			extensionImgs["pdx"]:draw(x,y)
+		elseif v:sub(#v-5,#v) == ".fosl/" then
+			extensionImgs["fosl"]:draw(x,y)
 		else
 			folderImg:draw(x,y)
 		end
