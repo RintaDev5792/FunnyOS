@@ -127,7 +127,7 @@ function widget:moveSelectedItemDown()
 	if selected >= #list  then return end
 	local item = table.remove(list,selected)
 	table.insert(list,selected+1,item)
-	moveDown()
+	widget:moveDown()
 	saveList()
 end
 
