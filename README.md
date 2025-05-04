@@ -74,7 +74,19 @@ If you are using FunnyOS 2, there is a built-in asset manager in which badges ca
 ### Widgets  
 In order to load widgets into FunnyOS, put any .pdx file (that you know is a widget) called `<name>.pdi` inside `/Shared/FunnyOS2/Widgets`. 
 Pre-made widgets are available [Here](https://github.com/RintaDev5792/FunnyOS/tree/main/Assets/Widgets).  
-It is highly recommended if you have multiple launchers to install the FunnyLoader widget from that directory, as it lets you switch launchers right from FOS2!  
+It is highly recommended if you have multiple launchers to install the FunnyLoader and FunnyExplorer widgets from that directory, as together they let you install, update, and switch launchers right from FOS2!  
+
+#### To-Do List  
+Lets you keep a list of strings right on your home screen!  
+  
+### FunnyLoader  
+Lists every launcher in /System and /Launchers so you can switch to a different launcher from the FOS2 home screen!  
+  
+### FunnyExplorer  
+A fully featured file explorer with copy,paste,rename,delete,new folder,preview, and launcher installation built in! Allows the user to preview specific file formats such as .pda and .pdi in the widget.  
+  
+This widget enables the use of ".fosl" files. In order to install a launcher with the Explorer, rename a .pdx file to .fosl. Then locate the file in the Explorer on device, click right to enter the context menu, and select "install as launcher."  
+  
   
 If you want to develop your own widgets, some example code is availale [Here](https://github.com/RintaDev5792/FunnyOS/tree/main/Widgets).  
 
