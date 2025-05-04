@@ -10,6 +10,7 @@ local itemHeight = 20
 local didAction = true
 local scrollRepeatTimer = nil
 local rename = false 
+local renameStartText = ""
 local timerInitialDelay,timerRepeatDelay = 300,40
 -- path is filled out when loaded by system
 widget.metadata = {
@@ -36,11 +37,15 @@ function widget:addItem()
 end
 
 function widget:keyboardWillHideCallback(pressedOK)
-	rename = false
 	if rename then
 		rename = false
 		--if playdate.keyboard.text == "" then return end 
-		if pressedOK then list[selected] = playdate.keyboard.text end
+		if pressedOK then 
+				
+			list[selected] = playdate.keyboard.text 
+		else
+			list[selected] = renameStartText
+		end
 		widget:loadWidgetImage()
 		widget:saveList()
 	end
@@ -59,7 +64,7 @@ end
 function widget:AButtonUp()
 	-- Open the bundle id listed in Metadata
 	if not didAction then
-		--openApp(self.metadata.game)
+		widget:renameSelectedItem()
 	end
 end
 
@@ -161,8 +166,9 @@ end
 
 function widget:renameSelectedItem()
 	widget:removeScrollTimer()
-	if selected <= #list then
-		playdate.keyboard.show()	
+	if selected <= #list and not rename then
+		playdate.keyboard.show()
+		renameStartText = list[selected]	
 		playdate.keyboard.text = list[selected]
 		rename = true
 		widget:loadWidgetImage()	

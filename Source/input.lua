@@ -701,7 +701,7 @@ function insertEmptyObject(index, label)
 end
 
 function toggleControlCenter()
-	if controlCenterState == 0 or controlCenterState == 1 then
+	if controlCenterState == 0 or controlCenterState == 1 or cursorState == cursorStates.SELECT_LABEL then
 		controlCenterState = 2
 		oldCursorState = cursorState
 		controlCenterInfoSelection = 1

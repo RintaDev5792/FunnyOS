@@ -112,6 +112,8 @@ configVarDefaults = {
 	["invertbgdither"] = false,
 	["ccdither"] = 0.25,
 	["invertcc"] = false,
+	["invertwidgets"] = false,
+	["invertwidgetcursor"] = false,
 	["labeldither"] = 0.75,
 	["cornerradius"] = 20,
 	["linewidth"] = 3,
@@ -134,13 +136,15 @@ configVarOptions = {
 	["invertlabels"] =  {["name"] = "Invert Labels", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["invertlabeltext"] =  {["name"] = "Invert Label Text", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["labeltextbgs"] =  {["name"] = "Label Text BGs", ["values"] = {true, false}, ["type"] = "BOOL"},
-	["bgdither"] = {["name"] = "BG Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}, ["type"] = "DITHER"},
+	["bgdither"] = {["name"] = "BG Dither", ["values"] = {1, 0.9, 0.75, 0.6, 0.5,0.35,0.25,0.10,0}, ["type"] = "DITHER"},
 	["invertbgdither"] = {["name"] = "Invert BG Dither", ["values"] = {true, false}, ["type"] = "BOOL"},
-	["ccdither"] = {["name"] = "CC Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}, ["type"] = "DITHER"},
+	["ccdither"] = {["name"] = "CC Dither", ["values"] = {1, 0.9, 0.75, 0.6, 0.5,0.35,0.25,0.10,0}, ["type"] = "DITHER"},
 	["invertcc"] = {["name"] = "Invert CC", ["values"] = {true, false}, ["type"] = "BOOL"},
-	["labeldither"] = {["name"] = "Label Dither", ["values"] = {1, 0.75, 0.5, 0.25, 0}, ["type"] = "DITHER"},
-	["cornerradius"] = {["name"] = "Corner Radius", ["values"] = {1, 5, 10, 15, 20, 25}, ["type"] = "PIXELS"},
-	["linewidth"] = {["name"] = "Outline Width", ["values"] = {2, 3, 4, 5, 6}, ["type"] = "PIXELS"},
+	["invertwidgets"] = {["name"] = "Invert Widgets", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["invertwidgetcursor"] = {["name"] = "Invert Widget Cursor", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["labeldither"] = {["name"] = "Label Dither", ["values"] = {1, 0.9, 0.75, 0.6, 0.5,0.35,0.25,0.10,0}, ["type"] = "DITHER"},
+	["cornerradius"] = {["name"] = "Corner Radius", ["values"] = {1, 5, 10, 15, 20, 25, 30}, ["type"] = "PIXELS"},
+	["linewidth"] = {["name"] = "Outline Width", ["values"] = {1, 2, 3, 4, 5, 6}, ["type"] = "PIXELS"},
 	["autocollapselabels"] =  {["name"] = "Auto-Close Labels", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["transwrapped"] =  {["name"] = "Clear Icon Wrap", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["hidewrapped"] =  {["name"] = "Hide New Names", ["values"] = {true, false}, ["type"] = "BOOL"},
@@ -156,13 +160,15 @@ configVarOptionsOrder = {
 	"iconborders",
 	"invertborders",
 	"iconbgs",
+	"labeltextbgs",
 	"inverticonbgs",
 	"invertcursor",
 	"invertlabels",
 	"invertlabeltext",
-	"labeltextbgs",
 	"invertbgdither",
 	"invertcc",
+	"invertwidgets",
+	"invertwidgetcursor",
 	"cornerradius",
 	"linewidth",
 	"autocollapselabels",
@@ -487,6 +493,7 @@ function main()
 	end
 	playdate.display.setRefreshRate(targetFPS)
 	playdate.display.flush()
+	coroutine.yield()
 	changeCursorState(cursorStates.SELECT_LABEL)
 	loadWidgets()
 	loadBadges()

@@ -2,18 +2,6 @@ local FunnyExplorer = {}
 local widget = FunnyExplorer
 local folderImg = nil
 local documentImg = nil
-local pdxinfoImg = nil
---able to open PDX, PDA, PDI, PDZ
-local extensionImgs = {
-	["pdx"] = 0,
-	["pdz"] = 0,
-	["pda"] = 0,
-	["pdi"] = 0,
-	["pft"] = 0,
-	["pdt"] = 0,
-	["pds"] = 0,
-	["json"] = 0,
-}
 local currentPath = "/Shared/FunnyOS2/"
 local previousPaths = {}
 local currentFiles = {"Test Folder"}
@@ -21,29 +9,21 @@ local currentSelection = 1
 local scroll = 0
 local itemHeight = 33
 local loadedAssets = false
-local contextMenu = false
-local contextMenuSelection = 1
-local contextMenuItemHeight = 20
-local contextMenuScroll = 0
 local copied = false
 local copiedPath = ""
 local copyProgress = 0
 local copySize = 0
-local contextMenuItems = {}
-local fileAudio = nil
 local fileImg = nil
-local fileScript = nil
 local inFileContent = false
 local fileContentType = ""
-local rename = false
-local renameStartText = ""
+local server = nil
 
 local timerInitialDelay,timerRepeatDelay = 300,40
 local scrollRepeatTimer = nil
 
 -- path is filled out when loaded by system
 widget.metadata = {
-	name = "FunnyExplorer",
+	name = "FunnyBadgeExplorer",
 	game = nil,
 	path = nil
 }
@@ -54,23 +34,16 @@ widget.image = nil
 function widget:BButtonUp()
 	-- Removes focus from the widget so others can be selected
 	-- Need this line somewhere if you use the B button.
-	if contextMenu then 
-		widget:closeContextMenu()
-	else 
-		widgetIsActive = false 
-	end
+	widgetIsActive = false 
 	widget:loadWidgetImage()
 end
 
 function widget:AButtonUp()
 	local selectedFile = currentFiles[currentSelection]
-	if contextMenu then
-		widget:performContextMenuAction()
-	elseif selectedFile:sub(-1,-1) == "/" then
+	if selectedFile:sub(-1,-1) == "/" then
 		widget:enterSelectedFolder()
 	else
 		widget:openFileContent(selectedFile)
-		widget:closeContextMenu()
 	end
 end
 
@@ -193,7 +166,6 @@ function widget:recreateFileStructure(originalPath, newPath)
 	local isFolder = lastDir:sub(-1,-1) == "/"
 	if indexOf(currentFiles, lastDir) then 
 		createInfoPopup("Action Failed", "*The specified file or folder already exists at the destination.", false)
-		widget:closeContextMenu()
 		return false
 	end
 	local fileStructure = {}
@@ -250,97 +222,10 @@ function widget:copy(ogPath,newPath)
 	copyProgress = 0
 end
 
-function widget:performContextMenuAction()
-	local selected = contextMenuItems[contextMenuSelection]
-	if selected == "Delete" then
-		createInfoPopup("Confirm Action", "*Please confirm that you would like to delete the item \""..currentFiles[currentSelection].."\".", true, function()
-			if fle.delete(currentPath..currentFiles[currentSelection],true) then
-				table.remove(currentFiles,currentSelection)
-				currentSelection -= 1
-				if scroll > 0 then scroll -= 1 end
-				widget:closeContextMenu()
-			end
-		end)
-	elseif selected == "Rename" then
-		widget:renameItem()
-		widget:closeContextMenu()
-	elseif selected == "Copy" then
-		copiedPath = currentPath..currentFiles[currentSelection]
-		copied = true
-		widget:closeContextMenu()
-	elseif selected == "Paste" then
-		widget:closeContextMenu()
-		playdate.frameTimer.performAfterDelay(1, function() widget:copy(copiedPath,currentPath) end)	
-	elseif selected == "New Folder" then
-		if fle.mkdir(currentPath.."New Folder") then
-			table.insert(currentFiles, currentSelection, "New Folder/")
-			widget:renameItem()
-			widget:closeContextMenu()
-		end
-	elseif selected == "Open" then
-		local selectedFile = currentFiles[currentSelection]
-		widget:openFileContent(selectedFile)
-		widget:closeContextMenu()
-	end
-end
-
-function widget:openContextMenu()
-	contextMenuSelection = 1
-	contextMenuScroll = 0
-	local selectedFile = currentFiles[currentSelection]
-	if selectedFile ~= "../" then
-		local suffix = selectedFile:sub(#selectedFile-4,#selectedFile)
-		if suffix:sub(1,1) ~= "." then
-			suffix = suffix:sub(2,#suffix)
-		end
-		if suffix == ".pda" or suffix == ".pdi" or suffix == ".pdx/" or suffix == ".pdz" or suffix:sub(1,1) == "/" then
-			contextMenuItems = {
-			"Open",
-			"Copy",
-			"Paste",
-			"Rename",
-			--"Unzip"
-			"New Folder",
-			"Delete",
-			}
-			
-		else
-			contextMenuItems = {
-			"Copy",
-			"Paste",
-			"Rename",
-			--"Unzip"
-			"New Folder",
-			"Delete",
-			}
-		end
-	else
-		contextMenuItems = {
-			"Paste",
-			"New Folder"
-		}
-	end
-	contextMenu = true
-	widget:loadWidgetImage()
-end
-
-function widget:closeContextMenu()
-	contextMenuSelection = 1
-	contextMenuScroll = 0
-	contextMenu = false
-	widget:loadWidgetImage()
-end
-
 function widget:rightButtonUp()
 	if rename then
 		widget:removeScrollTimer()
 		return	
-	end
-	
-	if contextMenu then	
-		widget:performContextMenuAction()
-	else
-		widget:openContextMenu()
 	end
 end
 
@@ -355,6 +240,13 @@ function widget:removeLastFolder(path)
 	return path:sub(1,lastSlash)
 end
 
+function widget:getFilesFromServer(path)
+	--https://sv.ocean.lol/funnybadges/
+	server = playdate.network.http.new("https://sv.ocean.lol/")
+	server:get("/funnybadges/")
+	return {"Loading..."}
+end
+
 function widget:goToFolder(path)
 	if not path then return end
 	if path:sub(#path-2,#path) == "../" then
@@ -367,7 +259,7 @@ function widget:goToFolder(path)
 			table.remove(previousPaths, 1)
 		end
 		currentPath = path
-		currentFiles = fle.listFiles(currentPath)
+		currentFiles = widget:getFilesFromServer(currentPath)
 		if not currentFiles then
 			widget:goToFolder("/")
 			return
@@ -415,44 +307,8 @@ function widget:openFileContent(selectedFile)
 		else
 			createInfoPopup("Action Failed", "*The Playdate Image File "..selectedFile.." was unable to be displayed.", false)
 		end
-	elseif suffix == ".pdz" then
-		if fileScript then fileScript = nil end
-		local success, fileScript = pcall(function()
-			return playdate.file.run(currentPath..selectedFile)
-		end)
-		if fileScript then
-			if fileScript.init then
-				fileScript:init()
-			else
-				fileScript = nil
-				createInfoPopup("Action Failed", "*The Playdate Compiled Script File "..selectedFile.." was unable to be run.", false)
-			end
-		else
-			createInfoPopup("Action Failed", "*The Playdate Compiled Script File "..selectedFile.." was unable to be run.", false)
-		end
-	elseif suffix == ".pda" then
-		if fileAudio then fileAudio:stop(); fileAudio = nil end
-		fileAudio = playdate.sound.fileplayer.new(currentPath..selectedFile)
-		if fileAudio then
-			if music then
-				music:pause()
-			end
-			fileAudio:setFinishCallback(function()
-				if music then
-					music:play()
-				end
-				widget:closeFileContent()
-			end
-			)
-			fileAudio:play()
-		else
-			createInfoPopup("Action Failed", "*The Playdate Audio File "..selectedFile.." was unable to be played.", false)
-		end
 	elseif selectedFile:sub(-1,-1) == "/" then
 		widget:enterSelectedFolder()
-		inFileContent = false
-	else
-		inFileContent = false
 	end
 	widget:loadWidgetImage()
 end
@@ -465,11 +321,6 @@ function widget:leftButtonUp()
 	if rename then
 		widget:removeScrollTimer()
 		return	
-	end
-	if contextMenu then
-		widget:closeContextMenu()
-	else
-		widget:returnToPreviousFolder()
 	end
 end
 
@@ -506,17 +357,10 @@ function widget:moveUp()
 		widget:removeScrollTimer()
 		return	
 	end
-	if contextMenu then
-		contextMenuSelection=math.max(contextMenuSelection-1,1)
-		if contextMenuSelection < contextMenuScroll+1 then
-			contextMenuScroll=contextMenuScroll-1
-		end	
-	else
-		currentSelection=math.max(currentSelection-1,1)
-		if currentSelection < scroll+1 then
-			scroll=scroll-1
-		end	
-	end
+	currentSelection=math.max(currentSelection-1,1)
+	if currentSelection < scroll+1 then
+		scroll=scroll-1
+	end	
 	widget:loadWidgetImage()
 	
 end
@@ -535,17 +379,9 @@ function widget:moveDown()
 		widget:removeScrollTimer()
 		return	
 	end
-	if contextMenu then
-		contextMenuSelection=math.min(contextMenuSelection+1,#contextMenuItems)
-		if contextMenuSelection > (200/contextMenuItemHeight)+contextMenuScroll-2 then
-			contextMenuScroll=contextMenuScroll+1
-		end
-	
-	else
-		currentSelection=math.min(currentSelection+1,#currentFiles)
-		if currentSelection > (200/itemHeight)+scroll-2 then
-			scroll=scroll+1
-		end
+	currentSelection=math.min(currentSelection+1,#currentFiles)
+	if currentSelection > (200/itemHeight)+scroll-2 then
+		scroll=scroll+1
 	end
 	widget:loadWidgetImage()
 end
@@ -565,31 +401,9 @@ end
 
 function widget:drawFileIconAt(v,x,y)
 	if v:sub(#v,#v) == "/" then
-		if v:sub(#v-4,#v) == ".pdx/" then
-			extensionImgs["pdx"]:draw(x,y)
-		else
-			folderImg:draw(x,y)
-		end
+		folderImg:draw(x,y)
 	else
-		if v == "pdxinfo" then
-			pdxinfoImg:draw(x,y+1)
-		elseif v:sub(#v-3,#v) == ".pda" then
-			extensionImgs["pda"]:draw(x,y+1)
-		elseif v:sub(#v-3,#v) == ".pdi" then
-			extensionImgs["pdi"]:draw(x,y+1)
-		elseif v:sub(#v-3,#v) == ".pds" then
-			extensionImgs["pds"]:draw(x,y+1)
-		elseif v:sub(#v-3,#v) == ".pdz" then
-			extensionImgs["pdz"]:draw(x,y+1)
-		elseif v:sub(#v-3,#v) == ".pdt" then
-			extensionImgs["pdt"]:draw(x,y+1)
-		elseif v:sub(#v-3,#v) == ".pft" then
-			extensionImgs["pft"]:draw(x,y+1)
-		elseif v:sub(#v-4,#v) == ".json" then
-			extensionImgs["json"]:draw(x,y+1)
-		else
-			documentImg:draw(x,y+1)
-		end
+		documentImg:draw(x,y+1)
 	end
 end
 
@@ -631,10 +445,7 @@ function widget:loadWidgetImage()
 
 		if inFileContent then
 			
-			if fileContentType == ".pda" then
-				extensionImgs["pda"]:drawScaled(53, 26, 3)
-				gfx.drawTextInRect("*"..currentFiles[currentSelection], 10, 134, 180,20,nil,"...",kTextAlignment.center)
-			elseif fileContentType == ".pdi" then
+			if fileContentType == ".pdi" then
 				gfx.setImageDrawMode(gfx.kDrawModeCopy)
 				gfx.setColor(gfx.kColorBlack)
 				gfx.setDitherPattern(0.5)
@@ -644,10 +455,6 @@ function widget:loadWidgetImage()
 				local ratio = math.max(wRatio,hRatio)
 				local scaleFactor = (1/ratio)
 				fileImg:drawScaled(100 - w*scaleFactor/2,100 - h*scaleFactor/2 - 11,scaleFactor)
-				
-			elseif fileContentType == ".pdz" then
-				extensionImgs["pdz"]:drawScaled(53, 26, 3)
-				gfx.drawTextInRect("*"..currentFiles[currentSelection], 10, 134, 180,20,nil,"...",kTextAlignment.center)
 			end
 			
 			widget:drawBottomBar()
@@ -685,54 +492,11 @@ function widget:loadWidgetImage()
 		if copied then 
 			gfx.drawTextAligned("*Copy", 100, 7, kTextAlignment.center)
 		else
-			gfx.drawTextAligned("*File Explorer*",100, 7,kTextAlignment.center)
+			gfx.drawTextAligned("*Badge Explorer*",100, 7,kTextAlignment.center)
 		end
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		
 		widget:drawBottomBar()
-		
-		if contextMenu then
-			local addSpacing = ((configVars.linewidth/2)//1)
-			local w = 200-labelSpacing*2
-			local h = 200-24-7-14-labelSpacing*2 + 1
-			local contextMenuImg = gfx.image.new(w+addSpacing*2,h+addSpacing*2,gfx.kColorClear)
-			local contextMenuMaskImg = gfx.image.new(w+addSpacing*2,h+addSpacing*2,gfx.kColorBlack)
-			
-			gfx.setImageDrawMode(gfx.kDrawModeCopy)
-			gfx.setLineWidth(configVars.linewidth)
-			
-			gfx.pushContext(contextMenuMaskImg)
-				gfx.setImageDrawMode(gfx.kDrawModeCopy)
-				gfx.setColor(gfx.kColorWhite)
-				gfx.fillRoundRect(0, 0, w+addSpacing*2, h+addSpacing*2, configVars.cornerradius)
-			gfx.popContext()
-			
-			gfx.pushContext(contextMenuImg)
-				gfx.setLineWidth(configVars.linewidth)
-				gfx.setImageDrawMode(gfx.kDrawModeCopy)
-				gfx.setColor(gfx.kColorWhite)
-				gfx.fillRoundRect(addSpacing, addSpacing, w, h, configVars.cornerradius)
-				gfx.setColor(gfx.kColorBlack)
-				gfx.drawRoundRect(addSpacing, addSpacing, w, h, configVars.cornerradius)
-				for i,v in ipairs(contextMenuItems) do
-					gfx.setImageDrawMode(gfx.kDrawModeCopy)
-					local y = (i-1)*contextMenuItemHeight - contextMenuScroll*contextMenuItemHeight + addSpacing + 8
-					if i == contextMenuSelection and widgetIsActive then
-						gfx.fillRect(addSpacing, y, w, contextMenuItemHeight)
-						gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
-					end
-					if y > 0 and y < 200 then
-						local drawText = v
-						drawText = drawText:gsub("_","__")
-						drawText = drawText:gsub("*","**")
-						gfx.drawText("*"..drawText,addSpacing+labelSpacing,y+2)
-					end
-					gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
-				end
-			gfx.popContext()
-			contextMenuImg:setMaskImage(contextMenuMaskImg)
-			contextMenuImg:draw(labelSpacing - addSpacing,labelSpacing+22 - addSpacing - 1)
-		end
 		
 		
 	playdate.graphics.popContext()
@@ -753,11 +517,7 @@ end
 function widget:update(isActive)
 	if not loadedAssets and widget.metadata.path ~= nil then
 		folderImg = gfx.image.new(widget.metadata.path.."fol")
-		documentImg = gfx.image.new(widget.metadata.path.."doc")	
-		pdxinfoImg = gfx.image.new(widget.metadata.path.."pdxinfo")	
-		for k,v in pairs(extensionImgs) do
-			extensionImgs[k] = gfx.image.new(widget.metadata.path..k)
-		end
+		documentImg = gfx.image.new(widget.metadata.path.."pdi")	
 		loadedAssets = folderImg ~= nil
 		widget:loadWidgetImage()
 	end
@@ -776,7 +536,7 @@ end
 
 -- Called when FunnyOS boots up
 function widget:init()
-	widget:goToFolder("/Shared/FunnyOS2/")
+	widget:goToFolder("/")
 	widget:getWidgetImage()
 	loadedAssets = false
 end

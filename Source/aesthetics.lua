@@ -171,13 +171,18 @@ function processAndDrawWidgets()
 				if widgetImage then
 					if not widgetMaskImg then generateWidgetMask() end
 					widgetImage:setMaskImage(widgetMaskImg)
+					if configVars.invertwidgets then
+						gfx.setImageDrawMode(gfx.kDrawModeInverted)
+					else
+						gfx.setImageDrawMode(gfx.kDrawModeCopy)
+					end
 					widgetImage:draw(widgetX, widgetY)
 				end
 	
 				-- Draw widget cursor
 				if i == currentWidget then
 					gfx.setLineWidth(configVars.linewidth)
-					gfx.setColor(invertedColors[configVars.invertcursor])
+					gfx.setColor(invertedColors[configVars.invertwidgetcursor])
 	
 					-- If widget is active, border fits exactly
 					-- If inactive, border has padding
@@ -407,7 +412,7 @@ function drawLabelBackgrounds()
 			local limg = gfx.image.new(w,h,gfx.kColorClear)
 			gfx.pushContext(limg)
 			gfx.setColor(invertedColors[configVars["invertlabels"]])
-			gfx.setDitherPattern(configVars.labeldither)
+			gfx.setDitherPattern(configVars.labeldither, gfx.image.kDitherTypeBayer8x8)
 			gfx.fillRoundRect(ditherMod, 0, w, h, configVars["cornerradius"])
 			local t = "*"..labels[v]["displayName"].."*"
 			local tw,th = gfx.getTextSize(t)
@@ -475,7 +480,7 @@ function makeBgDitherImg()
 	gfx.setColor(invertedColors[configVars.invertbgdither])
 	local img = gfx.image.new(402,240,gfx.kColorClear)
 	gfx.lockFocus(img)
-	gfx.setDitherPattern(configVars.bgdither)
+	gfx.setDitherPattern(configVars.bgdither, gfx.image.kDitherTypeBayer8x8)
 	gfx.fillRect(0,0,402,240)
 	gfx.unlockFocus()
 	bgDitherImg = img
@@ -514,7 +519,7 @@ end
 function drawBottomBar(yOffset)
 	local color = invertedColors[configVars.invertcc]
 	gfx.setColor(color)
-	gfx.setDitherPattern(configVars.ccdither)
+	gfx.setDitherPattern(configVars.ccdither, gfx.image.kDitherTypeBayer8x8)
 	gfx.fillRoundRect(-1,240-bottomBarHeight-controlCenterProgress+yOffset,402,bottomBarHeight*3+controlCenterProgress,configVars["cornerradius"])
 	if controlCenterState ~= 0 then
 		--backgrounds
@@ -697,12 +702,16 @@ function drawRecentlyPlayed()
 			if not invertedFillDrawModes then 
 				invertedFillDrawModes = {[true] = playdate.graphics.kDrawModeFillWhite, [false] = playdate.graphics.kDrawModeFillBlack}
 			end
-			gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
-			gfx.drawTextInRect("*"..gameInfo[v].name.."*", 190, y-8,155,30,nil,"...")
-			gfx.setImageDrawMode(invertedDrawModes[configVars.invertcc])
-			local icon = getIcon(v, "recentlyPlayed", "recentlyPlayed")
-			if icon then
-				icon:draw(400-32-labelSpacing*2, y-16)
+			if gameInfo[v] then
+				gfx.setImageDrawMode(invertedFillDrawModes[not configVars.invertcc])
+				gfx.drawTextInRect("*"..gameInfo[v].name.."*", 190, y-8,155,30,nil,"...")
+				gfx.setImageDrawMode(invertedDrawModes[configVars.invertcc])
+				local icon = getIcon(v, "recentlyPlayed", "recentlyPlayed")
+				if icon then
+					icon:draw(400-32-labelSpacing*2, y-16)
+				end
+			else
+				recentlyPlayed[i] = nil
 			end
 		end
 	end
