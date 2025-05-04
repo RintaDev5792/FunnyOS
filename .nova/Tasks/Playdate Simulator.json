@@ -1,0 +1,11 @@
+{
+  "extension" : {
+    "identifier" : "com.panic.Playdate",
+    "name" : "Playdate"
+  },
+  "extensionTemplate" : "simulator",
+  "extensionValues" : {
+    "playdate.output-path" : "..\/..\/PlaydateSDK\/Disk\/System\/Launchers",
+    "playdate.product-name" : "FunnyOS"
+  }
+}

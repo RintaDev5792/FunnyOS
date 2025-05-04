@@ -32,6 +32,7 @@ local copyProgress = 0
 local copySize = 0
 local contextMenuItems = {}
 local fileAudio = nil
+local fileText = nil
 local fileImg = nil
 local fileScript = nil
 local inFileContent = false
@@ -194,7 +195,6 @@ function widget:recreateFileStructure(originalPath, newPath,dontRename,forceOver
 	if dontRename then lastDir = originalPath:gsub(widget:removeLastFolder(originalPath),"") end
 	if originalPath:sub(-1,-1) == "/" and lastDir:sub(-1,-1) ~= "/" then
 		lastDir = lastDir.."/"
-		print(lastDir)
 	end
 	local isFolder = lastDir:sub(-1,-1) == "/"
 	if indexOf(fle.listFiles(newPath), lastDir) and not forceOverWrite then 
@@ -323,7 +323,7 @@ function widget:openContextMenu()
 			suffix = suffix:sub(2,#suffix)
 			if #suffix < 2 then break end
 		end
-		if suffix == ".pda" or suffix == ".pdi" or suffix == ".pdx/" or suffix == ".pdz" or suffix:sub(1,1) == "/" then
+		if suffix == ".pda" or suffix == ".pdi" or suffix == ".pdx/" or suffix == ".pdz" or selectedFile == "pdxinfo" or suffix:sub(1,1) == "/" then
 			contextMenuItems = {
 			"Open",
 			"Copy",
@@ -376,7 +376,7 @@ function widget:rightButtonUp()
 	
 	if contextMenu then	
 		widget:performContextMenuAction()
-	else
+	else		
 		widget:openContextMenu()
 	end
 end
@@ -429,6 +429,7 @@ function widget:closeFileContent()
 	if fileAudio then fileAudio:stop(); fileAudio = nil end
 	if fileImg then fileImg = nil end
 	if fileScript then fileScript = nil end
+	if fileText then fileText = nil end
 	widget:loadWidgetImage()
 end
 
@@ -441,6 +442,7 @@ function widget:openFileContent(selectedFile)
 		suffix = suffix:sub(2,#suffix)
 	end
 	fileContentType = suffix
+	if selectedFile == "pdxinfo" then fileContentType = "pdxinfo" end
 	
 	if suffix == ".pdx/" then
 		sys.switchToGame(currentPath..selectedFile)
@@ -451,6 +453,15 @@ function widget:openFileContent(selectedFile)
 			
 		else
 			createInfoPopup("Action Failed", "*The Playdate Image File "..selectedFile.." was unable to be displayed.", false)
+		end
+	elseif selectedFile == "pdxinfo" then
+		if fileText then fileText = nil end
+		file = fle.open(currentPath..selectedFile)
+		fileText = file:read(65536)
+		if fileText then
+			
+		else
+			createInfoPopup("Action Failed", "*The Playdate Package Info File "..selectedFile.." was unable to be displayed.", false)
 		end
 	elseif suffix == ".pdz" then
 		if fileScript then fileScript = nil end
@@ -683,6 +694,9 @@ function widget:loadWidgetImage()
 				local ratio = math.max(wRatio,hRatio)
 				local scaleFactor = (1/ratio)
 				fileImg:drawScaled(100 - w*scaleFactor/2,100 - h*scaleFactor/2 - 11,scaleFactor)
+			elseif fileContentType == "pdxinfo" then
+				gfx.setImageDrawMode(gfx.kDrawModeCopy)
+				gfx.drawTextInRect("*"..fileText, 10, 10,180,165)
 				
 			elseif fileContentType == ".pdz" then
 				extensionImgs["pdz"]:drawScaled(53, 26, 3)

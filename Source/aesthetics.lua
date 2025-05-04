@@ -210,7 +210,7 @@ function drawLabelNameBox(label)
 	gfx.setColor(gfx.kColorBlack)
 	gfx.setLineWidth(configVars.linewidth)
 	gfx.drawRoundRect(labelSpacing/2, (120-h/2)//1, w, h, configVars.cornerradius)
-	gfx.drawTextAligned("*"..key.text.."*", (w/2+labelSpacing/2)//1, (120-h/2+labelSpacing/2)//1-1, kTextAlignment.center)
+	gfx.drawTextAligned("*"..key.text.."*", (w/2+labelSpacing/2)//1, (120-h/2+labelSpacing/2)//1+2, kTextAlignment.center)
 end
 
 function updateCursorFrame()
