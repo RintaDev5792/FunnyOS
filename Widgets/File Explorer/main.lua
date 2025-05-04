@@ -194,6 +194,7 @@ function widget:recreateFileStructure(originalPath, newPath,dontRename,forceOver
 	if dontRename then lastDir = originalPath:gsub(widget:removeLastFolder(originalPath),"") end
 	if originalPath:sub(-1,-1) == "/" and lastDir:sub(-1,-1) ~= "/" then
 		lastDir = lastDir.."/"
+		print(lastDir)
 	end
 	local isFolder = lastDir:sub(-1,-1) == "/"
 	if indexOf(fle.listFiles(newPath), lastDir) and not forceOverWrite then 
