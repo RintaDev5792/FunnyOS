@@ -136,15 +136,18 @@ function widget:drawProgress(value,outOfValue, text)
 	gfx.setPattern({170,170,170,170,170,170,170,170})
 	local img = gfx.image.new(w-labelSpacing*2,32,gfx.kColorWhite)
 	gfx.pushContext(img)
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	gfx.fillRoundRect(0,0, (w-labelSpacing*2), 32, configVars.cornerradius*100)
 	gfx.popContext()
 	local mimg = gfx.image.new(w-labelSpacing*2,32,gfx.kColorBlack)
 	gfx.pushContext(mimg)
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	gfx.setDitherPattern(0)
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillRect(0, 0, ((w-labelSpacing*2)*(value/outOfValue))//1, 32)
 	gfx.popContext(mimg)
 	img:setMaskImage(mimg)
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	img:draw(x+labelSpacing,y+h-labelSpacing-32 )
 	gfx.setDitherPattern(0)
 	gfx.drawRoundRect(x+labelSpacing,y+h-labelSpacing-32 , w-labelSpacing*2, 32, configVars.cornerradius*100)
@@ -152,8 +155,11 @@ function widget:drawProgress(value,outOfValue, text)
 end
 
 function widget:copyFile(from,to,blockSize)
-	if not blockSize then blockSize = 98304 end
-	if to:sub(-1,-1) == "/" or from == to then return end	
+	if not blockSize then blockSize = 16384 end
+	if to:sub(-1,-1) == "/" or from == to then 
+		print("COPYFILE EXIT FOLDER "..from)
+		return false
+	end	
 	--open source file
 	local sourceFile = fle.open(from,fle.kFileRead)
 	if not sourceFile then return end
@@ -169,12 +175,12 @@ function widget:copyFile(from,to,blockSize)
 	
 	local len = playdate.file.getSize(from)
 	local numBlocks = (len/blockSize)//1 + 1
+	print("COPYING FROM "..from.." TO "..to)
 	for i=1,numBlocks do
 		local r, r2 = sourceFile:read(blockSize)
 		if r then
-			copyProgress += r2
+			copyProgress += blockSize
 			destFile:write(r)
-			
 			widget:drawProgress(copyProgress, copySize, "Copying...")
 			
 			playdate.display.flush()
@@ -198,7 +204,7 @@ function widget:recreateFileStructure(originalPath, newPath,dontRename,forceOver
 		lastDir = lastDir.."/"
 	end
 	local isFolder = lastDir:sub(-1,-1) == "/"
-	if indexOf(fle.listFiles(newPath), lastDir) and not forceOverWrite then 
+	if indexOf(fle.listFiles(newPath, true), lastDir) and not forceOverWrite then 
 		createInfoPopup("Action Failed", "*The specified file or folder already exists at the destination.", false)
 		widget:closeContextMenu()
 		return false
@@ -207,7 +213,7 @@ function widget:recreateFileStructure(originalPath, newPath,dontRename,forceOver
 	local done = false
 	local function returnFolderListAsDict(path)
 		local dict = {}
-		local listFiles = fle.listFiles(path)
+		local listFiles = fle.listFiles(path, true)
 		for i=1,#listFiles do
 			if listFiles[i]:sub(-1,-1) == "/" then
 				dict[listFiles[i]] = returnFolderListAsDict(path..listFiles[i])
@@ -230,31 +236,71 @@ function widget:recreateFileStructure(originalPath, newPath,dontRename,forceOver
 				fle.mkdir(path..k)
 				pasteFileStructure(v, path..k)
 			else
-				widget:copyFile(v,path..k)
+				if not widget:copyFile(v,path..k) then
+					print("COPYFILE FAILED IN PASTEFS "..path..k.."  "..v)
+					return false
+				end
 			end
 		end
+		return true
 	end
 	if isFolder then
-		fle.mkdir(newPath..lastDir)
-		pasteFileStructure(fileStructure, newPath..lastDir)
-	else
-		if not widget:copyFile(originalPath, newPath..lastDir) then
-			return false
+		if fle.exists(newPath..lastDir) then
+			print("EXISTS, ATTEMPTING DELETION")
+			if fle.delete(newPath..lastDir,true) then
+				print("DELETE SUCCESS")
+			else
+				print("DELETE FAILED")
+			end
+		else
+			print("DOES NOT EXIST")
 		end
-		
+		if fle.exists(newPath..lastDir) then
+			print("DIRECTORY EXISTS")
+			return false
+		else
+			print("PASTING FS BEGIN")
+			fle.mkdir(newPath..lastDir)
+			if pasteFileStructure(fileStructure, newPath..lastDir) then
+				print("PASTEFS SUCCESS")
+			else
+				print("PASTEFS FAILED")
+				return false
+			end
+		end
+	else
+		copySize = fle.getSize(originalPath)
+		if not widget:copyFile(originalPath, newPath..lastDir) then
+			print("COPY FILE FAILED")
+			return false
+		else
+			print("COPY FILE SUCCESS")
+		end
 	end
 	if newPath == currentPath then
 		table.insert(currentFiles, currentSelection+1, lastDir)
 		widget:moveDown()
 	end
 	widget:loadWidgetImage()
-	return fileStructure
+	return true
 end
 
 function widget:copy(ogPath,newPath,dontRename,forceOverWrite,finishCallback)
-	widget:recreateFileStructure(ogPath, newPath,dontRename,forceOverWrite)
-	if finishCallback then
-		finishCallback()
+	if widget:recreateFileStructure(ogPath, newPath,dontRename,forceOverWrite) then
+		if finishCallback then
+			finishCallback()
+		end
+	else
+		createInfoPopup("Action Failed", "*The copy operation returned an error. Please try again. The system will automatically delete the failed copy.",false,function()
+			local fname = newPath..ogPath:gsub(widget:removeLastFolder(ogPath), "")
+			fle.delete(fname,true)
+			if fle.exists(fname) then
+				createInfoPopup("Action Failed", "*The system was unable to remove failed copy. Please remove it manually with the use of another device.",false)
+			else
+				print("DELETE SUCCESS AFTER COPY FAIL")
+			end
+		end
+		)
 	end
 	copied = false
 	redrawFrame = true
@@ -284,17 +330,71 @@ function widget:performContextMenuAction()
 		copied = true
 		widget:closeContextMenu()
 		playdate.frameTimer.performAfterDelay(1, function() widget:copy(copiedPath,"/System/Launchers/",true,true,function()
+			
+				--Update
+				
 				if fle.exists("/System/Launchers/"..currentFiles[currentSelection]) then
+					print("FOUND COPY")
 					if fle.exists("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
-						fle.delete("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"),true)
+						print("FOUND PRE-EXISTING")
+						fle.delete("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"), true)
+						if fle.exists("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
+							print("PRE EXIST REMAINS")
+							fle.delete("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"),true)
+							if fle.exists("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
+								print("PRE EXIST STILL REMAINS")
+								createInfoPopup("Action Failed", "*The old launcher file at that location was unable to be deleted. The installation will not halt, but this file will remain as a hidden file.",false,function()
+								
+								local count = 0
+								local fname = "."..tostring(count)..currentFiles[currentSelection]:gsub(".fosl",".pdx")
+								local success = true
+								while fle.exists("/System/Launchers/"..fname) do
+									count+=1
+									fname = "."..tostring(count)..currentFiles[currentSelection]:gsub(".fosl",".pdx")
+									if count > 99 then
+										success = false
+										break
+									end
+								end
+								fname = fname:gsub("/","")
+								if not success then
+									createInfoPopup("Action Failed", "*There are already 99 hidden files with this name. It is recommended to do a fresh system install from a .pdos file after backing up.",false,function()
+									return
+									end)
+								else
+									if fle.rename("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"), "/System/Launchers/"..fname) then
+										createInfoPopup("Action Success", "*The file was successfully renamed to a hidden file.")
+									else
+										createInfoPopup("Action Failed", "*There was an error encountered while renaming to a hidden file.",false,function() 
+											return
+										end)
+									end
+								end
+								
+								--infpop
+								end)
+							else
+								print("DELETED PRE-EXISTING")
+							end
+						else
+							print("DELETED PRE-EXISTING")
+						end
 					end
-					playdate.file.rename("/System/Launchers/"..currentFiles[currentSelection],"/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"))
-					createInfoPopup("Action Success", "*The .fosl installation has finished. The system will now restart in order to properly load the new software.", false, function()
-						sys.switchToLauncher()
+					
+					--rename fosl to pdx
+					print("/System/Launchers/"..currentFiles[currentSelection])
+					print("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"))
+					if playdate.file.rename("/System/Launchers/"..currentFiles[currentSelection],"/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
+						createInfoPopup("Action Success", "*The .fosl installation has finished. The system will now restart in order to properly load the new software.", false, function()
+							sys.switchToLauncher()
+						end
+						)
+					else
+						createInfoPopup("Action Failed", "*Renaming the .fosl file in /System/Launchers has failed. It is recommended to manually rename it or future updates may fail.")
 					end
-					)
 				else
 					createInfoPopup("Action Failed", "*The file "..currentFiles[currentSelection].." was not copied to /System/Launchers/ properly",false)
+					return
 				end
 			end)
 		end)	
@@ -405,7 +505,7 @@ function widget:goToFolder(path)
 			table.remove(previousPaths, 1)
 		end
 		currentPath = path
-		currentFiles = fle.listFiles(currentPath)
+		currentFiles = fle.listFiles(currentPath, true)
 		if not currentFiles then
 			widget:goToFolder("/")
 			return
