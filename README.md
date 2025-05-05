@@ -59,12 +59,15 @@ If this at any point freezes or errors out during installation, especially multi
 1. Rename the existing application `Launcher.pdx` to somthing else, like `StockLauncher.pdx`
 1. Drag the `Launcher.pdx` you created in step 1 into the `System` folder
   
+### Installing Extras
+ - In order to install badges, widgets, and more, keep scrolling to the "Setup" section!  
+  
 ### Updating  
 - If a new PlaydateOS version has released or you do not have the Explorer widget, follow the install instructions again. If you are staying on the same PlaydateOS version and the same device, you do not have to re-download the .pdos and .pdkey.
 - If you are using the Explorer widget, simply rename the new release from a .pdx to .fosl after unzipping it. Then transfer the file anywhere on your playdate, and install it with the Explorer widget. 
 
 ## Setup  
-Before any of these actions can be completed, run the launcher on-device after installing.  
+Before any of these actions can be completed, you must run the launcher on-device after installing.  
 
 ### Badges  
 In order to load badges into FunnyOS, put any .pdi image file called `<name>.pdi` inside `/Shared/FunnyOS2/Badges`. 

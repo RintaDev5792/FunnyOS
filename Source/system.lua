@@ -526,6 +526,12 @@ function fillLabelEndWithEmpty(label, removeEmptyColumns)
 					table.remove(labels[label].objects,#labels[label].objects)	
 				end	
 			end
+			if #labels[label].objects == 0 then
+				done = true
+				for i=0,labels[label].rows do
+					table.insert(labels[label].objects, emptyObject)
+				end
+			end
 		end
 	end
 	while currentObject > #labels[currentLabel].objects do
@@ -616,7 +622,6 @@ function loadIcon(bundleID, labelName, imageName)
 					for i,v2 in ipairs(v.objects) do
 						if v2.bundleid == bundleID then
 							labels[k].objects[i] = emptyObject
-							print("REMOVED")
 						end
 					end
 				end
