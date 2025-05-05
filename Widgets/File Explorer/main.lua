@@ -191,6 +191,7 @@ end
 function widget:recreateFileStructure(originalPath, newPath,dontRename,forceOverWrite)
 	copyProgress = 0
 	copySize = 0
+	if not fle.exists(newPath..originalPath:gsub(widget:removeLastFolder(originalPath), "")) then dontRename = true end
 	local lastDir = "copy of "..originalPath:gsub(widget:removeLastFolder(originalPath),"")
 	if dontRename then lastDir = originalPath:gsub(widget:removeLastFolder(originalPath),"") end
 	if originalPath:sub(-1,-1) == "/" and lastDir:sub(-1,-1) ~= "/" then
