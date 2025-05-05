@@ -10,6 +10,7 @@ local keyTimerInitialDelay = 300
 local keyTimerRepeatDelay = 40
 local didShortcut = false
 local scrollLeftFast = false
+local cardLaunchGame = nil
 
 cursorStates = {
 	SELECT_LABEL = 1, 
@@ -117,20 +118,7 @@ cursorStateInputHandlers = {
 		end,		
 		upButtonDown = function()
 			sound02SelectionReverseTrimmed:play()
-			if playdate.buttonIsPressed("A") then
-				didShortcut = true
-				if playdate.buttonIsPressed("B") then
-					changeCursorState(cursorStates.RENAME_LABEL)
-				else
-					--move item
-				end
-			elseif playdate.buttonIsPressed("B") then
-				--removeEmptyObject(currentObject, currentLabel)
-				didShortcut = true
-			else
-				toggleControlCenter()
-				didShortcut = false
-			end
+			delaySetNoShortcut()
 		end,
 		upButtonUp = function()
 			removeKeyTimer()
@@ -164,11 +152,24 @@ cursorStateInputHandlers = {
 			delaySetNoShortcut()
 			removeKeyTimer()
 		end,
-		
 		AButtonUp = function()
 			if not didShortcut then
 				sound03ActionTrimmed:play()
-				launchGame(labels[currentLabel].objects[currentObject].bundleid)
+				local bundleid = labels[currentLabel].objects[currentObject].bundleid
+				local game = gameInfo[bundleid]
+				if game and game.imagepath and game.path then
+					local imagepath = game.imagepath
+					if imagepath:sub(-1) == "/" then
+						imagepath = imagepath:sub(1, -2)
+					end
+					local cardPath = game.path .. "/" .. imagepath .. "/card"
+					cardImage = gfx.image.new(cardPath)
+					cardGameBundleId = bundleid
+					cardLaunchGame = bundleid
+					changeCursorState(cursorStates.GAME_CARD)
+				else
+					print("No card image path for this game.")
+				end
 			end
 			delaySetNoShortcut()
 			removeKeyTimer()
@@ -359,8 +360,47 @@ cursorStateInputHandlers = {
 		
 	},
 	[cursorStates.GAME_CARD] = {
-	
-	},	
+		BButtonUp = function()
+			print("b button")
+			if not didShortcut then
+				sound03ActionTrimmed:play()
+				changeCursorState(cursorStates.SELECT_OBJECT)
+				cardShowing = false
+				cardYposTarget = -10
+				cardInfoShowing = false
+				cardImage = nil
+			end
+			delaySetNoShortcut()
+			removeKeyTimer()
+		end,
+		
+		AButtonUp = function()
+			print("a button")
+			if not didShortcut and not cardInfoShowing then
+				sound03ActionTrimmed:play() 
+				print(cardLaunchGame)
+				loadLaunchAnimation(cardLaunchGame)
+			end
+			delaySetNoShortcut()
+			removeKeyTimer()
+		end,
+		
+		upButtonDown = function()
+			if cardInfoShowing then
+				cardYposTarget = -10
+				cardInfoShowing = false
+				sound01SelectionTrimmed:play()
+			end
+		end,
+		
+		downButtonDown = function() 
+			if not cardInfoShowing then
+				cardYposTarget = -250
+				cardInfoShowing = true
+				sound02SelectionReverseTrimmed:play()
+			end
+		end
+	},
 	[cursorStates.GAME_INFO] = {
 	
 	},
@@ -542,7 +582,7 @@ cursorStateInputHandlers = {
 			sound03ActionTrimmed:play()
 			if not didShortcut and infoPopupEnableB then
 				changeCursorState(oldCursorState)
-			end
+		 end
 			delaySetNoShortcut()	
 			removeKeyTimer()
 		end

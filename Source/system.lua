@@ -205,54 +205,6 @@ function addToRecentlyPlayed(bundleid)
 	saveRecentlyPlayed()
 end
 
-function launchGame(bundleID)
-	if not gameInfo[bundleID] then return end
-	if gameInfo[bundleID].path then
-		if fle.isdir(gameInfo[bundleID].path) or fle.exists(gameInfo[bundleID].path) then
-			if gameIsFreshlyInstalled(bundleID, true) then
-				soundUnwrap:setOffset(2)
-				soundUnwrap:play()
-				playdate.inputHandlers.push(blockInputHandler)
-				playdate.timer.performAfterDelay(1000, function()
-					iconsCache[labels[currentLabel].objects[currentObject].bundleid] = nil
-				end)
-				playdate.timer.performAfterDelay(3000,function()
-					sys.updateGameList()
-					playdate.inputHandlers.pop()
-				end)
-			else
-				if gameInfo[bundleID].suppresscontentwarning or not gameInfo[bundleID].contentwarning then
-					addToRecentlyPlayed(bundleID)
-					openApp(labels[currentLabel].objects[currentObject].bundleid)
-				elseif gameInfo[bundleID].contentwarning then
-					createInfoPopup("Content Warning", "*"..gameInfo[bundleID].contentwarning.."*", true, function()
-						if gameInfo[bundleID].contentwarning2 then
-							createInfoPopup("Content Warning", "*"..gameInfo[bundleID].contentwarning2.."*", true, function()
-								local game = getGameObject(bundleID)
-								if game then
-									game:setSuppressContentWarning(true)
-								end
-								sys.updateGameList()
-								addToRecentlyPlayed(bundleID)
-								sys.switchToGame(labels[currentLabel].objects[currentObject].path)
-							end)
-						else
-							local game = getGameObject(bundleID)
-							if game then
-								game:setSuppressContentWarning(true)
-							end
-							sys.updateGameList()
-							addToRecentlyPlayed(bundleID)
-							sys.switchToGame(labels[currentLabel].objects[currentObject].path)
-						end
-						
-					end)	
-				end
-			end
-		end
-	end
-end
-
 function launchRandomGame()
 	local possibleGames = {}
 	for i,v in ipairs(groups) do
@@ -352,6 +304,8 @@ function setupGameInfo()
 					end
 					props = newprops
 					props["path"] = gme.getPath(v2)
+					props["launchsoundpath"] = props["launchsoundpath"] or props["launchSoundPath"]  -- Handle both cases
+					
 					if props["imagepath"] and props["path"] then
 						if props["imagepath"]:sub(#props["imagepath"]-3,#props["imagepath"]) == ".png" or fle.exists(props["path"] .."/"..props["imagepath"]..".pdi") then
 							local imgp = ""

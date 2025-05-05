@@ -231,7 +231,9 @@ function changeCursorState(state)
 	while #playdate.inputHandlers > 1 do
 		playdate.inputHandlers.pop()
 	end
-	playdate.inputHandlers.push(cursorStateInputHandlers[state])	
+	local handler = cursorStateInputHandlers[state]
+	if handler == nil then handler = {} end
+	playdate.inputHandlers.push(handler)
 	if state == cursorStates.RENAME_LABEL then
 		playdate.frameTimer.performAfterDelay(10, function() key.show(currentLabel) end)	
 	end
@@ -434,26 +436,34 @@ function playdate.keyboard.keyboardWillHideCallback(pressedOK)
 end
 
 function playdate.update()
-	if firstUpdate then
-		firstUpdate = false
-		main()
-		return
-	end
-	
-	
-	playdate.timer.updateTimers()
-	playdate.frameTimer.updateTimers()
-	
-	if #playdate.inputHandlers < 2 then
-		playdate.inputHandlers.push(cursorStateInputHandlers[cursorState])	  
-	end
-	drawRoutine()
-	if dumpFrame then
-		dumpGlobals()
-		dumpFrame = false
-	end
-	delta = 1/playdate.display.getRefreshRate()--playdate.getFPS()
-	updateReap()
+    if cursorState == nil then
+        print("WARNING: cursorState is nil in playdate.update, resetting to SELECT_LABEL")
+        cursorState = cursorStates.SELECT_LABEL
+        changeCursorState(cursorStates.SELECT_LABEL)
+    end
+    
+    if firstUpdate then
+        firstUpdate = false
+        main()
+        return
+    end
+    
+    redrawFrame = true  -- Force redraw every frame when card is showing
+    playdate.timer.updateTimers()
+    playdate.frameTimer.updateTimers()
+    
+    if #playdate.inputHandlers < 2 then
+        playdate.inputHandlers.push(cursorStateInputHandlers[cursorState])      
+    end
+    
+    drawRoutine()
+    
+    if dumpFrame then
+        dumpGlobals()
+        dumpFrame = false
+    end
+    delta = 1/playdate.display.getRefreshRate()
+    updateReap()
 end
 
 function loadMusic()

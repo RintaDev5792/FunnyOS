@@ -72,145 +72,390 @@ invertedFillDrawModes = {[true] = playdate.graphics.kDrawModeFillWhite, [false] 
 -- Vertical space between widgets
 widgetScroll = 0
 
+-- Animation state for card-highlighted
+cardAnimFrames = nil
+cardAnimFrameCount = 0
+cardAnimCurrentFrame = 1
+cardAnimFrameTimer = 0
+cardAnimLastBundleId = nil
+cardAnimLastTime = playdate.getCurrentTimeMilliseconds() / 1000
+cardAnimLoopCount = 0
+cardAnimLoopMax = 0
+cardAnimIntroFrames = nil
+cardAnimInIntro = false
+
+-- Add at top with other state variables
+launchAnimFrames = nil
+launchAnimFrameCount = 0
+launchAnimCurrentFrame = 1
+launchAnimLastTime = 0
+launchAnimLoopCount = 0
+launchAnimLoopMax = 0
+launchAnimIntroFrames = nil
+launchAnimInIntro = false
+launchAnimActive = false
+launchAnimBundleId = nil
+launchAnimAvailableFrames = nil
+launchAnimFinished = false
+launchSound = nil
+
+-- Add near other state variables at top
+topScreenHeight = 240
+lastScrollY = 0
+scrollY = 0
+topSection = {
+    state = 0, -- 0 closed, 1 closing, 2 opening, 3 open
+    progress = 0,
+    maxProgress = 222
+}
+
+local fadingCard = nil
+local fadingCardY = 0
+
+local function parseFrameSequence(seqstr)
+	local frames = {}
+	for entry in seqstr:gmatch("[^,]+") do
+		local num, rep = entry:match("(%d+)%s*[xX]%s*(%d+)")
+		if num and rep then
+			num = tonumber(num)
+			rep = tonumber(rep)
+			for i=1,rep do table.insert(frames, num) end
+		else
+			num = tonumber(entry)
+			if num then table.insert(frames, num) end
+		end
+	end
+	return frames
+end
+
+function loadCardAnimationFrames(bundleid)
+    cardAnimFrames = nil
+    cardAnimFrameCount = 0
+    cardAnimCurrentFrame = 1
+    cardAnimFrameTimer = 0
+    cardAnimLastBundleId = bundleid
+    cardAnimLastTime = playdate.getCurrentTimeMilliseconds() / 1000
+    cardAnimLoopCount = 0
+    cardAnimLoopMax = 0
+    cardAnimIntroFrames = nil
+    cardAnimInIntro = false
+
+    local game = gameInfo and gameInfo[bundleid]
+    if not game or not game.imagepath or not game.path then return end
+    local imagepath = game.imagepath
+    if imagepath:sub(-1) == "/" then
+        imagepath = imagepath:sub(1, -2)
+    end
+    local animDir = game.path .. "/" .. imagepath .. "/card-highlighted/"
+    local animFile = nil
+
+    if fle.exists(animDir .. "animation.txt") then
+        animFile = fle.open(animDir .. "animation.txt")
+        if animFile then
+            local contents = ""
+            local line = animFile:readline()
+            while line do
+                contents = contents .. line .. "\n"
+                line = animFile:readline()
+            end
+            animFile:seek(0)
+        end
+    end
+
+    local files = fle.listFiles(animDir) or {}
+    local availableFrames = {}
+    for _, fname in ipairs(files) do
+        local num = tonumber(fname:match("^(%d+)%..*$"))
+        if num then
+            availableFrames[num] = animDir .. fname
+        end
+    end
+    local maxFrame = 0
+    for i,v in pairs(availableFrames) do if i > maxFrame then maxFrame = i end end
+    local framesSeq, introSeq, loopCount
+    if animFile then
+        local info = parseAnimFile(animFile)
+        animFile:close()
+        if info.frames then framesSeq = info.frames end
+        if info.introFrames then introSeq = info.introFrames end
+        if info.loop then loopCount = info.loop end
+    end
+    if not framesSeq then
+        framesSeq = {}
+        for i=1,maxFrame do table.insert(framesSeq, i) end
+    end
+    if introSeq and #introSeq > 0 then
+        cardAnimIntroFrames = introSeq
+        cardAnimInIntro = true
+        cardAnimCurrentFrame = 1
+    else
+        cardAnimInIntro = false
+        cardAnimCurrentFrame = 1
+    end
+    cardAnimFrames = framesSeq
+    cardAnimFrameCount = #framesSeq
+    cardAnimLoopCount = 0
+    cardAnimLoopMax = loopCount or 0
+    cardAnimAvailableFrames = availableFrames
+end
+
+function loadLaunchAnimation(bundleid)
+    launchAnimFrames = nil
+    launchAnimFrameCount = 0
+    launchAnimCurrentFrame = 1
+    launchAnimLastTime = playdate.getCurrentTimeMilliseconds() / 1000
+    launchAnimLoopCount = 0
+    launchAnimLoopMax = 0
+    launchAnimIntroFrames = nil
+    launchAnimInIntro = false
+    launchAnimActive = true
+    launchAnimBundleId = bundleid
+    launchAnimFinished = false
+    launchAnimAvailableFrames = nil
+    launchFadeToBlack = false
+    launchFadeAlpha = 0
+    launchFadeSpeed = 0.08
+    -- Stop any existing launch sound
+    if launchSound then
+        launchSound:stop()
+        launchSound = nil
+    end
+
+    local game = gameInfo and gameInfo[bundleid]
+    if not game then 
+        return 
+    end
+
+    local imagepath = game.imagepath
+    if imagepath:sub(-1) == "/" then
+        imagepath = imagepath:sub(1, -2)
+    end
+    local animDir = game.path .. "/" .. imagepath .. "/launchImages/"
+
+    local files = fle.listFiles(animDir) or {}
+    local availableFrames = {}
+    for _, fname in ipairs(files) do
+        local num = tonumber(fname:match("^(%d+)%..*$"))
+        if num then
+            availableFrames[num] = animDir .. fname
+        end
+    end
+    
+    local maxFrame = 0
+    for i,v in pairs(availableFrames) do if i > maxFrame then maxFrame = i end end
+    
+    local framesSeq, introSeq, loopCount
+    
+    if not framesSeq then
+        framesSeq = {}
+        for i=1,maxFrame do table.insert(framesSeq, i) end
+    end
+    
+    if introSeq and #introSeq > 0 then
+        launchAnimIntroFrames = introSeq
+        launchAnimInIntro = true
+        launchAnimCurrentFrame = 1
+    end
+    
+    launchAnimFrames = framesSeq
+    launchAnimFrameCount = #framesSeq
+    launchAnimLoopCount = 0
+    launchAnimLoopMax = loopCount or 0
+    launchAnimAvailableFrames = availableFrames
+
+    -- If there are no launch animation frames, trigger fade to black
+    if launchAnimFrameCount == 0 or not launchAnimAvailableFrames or next(launchAnimAvailableFrames) == nil then
+        launchFadeToBlack = true
+        launchAnimActive = true
+        launchAnimFinished = false
+        launchFadeAlpha = 0
+    end
+end
+
 function drawRoutine()
-	snappiness=defaultSnappiness*targetFPS*delta
-	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	if not saveFrame then cachedScreenImg = nil end
-	if redrawFrame then
-		incFrame+=1
-		gfx.clear(gfx.kColorWhite)
-		
-		if bgDitherImg and configVars.bgdither ~= 1 then 
-			bgDitherImg:draw(0 ,0) 
-		end 
-		if bgImg and configVars.bgon then 
-			bgImg:draw(0,0) --bgImg:draw(0,0) 
-		end 
-		drawLabelBackgrounds()
-		--drawIcons()
-		
-	end
-	redrawFrame = defaultRedrawFrame
-	
-	if cachedScreenImg and ((not redrawFrame) or saveFrame) then
-		cachedScreenImg:draw(0,0) 
-	end
-	
-	saveFrame = false
-	processAndDrawWidgets()
-	
-	lastScrollX = scrollX
-	processDrawChanges()
-	doScrolling()
-	--always last
-	local yOffset = 0
-	if scrollX > 0 then
-		yOffset = (scrollX/(widgetsScreenWidth/bottomBarHeight)+1)//1
-	end
-	
-	if scrollX//1 ~= lastScrollX//1 then
-		redrawFrame = true	
-	end
-	
-	if cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT then
-		drawObjectCursor()	
-	else
-		lastObjectCursorDrawX = labels[currentLabel].drawX+labelTextSize*2
-	end
-	
-	drawBottomBar(yOffset)
-	if cursorState == cursorStates.INFO_POPUP then
-		drawInfoPopup()	
-	elseif cursorState == cursorStates.RENAME_LABEL then
-		drawLabelNameBox(currentLabel)	
-	end
-	--playdate.drawFPS(383,0)
-end
+    gfx.setImageDrawMode(gfx.kDrawModeCopy)
+    
+    -- Calculate content offset based on top section
+    local contentOffset = 0
+    if topSection.state > 0 then
+        contentOffset = topSection.progress
+    end
+    
+    -- Clear and draw background first (without offset)
+    gfx.clear(gfx.kColorWhite)
+    if bgDitherImg and configVars.bgdither ~= 1 then 
+        bgDitherImg:draw(0, 0) 
+    end 
+    if bgImg and configVars.bgon then 
+        bgImg:draw(0, 0)
+    end
 
-function generateWidgetMask()
-	widgetMaskImg = gfx.image.new(200,200,gfx.kColorBlack)	
-	gfx.pushContext(widgetMaskImg)
-	gfx.setColor(gfx.kColorWhite)
-	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	gfx.fillRoundRect(0, 0, 200, 200, configVars.cornerradius)
-	gfx.popContext()
-end
+    -- Draw top section
+    if topSection.state > 0 then
+        -- Draw top section background with same dither pattern
+        gfx.setColor(invertedColors[configVars.invertlabels])
+        gfx.setDitherPattern(configVars.labeldither, gfx.image.kDitherTypeBayer8x8)
+        gfx.fillRect(0, 0, 400, topSection.progress)
+    end
 
-function processAndDrawWidgets()
-	if scrollX > 1 then
-		gfx.setImageDrawMode(gfx.kDrawModeCopy)
-		if not widgetsBackground then
-			widgetsBackground = gfx.image.new(widgetsScreenWidth,widgetsScreenWidth,gfx.kColorWhite)
-			gfx.pushContext(widgetsBackground)
-			gfx.setColor(gfx.kColorBlack)
-			gfx.setPattern({0, 255,0,255,0,255,0,255})
-			gfx.fillRect(0, 0, widgetsScreenWidth, 240)
-			gfx.popContext()
-		end
-		
-		local x = -widgetsScreenWidth+scrollX
-		local baseY = (((240-widgetHeight)/2))//1
-		
-		widgetsBackground:draw(x,0)
-	
-		-- Update widget scroll position with lerp
-		widgetScroll = lerpMaxed(widgetScroll, -(currentWidget-1)*(widgetHeight + widgetSpacing), snappiness)
-	
-		-- Draw all widgets in a vertical list
-		for i, widget in ipairs(widgets) do
-			if i == currentWidget then
-				widget:update(widgetIsActive)
-			end
-			local widgetY = baseY + (i-1) * (widgetHeight + widgetSpacing) + widgetScroll
-			local widgetX = x + ((widgetsScreenWidth - widgetWidth)/2)//1
-	
-			-- Only draw if widget would be visible
-			if widgetY + widgetHeight > 0 and widgetY < 240 then
-				-- Draw widget content first
-				local widgetImage = widget:getWidgetImage()  -- Always run main()
-				if widgetImage then
-					if not widgetMaskImg then generateWidgetMask() end
-					widgetImage:setMaskImage(widgetMaskImg)
-					if configVars.invertwidgets then
-						gfx.setImageDrawMode(gfx.kDrawModeInverted)
-					else
-						gfx.setImageDrawMode(gfx.kDrawModeCopy)
-					end
-					widgetImage:draw(widgetX, widgetY)
-				end
-	
-				-- Draw widget cursor
-				if i == currentWidget then
-					gfx.setLineWidth(configVars.linewidth)
-					gfx.setColor(invertedColors[configVars.invertwidgetcursor])
-	
-					-- If widget is active, border fits exactly
-					-- If inactive, border has padding
-					local padding = (widgetIsActive) and 0 or widgetPadding
-					gfx.drawRoundRect(
-						widgetX - padding, 
-						widgetY - padding, 
-						widgetWidth + padding*2, 
-						widgetHeight + padding*2, 
-						configVars.cornerradius
-					)
-				end
-			end
-		end
-	end
-end
+    -- Apply offset for main content
+    gfx.setDrawOffset(0, contentOffset)
+    
+    -- Draw main content
+    drawLabelBackgrounds()
+    -- Draw label backgrounds
+    drawLabelBackgrounds()
 
-function drawLabelNameBox(label)
-	local w, h = gfx.getTextSize("HI")
-	w = 400-labelSpacing-key.width()
-	h+=labelSpacing
-	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	gfx.setColor(gfx.kColorWhite)
-	gfx.fillRoundRect(labelSpacing/2, (120-h/2)//1, w, h, configVars.cornerradius)
-	gfx.setColor(gfx.kColorBlack)
-	gfx.setLineWidth(configVars.linewidth)
-	gfx.drawRoundRect(labelSpacing/2, (120-h/2)//1, w, h, configVars.cornerradius)
-	gfx.drawTextAligned("*"..key.text.."*", (w/2+labelSpacing/2)//1, (120-h/2+labelSpacing/2)//1+2, kTextAlignment.center)
+    -- Handle cached screen
+    if cachedScreenImg and ((not redrawFrame) or saveFrame) then
+        cachedScreenImg:draw(0, contentOffset) 
+    end
+    
+    saveFrame = false
+    processAndDrawWidgets()
+    
+    lastScrollX = scrollX
+    processDrawChanges()
+    doScrolling()
+    
+    local yOffset = 0
+    if scrollX > 0 then
+        yOffset = (scrollX/(widgetsScreenWidth/bottomBarHeight)+1)//1
+    end
+    
+    if scrollX//1 ~= lastScrollX//1 then
+        redrawFrame = true    
+    end
+    
+    if cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT then
+        drawObjectCursor()    
+    else
+        lastObjectCursorDrawX = labels[currentLabel].drawX+labelTextSize*2
+    end
+    
+    drawBottomBar(yOffset)
+    if cursorState == cursorStates.INFO_POPUP then
+        drawInfoPopup()    
+    elseif cursorState == cursorStates.RENAME_LABEL then
+        drawLabelNameBox(currentLabel)    
+    end
+
+    -- Handle card display and animation
+    if cardImage or launchAnimActive then
+        -- Show top section when card or launch animation is active
+        topSection.state = 2
+        
+        -- Draw card on top if it exists
+        if cardImage then
+            gfx.setDrawOffset(0, 0)
+            
+            if cardGameBundleId and cardGameBundleId ~= cardAnimLastBundleId then
+                loadCardAnimationFrames(cardGameBundleId)
+                cardAnimLastTime = playdate.getCurrentTimeMilliseconds() / 1000
+            end
+            
+            if cardAnimFrames and cardAnimFrameCount > 0 and cardAnimAvailableFrames then
+                local now = playdate.getCurrentTimeMilliseconds() / 1000
+                if now - (cardAnimLastTime or 0) >= 0.05 then
+                    cardAnimLastTime = now
+                    cardAnimCurrentFrame = cardAnimCurrentFrame + 1
+                    if cardAnimCurrentFrame > cardAnimFrameCount then 
+                        cardAnimCurrentFrame = 1 
+                    end
+                end
+                
+                local frameNum = cardAnimFrames[cardAnimCurrentFrame]
+                local framePath = cardAnimAvailableFrames[frameNum]
+                local frameImg = framePath and gfx.image.new(framePath)
+                if frameImg then
+                    frameImg:drawCentered(200, topSection.progress/2 + 9)
+                end
+            else
+                cardImage:drawCentered(200, topSection.progress/2 + 9)
+            end
+        end
+        
+        if launchAnimActive and launchAnimFrames and launchAnimFrameCount > 0 and launchAnimAvailableFrames and not launchFadeToBlack then
+            -- Launch animations should take up whole screen, ignore content offset
+            gfx.setDrawOffset(0, 0)
+            local now = playdate.getCurrentTimeMilliseconds() / 1000
+            if now - launchAnimLastTime >= 0.05 then
+                launchAnimLastTime = now
+                if launchAnimInIntro and launchAnimIntroFrames then
+                    launchAnimCurrentFrame = launchAnimCurrentFrame + 1
+                    if launchAnimCurrentFrame > #launchAnimIntroFrames then
+                        launchAnimInIntro = false
+                        launchAnimCurrentFrame = 1
+                    end
+                else
+                    launchAnimCurrentFrame = launchAnimCurrentFrame + 1
+                    if launchAnimCurrentFrame > launchAnimFrameCount then
+                        launchAnimFinished = true
+                        openApp(launchAnimBundleId)
+                    end
+                end
+            end
+
+            local frameNum
+            if launchAnimInIntro and launchAnimIntroFrames then
+                frameNum = launchAnimIntroFrames[launchAnimCurrentFrame]
+            else
+                frameNum = launchAnimFrames[launchAnimCurrentFrame]
+            end
+            
+            local framePath = launchAnimAvailableFrames[frameNum]
+            local frameImg = framePath and gfx.image.new(framePath)
+            if frameImg then
+                frameImg:draw(0, 0)
+                return -- Skip drawing anything else
+            end
+        elseif launchAnimActive and launchFadeToBlack then
+            -- Fade to black if no launch animation
+            gfx.setDrawOffset(0, 0)
+            if not launchFadeAlpha then launchFadeAlpha = 0 end
+            launchFadeAlpha = math.min(1, (launchFadeAlpha or 0) + launchFadeSpeed)
+            gfx.setColor(gfx.kColorBlack)
+            if launchFadeAlpha < 1 then
+                gfx.setDitherPattern(1 - launchFadeAlpha, gfx.image.kDitherTypeBayer8x8)
+            else
+                gfx.setDitherPattern(0, gfx.image.kDitherTypeBayer8x8)
+            end
+            gfx.fillRect(0, 0, 400, 240)
+            if launchFadeAlpha >= 1 then
+                launchAnimFinished = true
+                launchAnimActive = false
+                launchFadeToBlack = false
+                openApp(launchAnimBundleId)
+                return
+            end
+            return
+        end
+
+        if launchAnimFinished then
+            if launchSound then
+                launchSound:stop()
+                launchSound = nil
+            end
+            gfx.setDrawOffset(0, 0)
+            local frameNum = launchAnimFrames[launchAnimFrameCount]
+            local framePath = launchAnimAvailableFrames and launchAnimAvailableFrames[frameNum]
+            local frameImg = framePath and gfx.image.new(framePath)
+            if frameImg then
+                frameImg:draw(0, 0)
+                return -- Skip drawing anything else
+            elseif launchFadeToBlack then
+                gfx.setColor(gfx.kColorBlack)
+                gfx.fillRect(0, 0, 400, 240)
+                return
+            end
+        end
+    else
+        -- Hide top section when no card/animation
+        topSection.state = 1
+    end
+
+    -- Reset draw offset before finishing
+    gfx.setDrawOffset(0, 0)
 end
 
 function updateCursorFrame()
@@ -279,6 +524,13 @@ function doScrolling()
 		scrollX = lerpFloored(scrollX,scrollX-lastObjectCursorDrawX+labelSpacing,snappiness)
 		
 	end
+
+    -- Add vertical scrolling for top section
+    if topSection.state == 2 or topSection.state == 3 then
+        scrollY = lerpFloored(scrollY, topSection.maxProgress, snappiness)
+    else
+        scrollY = lerpFloored(scrollY, 0, snappiness)
+    end
 end
 
 function drawObjectCursor()
@@ -386,6 +638,40 @@ function processDrawChanges()
 			controlCenterState = 3  
 		end
 	end
+
+    -- Match easing rate with control center
+    if topSection.state == 1 then
+        if topSection.progress == topSection.maxProgress and cardImage then
+            fadingCard = cardImage
+            fadingCardY = -120  -- Start offscreen
+        end
+
+        topSection.progress = lerpFloored(topSection.progress, 0, snappiness)//1
+        redrawFrame = true
+        
+        if fadingCard then
+            gfx.setDrawOffset(0, 0)
+            local startY = -120
+            local endY = 120
+            local progress = topSection.progress / topSection.maxProgress
+            fadingCardY = startY + (endY - startY) * progress 
+            fadingCard:drawCentered(200, fadingCardY)
+        end
+        
+        if topSection.progress < 2 then 
+            topSection.progress = 0
+            topSection.state = 0
+            fadingCard = nil
+        end
+    end
+    if topSection.state == 2 then
+        topSection.progress = lerpCeiled(topSection.progress, topSection.maxProgress, snappiness)
+        redrawFrame = true
+        if topSection.progress > topSection.maxProgress-3 then 
+            topSection.progress = topSection.maxProgress
+            topSection.state = 3
+        end
+    end
 end
 
 function drawLabelBackgrounds()
@@ -806,4 +1092,77 @@ function drawCircleCursor(baseX, baseY, spacing, index, maxIndex, scroll)
 	if index ~= maxIndex then
 		gfx.fillTriangle(baseX,  baseY-controlCenterProgress+16+spacing*(index-scroll)+circleCursorRadius, baseX+circleCursorRadius,  baseY-controlCenterProgress+8+spacing*(index-scroll)+1 , baseX - circleCursorRadius,  baseY-controlCenterProgress+8+spacing*(index-scroll)+1)	
 	end
+end
+
+function generateWidgetMask()
+    widgetMaskImg = gfx.image.new(200,200,gfx.kColorBlack)
+    gfx.pushContext(widgetMaskImg)
+    gfx.setColor(gfx.kColorWhite)
+    gfx.setImageDrawMode(gfx.kDrawModeCopy)
+    gfx.fillRoundRect(0, 0, 200, 200, configVars.cornerradius)
+    gfx.popContext()
+end
+
+function processAndDrawWidgets()
+    if scrollX > 1 then
+        gfx.setImageDrawMode(gfx.kDrawModeCopy)
+        if not widgetsBackground then
+            widgetsBackground = gfx.image.new(widgetsScreenWidth,widgetsScreenWidth,gfx.kColorWhite)
+            gfx.pushContext(widgetsBackground)
+            gfx.setColor(gfx.kColorBlack)
+            gfx.setPattern({0, 255,0,255,0,255,0,255})
+            gfx.fillRect(0, 0, widgetsScreenWidth, 240)
+            gfx.popContext()
+        end
+        
+        local x = -widgetsScreenWidth+scrollX
+        local baseY = (((240-widgetHeight)/2))//1
+        
+        widgetsBackground:draw(x,0)
+    
+        -- Update widget scroll position with lerp
+        widgetScroll = lerpMaxed(widgetScroll, -(currentWidget-1)*(widgetHeight + widgetSpacing), snappiness)
+    
+        -- Draw all widgets in a vertical list
+        for i, widget in ipairs(widgets) do
+            if i == currentWidget then
+                widget:update(widgetIsActive)
+            end
+            local widgetY = baseY + (i-1) * (widgetHeight + widgetSpacing) + widgetScroll
+            local widgetX = x + ((widgetsScreenWidth - widgetWidth)/2)//1
+    
+            -- Only draw if widget would be visible
+            if widgetY + widgetHeight > 0 and widgetY < 240 then
+                -- Draw widget content first
+                local widgetImage = widget:getWidgetImage()  -- Always run main()
+                if widgetImage then
+                    if not widgetMaskImg then generateWidgetMask() end
+                    widgetImage:setMaskImage(widgetMaskImg)
+                    if configVars.invertwidgets then
+                        gfx.setImageDrawMode(gfx.kDrawModeInverted)
+                    else
+                        gfx.setImageDrawMode(gfx.kDrawModeCopy)
+                    end
+                    widgetImage:draw(widgetX, widgetY)
+                end
+    
+                -- Draw widget cursor
+                if i == currentWidget then
+                    gfx.setLineWidth(configVars.linewidth)
+                    gfx.setColor(invertedColors[configVars.invertwidgetcursor])
+    
+                    -- If widget is active, border fits exactly
+                    -- If inactive, border has padding
+                    local padding = (widgetIsActive) and 0 or widgetPadding
+                    gfx.drawRoundRect(
+                        widgetX - padding, 
+                        widgetY - padding, 
+                        widgetWidth + padding*2, 
+                        widgetHeight + padding*2, 
+                        configVars.cornerradius
+                    )
+                end
+            end
+        end
+    end
 end
