@@ -157,40 +157,59 @@ end
 function widget:copyFile(from,to,blockSize)
 	if not blockSize then blockSize = 16384 end
 	if to:sub(-1,-1) == "/" or from == to then 
-		print("COPYFILE EXIT FOLDER "..from)
+		--print("COPYFILE EXIT FOLDER "..from)
 		return false
 	end	
 	--open source file
 	local sourceFile = fle.open(from,fle.kFileRead)
-	if not sourceFile then return end
+	if not sourceFile then 
+		--print("SOURCE FILE AT "..from.." FAILED TO OPEN")
+		return false
+	end
 	
 	--create the file with no data, erase if data
+	
 	local destFile = fle.open(to,fle.kFileWrite)
-	if not destFile then return end
+	
+	if not destFile then 
+		
+		--print("DESTINATION FILE AT "..to.." FAILED TO OPEN")
+		return false
+		
+	end
 	destFile:close()
 	
 	--open to append
 	destFile = fle.open(to,fle.kFileAppend)
-	if not destFile then return end
+	if not destFile then 
+		--print("2ND RUN DESTINATION FILE AT "..to.." FAILED TO OPEN")
+		return false
+	end
 	
 	local len = playdate.file.getSize(from)
 	local numBlocks = (len/blockSize)//1 + 1
-	print("COPYING FROM "..from.." TO "..to)
+	--print("COPYING FROM "..from.." TO "..to)
+	local fileSizeCopied = 0
 	for i=1,numBlocks do
 		local r, r2 = sourceFile:read(blockSize)
-		if r then
-			copyProgress += blockSize
+		if r and r2 then
+			copyProgress += r2
+			fileSizeCopied += r2
 			destFile:write(r)
 			widget:drawProgress(copyProgress, copySize, "Copying...")
 			
 			playdate.display.flush()
 			coroutine.yield()
 		else
+			--print("CORRUPTED FILE :3\n\n\n")
 			createInfoPopup("Action Failed", "*File "..from.." was unable to copy to "..to..".", function() return false end)
-			return false
+			--return false
 		end
 		coroutine.yield()
 	end
+	if destFile then destFile:close() end
+	if sourceFile then sourceFile:close() end
+	--print("FILE COPY SIZE / FILE SIZE      "..fileSizeCopied, len)
 	return true
 end
 
@@ -237,8 +256,10 @@ function widget:recreateFileStructure(originalPath, newPath,dontRename,forceOver
 				pasteFileStructure(v, path..k)
 			else
 				if not widget:copyFile(v,path..k) then
-					print("COPYFILE FAILED IN PASTEFS "..path..k.."  "..v)
+					--print("COPYFILE FAILED IN PASTEFS "..path..k.."  "..v)
 					return false
+				else
+					--print("COPYFILE SUCCESS IN PASTEFS")
 				end
 			end
 		end
@@ -246,35 +267,35 @@ function widget:recreateFileStructure(originalPath, newPath,dontRename,forceOver
 	end
 	if isFolder then
 		if fle.exists(newPath..lastDir) then
-			print("EXISTS, ATTEMPTING DELETION")
+			--print("EXISTS, ATTEMPTING DELETION")
 			if fle.delete(newPath..lastDir,true) then
-				print("DELETE SUCCESS")
+				--print("DELETE SUCCESS")
 			else
-				print("DELETE FAILED")
+				--print("DELETE FAILED")
 			end
 		else
-			print("DOES NOT EXIST")
+			--print("DOES NOT EXIST")
 		end
 		if fle.exists(newPath..lastDir) then
-			print("DIRECTORY EXISTS")
+			--print("DIRECTORY EXISTS")
 			return false
 		else
-			print("PASTING FS BEGIN")
+			--print("PASTING FS BEGIN")
 			fle.mkdir(newPath..lastDir)
 			if pasteFileStructure(fileStructure, newPath..lastDir) then
-				print("PASTEFS SUCCESS")
+				--print("PASTEFS SUCCESS")
 			else
-				print("PASTEFS FAILED")
+				--print("PASTEFS FAILED")
 				return false
 			end
 		end
 	else
 		copySize = fle.getSize(originalPath)
 		if not widget:copyFile(originalPath, newPath..lastDir) then
-			print("COPY FILE FAILED")
+			--print("COPY FILE FAILED")
 			return false
 		else
-			print("COPY FILE SUCCESS")
+			--print("COPY FILE SUCCESS")
 		end
 	end
 	if newPath == currentPath then
@@ -293,11 +314,21 @@ function widget:copy(ogPath,newPath,dontRename,forceOverWrite,finishCallback)
 	else
 		createInfoPopup("Action Failed", "*The copy operation returned an error. Please try again. The system will automatically delete the failed copy.",false,function()
 			local fname = newPath..ogPath:gsub(widget:removeLastFolder(ogPath), "")
-			fle.delete(fname,true)
 			if fle.exists(fname) then
-				createInfoPopup("Action Failed", "*The system was unable to remove failed copy. Please remove it manually with the use of another device.",false)
+				--print("FOUND, DELETING")
+				if fle.delete(fname,true) then
+					--print("DELETE SUCCESS!")
+				else
+					--print("DELETE RETURNED FAIL")
+				end
 			else
-				print("DELETE SUCCESS AFTER COPY FAIL")
+				
+			end
+			if fle.exists(fname) then
+				--print("DELETE FAIL AFTER COPY FAIL")
+				createInfoPopup("Action Failed", "*The system was unable to remove failed copy. Please remove it manually.",false)
+			else
+				--print("DELETE SUCCESS AFTER COPY FAIL")
 			end
 		end
 		)
@@ -334,16 +365,16 @@ function widget:performContextMenuAction()
 				--Update
 				
 				if fle.exists("/System/Launchers/"..currentFiles[currentSelection]) then
-					print("FOUND COPY")
+					--print("FOUND COPY")
 					if fle.exists("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
-						print("FOUND PRE-EXISTING")
+						--print("FOUND PRE-EXISTING")
 						fle.delete("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"), true)
 						if fle.exists("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
-							print("PRE EXIST REMAINS")
+							--print("PRE EXIST REMAINS")
 							fle.delete("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"),true)
 							if fle.exists("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
-								print("PRE EXIST STILL REMAINS")
-								createInfoPopup("Action Failed", "*The old launcher file at that location was unable to be deleted. The installation will not halt, but this file will remain as a hidden file.",false,function()
+								--print("PRE EXIST STILL REMAINS")
+								createInfoPopup("Action Failed", "*The old launcher file at that location was unable to be deleted. The installation will not halt, but this file will remain as a hidden file.")
 								
 								local count = 0
 								local fname = "."..tostring(count)..currentFiles[currentSelection]:gsub(".fosl",".pdx")
@@ -356,34 +387,35 @@ function widget:performContextMenuAction()
 										break
 									end
 								end
-								fname = fname:gsub("/","")
+								--print("CREATED FNAME "..fname)
 								if not success then
-									createInfoPopup("Action Failed", "*There are already 99 hidden files with this name. It is recommended to do a fresh system install from a .pdos file after backing up.",false,function()
+									--print("HELLLLL NO")
+									createInfoPopup("Action Failed", "*There are already 99 hidden files with this name. It is recommended to do a fresh system install from a .pdos file after backing up. I am sorry for your wasted hours.",false,function()
 									return
 									end)
 								else
 									if fle.rename("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"), "/System/Launchers/"..fname) then
+										--print("HIDDEN RENAME SUCCESS")
 										createInfoPopup("Action Success", "*The file was successfully renamed to a hidden file.")
 									else
+										--print("HIDDEN RENAME FAILED")
 										createInfoPopup("Action Failed", "*There was an error encountered while renaming to a hidden file.",false,function() 
 											return
 										end)
 									end
 								end
 								
-								--infpop
-								end)
 							else
-								print("DELETED PRE-EXISTING")
+								--print("DELETED PRE-EXISTING")
 							end
 						else
-							print("DELETED PRE-EXISTING")
+							--print("DELETED PRE-EXISTING")
 						end
 					end
 					
 					--rename fosl to pdx
-					print("/System/Launchers/"..currentFiles[currentSelection])
-					print("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"))
+					--print("/System/Launchers/"..currentFiles[currentSelection])
+					--print("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"))
 					if playdate.file.rename("/System/Launchers/"..currentFiles[currentSelection],"/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
 						createInfoPopup("Action Success", "*The .fosl installation has finished. The system will now restart in order to properly load the new software.", false, function()
 							sys.switchToLauncher()
@@ -559,6 +591,7 @@ function widget:openFileContent(selectedFile)
 		if fileText then fileText = nil end
 		file = fle.open(currentPath..selectedFile)
 		fileText = file:read(65536)
+		file:close()
 		if fileText then
 			
 		else
