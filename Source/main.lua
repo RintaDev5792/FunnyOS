@@ -121,6 +121,7 @@ configVarDefaults = {
 	["transwrapped"] = true,
 	["hidewrapped"] = true,
 	["sysinfoonboot"] = false,
+	["showfps"] = false,
 }
 
 configVarOptions = {
@@ -149,6 +150,7 @@ configVarOptions = {
 	["transwrapped"] =  {["name"] = "Clear Icon Wrap", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["hidewrapped"] =  {["name"] = "Hide New Names", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["sysinfoonboot"] =  {["name"] = "Get Sysinfo on Boot", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["showfps"] =  {["name"] = "Show FPS", ["values"] = {true, false}, ["type"] = "BOOL"},
 }
 
 configVarOptionsOrder = {
@@ -175,6 +177,7 @@ configVarOptionsOrder = {
 	"skipcard",
 	"transwrapped",
 	"hidewrapped",
+	"showfps",
 	"sysinfoonboot",
 }
 
@@ -454,6 +457,9 @@ function playdate.update()
 	end
 	delta = 1/playdate.display.getRefreshRate()--playdate.getFPS()
 	updateReap()
+	if configVars.showfps then
+		playdate.drawFPS(0,0)
+	end
 end
 
 function loadMusic()
