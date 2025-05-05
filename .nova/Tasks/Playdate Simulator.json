@@ -5,6 +5,7 @@
   },
   "extensionTemplate" : "simulator",
   "extensionValues" : {
+    "playdate.debugRequest" : "attach",
     "playdate.output-path" : "..\/..\/PlaydateSDK\/Disk\/System\/Launchers",
     "playdate.product-name" : "FunnyOS"
   }

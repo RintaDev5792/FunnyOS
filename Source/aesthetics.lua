@@ -56,7 +56,7 @@ bottomBarHeight = 10 -- usually 22
 snappiness, defaultSnappiness = 0.175,0.17
 circleCursorRadius = 4
 
-widgetsScreenWidth = 240
+widgetsScreenWidth = 230
 widgetWidth, widgetHeight = 200, 200
 
 local lastScrollX = 0
@@ -140,14 +140,13 @@ function processAndDrawWidgets()
 	if scrollX > 1 then
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		if not widgetsBackground then
-			widgetsBackground = gfx.image.new(widgetsScreenWidth,widgetsScreenWidth,gfx.kColorWhite)
+			widgetsBackground = gfx.image.new(widgetsScreenWidth,240,gfx.kColorWhite)
 			gfx.pushContext(widgetsBackground)
 			gfx.setColor(gfx.kColorBlack)
 			gfx.setPattern({0, 255,0,255,0,255,0,255})
 			gfx.fillRect(0, 0, widgetsScreenWidth, 240)
 			gfx.popContext()
 		end
-		
 		local x = -widgetsScreenWidth+scrollX
 		local baseY = (((240-widgetHeight)/2))//1
 		
@@ -163,7 +162,6 @@ function processAndDrawWidgets()
 			end
 			local widgetY = baseY + (i-1) * (widgetHeight + widgetSpacing) + widgetScroll
 			local widgetX = x + ((widgetsScreenWidth - widgetWidth)/2)//1
-	
 			-- Only draw if widget would be visible
 			if widgetY + widgetHeight > 0 and widgetY < 240 then
 				-- Draw widget content first
@@ -180,12 +178,13 @@ function processAndDrawWidgets()
 				end
 	
 				-- Draw widget cursor
-				if i == currentWidget then
+				if i == currentWidget and cursorState == cursorStates.SELECT_WIDGET then
 					gfx.setLineWidth(configVars.linewidth)
 					gfx.setColor(invertedColors[configVars.invertwidgetcursor])
 	
 					-- If widget is active, border fits exactly
 					-- If inactive, border has padding
+					widgetPadding = labelSpacing - (configVars.linewidth/2)//1
 					local padding = (widgetIsActive) and 0 or widgetPadding
 					gfx.drawRoundRect(
 						widgetX - padding, 
@@ -258,8 +257,8 @@ function doScrolling()
 		scrollX = lerpMaxed(scrollX,scrollX-labels[currentLabel]["drawX"]+labelSpacing,snappiness)
 	end
 	
-	if cursorState == cursorStates.SELECT_WIDGET and scrollX < widgetsScreenWidth-5 then
-		scrollX = lerpFloored(scrollX, widgetsScreenWidth, snappiness)	
+	if cursorState == cursorStates.SELECT_WIDGET and scrollX < widgetsScreenWidth then
+		scrollX = lerpMaxed(scrollX, widgetsScreenWidth, snappiness)	
 	end
 		
 	if (lastObjectCursorDrawX > 400-objectTotalSize-labelSpacing-configVars.cornerradius) and (currentObject > #labels[currentLabel].objects-labels[currentLabel].rows) and (cursorState == cursorStates.SELECT_OBJECT or cursorState == cursorStates.MOVE_OBJECT) then
@@ -368,7 +367,7 @@ end
 
 function processDrawChanges()
 	if controlCenterState == 1 then
-		controlCenterProgress = lerpFloored(controlCenterProgress,  0, snappiness)//1
+		controlCenterProgress = lerpMaxed(controlCenterProgress,  0, snappiness)//1
 		redrawFrame = true
 		if controlCenterProgress < 2 then 
 			controlCenterProgress = 0
@@ -379,7 +378,7 @@ function processDrawChanges()
 		end
 	end
 	if controlCenterState == 2 then
-		controlCenterProgress = lerpCeiled(controlCenterProgress,  maxControlCenterProgress, snappiness)
+		controlCenterProgress = lerpMaxed(controlCenterProgress,  maxControlCenterProgress, snappiness)
 		redrawFrame = true
 		if controlCenterProgress > maxControlCenterProgress-3 then 
 			controlCenterProgress = maxControlCenterProgress
@@ -444,7 +443,7 @@ function drawLabelBackgrounds()
 			limg:draw(scrollX+currentLabelOffset - ditherMod,labelYMargin)
 		end
 		
-		if v == currentLabel then
+		if v == currentLabel and cursorState ~= cursorStates.SELECT_WIDGET then
 			gfx.setDitherPattern(0)
 			gfx.setLineWidth(configVars.linewidth)
 			gfx.setColor(invertedColors[configVars.invertcursor])
@@ -520,7 +519,8 @@ function drawBottomBar(yOffset)
 	local color = invertedColors[configVars.invertcc]
 	gfx.setColor(color)
 	gfx.setDitherPattern(configVars.ccdither, gfx.image.kDitherTypeBayer8x8)
-	gfx.fillRoundRect(-1,240-bottomBarHeight-controlCenterProgress+yOffset,402,bottomBarHeight*3+controlCenterProgress,configVars["cornerradius"])
+	local x = -1
+	gfx.fillRoundRect(x,240-bottomBarHeight-controlCenterProgress+yOffset,402,bottomBarHeight*3+controlCenterProgress,configVars["cornerradius"])
 	if controlCenterState ~= 0 then
 		--backgrounds
 		
