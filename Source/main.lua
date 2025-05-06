@@ -349,8 +349,12 @@ function loadConfig()
 		labels = {}
 	
 		for _, labelFile in ipairs(labelFiles) do
-			labels[labelFile:sub(1,-6)] = das.read(savePath .. "Labels/" .. labelFile:sub(1,-6))
-			labels[labelFile:sub(1,-6)]["collapsed"] = configVars.autocollapselabels
+			if labelFile:sub(1,-6) then
+				labels[labelFile:sub(1,-6)] = das.read(savePath .. "Labels/" .. labelFile:sub(1,-6))
+				if labels[labelFile:sub(1,-6)] then
+					labels[labelFile:sub(1,-6)]["collapsed"] = configVars.autocollapselabels
+				end
+			end
 		end
 	end
 	
@@ -388,6 +392,8 @@ function playdate.keyboard.keyboardAnimatingCallback()
 end
 
 function playdate.keyboard.textChangedCallback()
+	key.text = key.text:gsub("/", "&")
+	key.text = key.text:gsub("\\", "&")
 	if cursorState == cursorStates.SELECT_WIDGET then
 		if widgetIsActive and widgets[currentWidget].textChangedCallback then
 			widgets[currentWidget]:textChangedCallback()	
@@ -405,6 +411,7 @@ end
 function playdate.keyboard.keyboardWillHideCallback(pressedOK)
 	if cursorState == cursorStates.RENAME_LABEL then
 		if pressedOK then
+			key.text = key.text:gsub("/", "&")
 			if key.text == currentLabel then return end
 			if labels[key.text] then
 				stopAllSounds()
