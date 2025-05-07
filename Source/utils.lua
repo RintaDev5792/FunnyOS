@@ -22,6 +22,7 @@ end
 
 --SCRATCH KEEP THIS FUNCTION, BUILT-IN DOESNT HANDLE BOOLS
 function indexOf(table, value) 
+	if not table then return nil end
 	for i,v in ipairs(table) do
 		if v == value then return i end
 	end

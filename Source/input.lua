@@ -599,15 +599,7 @@ cursorStateInputHandlers = {
 					widgets[currentWidget]:upButtonDown()
 				end
 			else
-				if playdate.buttonIsPressed("B") then
-					moveWidgetUp(currentWidget)	
-					didShortcut = true
-				end
-				if currentWidget > 1 then
-					currentWidget -= 1
-				else
-					currentWidget = #widgets
-				end
+				widgetSelectMoveUp()
 			end
 			
 			sound02SelectionReverseTrimmed:play()
@@ -627,16 +619,7 @@ cursorStateInputHandlers = {
 					widgets[currentWidget]:downButtonDown()
 				end
 			else
-				if playdate.buttonIsPressed("B") then
-					moveWidgetDown(currentWidget)	
-					didShortcut = true
-				end
-				
-				if currentWidget < #widgets then
-					currentWidget += 1
-				else
-					currentWidget = 1
-				end
+				widgetSelectMoveDown()
 			end
 			sound01SelectionTrimmed:play()
 			delaySetNoShortcut()
@@ -683,6 +666,31 @@ cursorStateInputHandlers = {
 		end
 	},
 }
+
+function widgetSelectMoveDown()
+	if playdate.buttonIsPressed("B") then
+		moveWidgetDown(currentWidget)	
+		didShortcut = true
+	end
+	
+	if currentWidget < #widgets then
+		currentWidget += 1
+	else
+		currentWidget = 1
+	end
+end
+
+function widgetSelectMoveUp()
+	if playdate.buttonIsPressed("B") then
+		moveWidgetUp(currentWidget)	
+		didShortcut = true
+	end
+	if currentWidget > 1 then
+		currentWidget -= 1
+	else
+		currentWidget = #widgets
+	end
+end
 
 function removeEmptyObject(index,label)
 	if labels[label].objects[index].bundleid == ".empty" then

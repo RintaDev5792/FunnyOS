@@ -63,6 +63,37 @@ cursorStates = {
 	SELECT_WIDGET = 11
 }
 
+crankSinceLastNotch = 0
+crankNotchSizes = {180, 90,180,180,90,0,0,45,45,0,180}
+currentCrankNotchSize = 1
+crankCallbacks = {
+	[cursorStates.SELECT_LABEL] = {
+		[true] = labelSelectMoveRight,
+		[false] = labelSelectMoveLeft
+	},
+	[cursorStates.SELECT_OBJECT] = {
+		[true] = objectSelectMoveDown,
+		[false] = objectSelectMoveUp
+	},
+	[cursorStates.MOVE_OBJECT] = {
+		[true] = objectSelectMoveDown,
+		[false] = objectSelectMoveUp
+	},
+	[cursorStates.CONTROL_CENTER_MENU] = {
+		[true] = controlCenterMenuMoveDown,
+		[false] = controlCenterMenuMoveUp
+	},
+	[cursorStates.CONTROL_CENTER_CONTENT] = {
+		[true] = controlCenterContentMoveDown,
+		[false] = controlCenterContentMoveUp
+	},
+	[cursorStates.SELECT_WIDGET] = {
+		[true] = widgetSelectMoveDown,
+		[false] = widgetSelectMoveUp
+	},
+}
+
+
 music = nil
 sound01SelectionTrimmed = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
 sound02SelectionReverseTrimmed = playdate.sound.fileplayer.new("systemsfx/02-selection-reverse-trimmed")
@@ -122,11 +153,14 @@ configVarDefaults = {
 	["hidewrapped"] = true,
 	["sysinfoonboot"] = false,
 	["showfps"] = false,
+	["crankacceleration"] = false,
 }
 
 configVarOptions = {
 	--options
 	["musicon"] = {["name"] = "Enable Music", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["bgon"] = {["name"] = "Enable BG Image", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["crankacceleration"] = {["name"] = "Crank Acceleration", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["bgon"] = {["name"] = "Enable BG Image", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["iconborders"] =  {["name"] = "Enable Icon Borders", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["iconbgs"] =  {["name"] = "Enable Icon BGs", ["values"] = {true, false}, ["type"] = "BOOL"},
@@ -174,6 +208,7 @@ configVarOptionsOrder = {
 	"cornerradius",
 	"linewidth",
 	"autocollapselabels",
+	"crankacceleration",
 	"skipcard",
 	"transwrapped",
 	"hidewrapped",
@@ -206,6 +241,37 @@ packageInstallerMenuItems = {
 }
 
 configVars = configVarDefaults
+
+
+function playdate.cranked(c,ac)
+	local change = c
+	if configVars.crankacceleration then
+		change = ac
+	end
+	crankSinceLastNotch+=change
+	local crankNotchSize = crankNotchSizes[cursorState]
+	local times = 0
+	while math.abs(crankSinceLastNotch) >= crankNotchSize and crankNotchSize ~= 0 do
+		times += 1
+		if crankSinceLastNotch < 0 then
+			crankSinceLastNotch += crankNotchSize
+			
+		else
+			crankSinceLastNotch -= crankNotchSize
+			
+		end
+		if crankCallbacks[cursorState] then
+			if crankCallbacks[cursorState][crankSinceLastNotch > 0] then
+				print("CALLED")
+				crankCallbacks[cursorState][crankSinceLastNotch > 0](times > 1)
+			else
+				print("NO FUNC")
+			end
+		else
+			print("NO FUNC")
+		end
+	end
+end
 
 function stopAllSounds()
 	sound01SelectionTrimmed:stop()

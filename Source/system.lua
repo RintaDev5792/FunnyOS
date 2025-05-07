@@ -638,6 +638,13 @@ function loadIcon(bundleID, labelName, imageName)
 	local fresh = gameIsFreshlyInstalled(bundleID,false)
 	if gameInfo[bundleID].imagepath ~= nil then 
 		gameIcon = gfx.image.new(gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName) 
+		if gameIcon then
+			print("LOADICON GameIcon succesfuly loaded for "..bundleID.." at path "..gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName)
+		else
+			print("LOADICON GameIcon FAILED to load for "..bundleID.." at path "..gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName)
+		end
+	else
+		print("LOADICON Imagepath is NIL for "..bundleID)
 	end
 	
 	if listHasValue(season1, bundleID) and gameIcon == nil then

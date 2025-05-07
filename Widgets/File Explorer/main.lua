@@ -223,6 +223,9 @@ function widget:recreateFileStructure(originalPath, newPath,dontRename,forceOver
 		lastDir = lastDir.."/"
 	end
 	local isFolder = lastDir:sub(-1,-1) == "/"
+	if not fle.exists(newPath) and isFolder then 
+		fle.mkdir(newPath)
+	end
 	if indexOf(fle.listFiles(newPath, true), lastDir) and not forceOverWrite then 
 		createInfoPopup("Action Failed", "*The specified file or folder already exists at the destination.", false)
 		widget:closeContextMenu()

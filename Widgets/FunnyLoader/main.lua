@@ -117,6 +117,9 @@ local function loadLaunchers()
                 if data then
                     launcherName = data.name
                 end
+                if launchers[launcherName] then 
+                    launcherName = "/System/Launchers/"..v.." ["..launcherName.."]"
+                end
                 launchers[launcherName] = {["icon"] = getLauncherIcon("/System/Launchers/"..v), ["path"] = "/System/Launchers/"..v}
             end
         end	
