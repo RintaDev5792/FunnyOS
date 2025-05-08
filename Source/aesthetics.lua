@@ -73,10 +73,13 @@ invertedFillDrawModes = {[true] = playdate.graphics.kDrawModeFillWhite, [false] 
 widgetScroll = 0
 
 function drawRoutine()
+	iconsLoadedThisFrame = 0
+	local redraw = redrawFrame
+	redrawFrame = defaultRedrawFrame
 	snappiness=defaultSnappiness*targetFPS*delta
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	if not saveFrame then cachedScreenImg = nil end
-	if redrawFrame then
+	if redraw then
 		incFrame+=1
 		gfx.clear(gfx.kColorWhite)
 		
@@ -90,10 +93,9 @@ function drawRoutine()
 		--drawIcons()
 		
 	end
-	redrawFrame = defaultRedrawFrame
 	
-	if cachedScreenImg and ((not redrawFrame) or saveFrame) then
-		cachedScreenImg:draw(0,0) 
+	if cachedScreenImg and ((not redraw) or saveFrame) then
+		--cachedScreenImg:draw(0,0) 
 	end
 	
 	saveFrame = false
@@ -235,6 +237,7 @@ function drawIconsDeprecated()
 end
 
 function drawIconsForLabel(v,xoffset,yoffset)
+	local cap = false
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	if not labels[v].collapsed and #labels[v].objects > 0 then
 		for j, objectData in ipairs(labels[v].objects) do
@@ -242,11 +245,15 @@ function drawIconsForLabel(v,xoffset,yoffset)
 			x += xoffset
 			y+= yoffset
 			if objectData then--and x > -objectSizes[labels[v].rows] and x < 450 then
-				local icon = getIcon(objectData.bundleid, v)
+				local icon, status = getIcon(objectData.bundleid, v)
 				if icon then icon:drawCentered(x,y) end
+				if status == "CAP" then
+					cap = true
+				end
 			end
 		end
 	end	
+	return cap
 end
 
 function doScrolling()
@@ -434,11 +441,15 @@ function drawLabelBackgrounds()
 			img:draw(4 + ditherMod,0)
 			
 			
-			drawIconsForLabel(v,0-x+ditherMod,-labelYMargin)
-			
+			local cap = drawIconsForLabel(v,0-x+ditherMod,-labelYMargin)
 			gfx.popContext()
-			if not labelsCache[v] then labelsCache[v] = {} end
-			labelsCache[v][ditherMod] = limg
+			if (not labelsCache[v]) or cap then labelsCache[v] = {} end
+			if not cap then
+				labelsCache[v][ditherMod] = limg
+			else
+				redrawFrame = true
+			end
+			print(cap)
 			
 			limg:draw(scrollX+currentLabelOffset - ditherMod,labelYMargin)
 		end

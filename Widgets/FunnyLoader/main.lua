@@ -106,6 +106,11 @@ end
 
 local function loadLaunchers()
     launchers = {}
+    local launcherName = sys.getMetadata("/System/Launcher.pdx/pdxinfo").name
+    if launchers[launcherName] then 
+        launcherName = "/System/Launcher.pdx".." ["..launcherName.."]"
+    end
+    launchers[launcherName] = {["icon"] = getLauncherIcon("/System/Launcher.pdx"), ["path"] = "/System/Launcher.pdx"}
     if fle.isdir("/System/Launchers") then
         local files = fle.listFiles("/System/Launchers")
         for i,v in ipairs(files) do
@@ -124,8 +129,6 @@ local function loadLaunchers()
             end
         end	
     end
-    local launcherName = sys.getMetadata("/System/Launcher.pdx/pdxinfo").name
-    launchers[launcherName] = {["icon"] = getLauncherIcon("/System/Launcher.pdx"), ["path"] = "/System/Launcher.pdx"}
     launcherOrder = {}
     for k,v in pairs(launchers) do
         table.insert(launcherOrder, k)	

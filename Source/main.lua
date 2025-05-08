@@ -63,6 +63,9 @@ cursorStates = {
 	SELECT_WIDGET = 11
 }
 
+iconsLoadedThisFrame = 0
+iconsLoadPerFrameCap = 32
+
 crankSinceLastNotch = 0
 crankNotchSizes = {180, 90,180,180,90,0,0,45,45,0,180}
 currentCrankNotchSize = 1
@@ -154,6 +157,7 @@ configVarDefaults = {
 	["sysinfoonboot"] = false,
 	["showfps"] = false,
 	["crankacceleration"] = false,
+	["invertcrank"] = false,
 }
 
 configVarOptions = {
@@ -185,6 +189,7 @@ configVarOptions = {
 	["hidewrapped"] =  {["name"] = "Hide New Names", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["sysinfoonboot"] =  {["name"] = "Get Sysinfo on Boot", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["showfps"] =  {["name"] = "Show FPS", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["invertcrank"] =  {["name"] = "Reverse Crank", ["values"] = {true, false}, ["type"] = "BOOL"},
 }
 
 configVarOptionsOrder = {
@@ -209,6 +214,7 @@ configVarOptionsOrder = {
 	"linewidth",
 	"autocollapselabels",
 	"crankacceleration",
+	"invertcrank",
 	"skipcard",
 	"transwrapped",
 	"hidewrapped",
@@ -261,14 +267,11 @@ function playdate.cranked(c,ac)
 			
 		end
 		if crankCallbacks[cursorState] then
-			if crankCallbacks[cursorState][crankSinceLastNotch > 0] then
-				print("CALLED")
-				crankCallbacks[cursorState][crankSinceLastNotch > 0](times > 1)
-			else
-				print("NO FUNC")
+			local bool = crankSinceLastNotch > 0
+			if configVars.invertcrank then bool = not bool end
+			if crankCallbacks[cursorState][bool] then
+				crankCallbacks[cursorState][bool](times > 1)
 			end
-		else
-			print("NO FUNC")
 		end
 	end
 end
@@ -510,6 +513,7 @@ function playdate.keyboard.keyboardWillHideCallback(pressedOK)
 end
 
 function playdate.update()
+	iconsLoadedThisFrame = 0
 	if firstUpdate then
 		firstUpdate = false
 		main()

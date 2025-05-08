@@ -539,22 +539,6 @@ function fillLabelEndWithEmpty(label, removeEmptyColumns)
 	end
 end
 
-function getIcon(bundleID, labelName, imageName)
-	if not imageName then
-		imageName = "icon"
-	end
-	
-	if iconsCache[bundleID] then
-		if iconsCache[bundleID][imageName] then
-			return iconsCache[bundleID][imageName]
-		else 
-			return loadIcon(bundleID, labelName, imageName)
-		end
-	else
-		return loadIcon(bundleID, labelName, imageName)
-	end
-end
-
 function gameIsFreshlyInstalled(bundleID, set) 
 	if set == nil then set = false end
 	local gameGroup = nil
@@ -579,7 +563,32 @@ function gameIsFreshlyInstalled(bundleID, set)
 	end
 end
 
+function getIcon(bundleID, labelName, imageName)
+	if not imageName then
+		imageName = "icon"
+	end
+	
+	if iconsLoadedThisFrame >= iconsLoadPerFrameCap and gameInfo[bundleID] then
+		redrawFrame = true
+		return defaultListIcon, "CAP"
+	end
+	
+	
+	if iconsCache[bundleID] then
+		if iconsCache[bundleID][imageName] then
+			return iconsCache[bundleID][imageName]
+		else 
+			return loadIcon(bundleID, labelName, imageName)
+		end
+	else
+		return loadIcon(bundleID, labelName, imageName)
+	end
+end
+
 function loadIcon(bundleID, labelName, imageName)
+	
+	iconsLoadedThisFrame+=1
+	if iconsLoadedThisFrame > iconsLoadPerFrameCap and gameInfo[bundleID] then return end
 	local rowsNumber = 1
 	if labels[labelName] then
 		rowsNumber = 6 / labels[labelName].rows
@@ -635,16 +644,23 @@ function loadIcon(bundleID, labelName, imageName)
 	end
 	
 	local gameIcon
+	local gameIconExists = false
 	local fresh = gameIsFreshlyInstalled(bundleID,false)
 	if gameInfo[bundleID].imagepath ~= nil then 
 		gameIcon = gfx.image.new(gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName) 
 		if gameIcon then
-			print("LOADICON GameIcon succesfuly loaded for "..bundleID.." at path "..gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName)
+			--print("LOADICON GameIcon succesfuly loaded for "..bundleID.." at path "..gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName)
 		else
-			print("LOADICON GameIcon FAILED to load for "..bundleID.." at path "..gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName)
+			--print("LOADICON GameIcon FAILED to load for "..bundleID.." at path "..gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName)
+			if fle.exists(gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName..".pdi") then
+				--print("HOWEVER - the file exists")
+				gameIconExists = true
+			else
+				--print("CONFIRMED - file is not there")
+			end
 		end
 	else
-		print("LOADICON Imagepath is NIL for "..bundleID)
+		--print("LOADICON Imagepath is NIL for "..bundleID)
 	end
 	
 	if listHasValue(season1, bundleID) and gameIcon == nil then
@@ -652,8 +668,11 @@ function loadIcon(bundleID, labelName, imageName)
 	end
 	
 	if gameIcon == nil then 
-		
-		gameIcon = defaultListIcon 
+		if gameIconExists then
+			loadIcon(bundleID, labelName, imageName)
+		else
+			gameIcon = defaultListIcon 
+		end
 	end
 	
 	gfx.pushContext(iconImg)
