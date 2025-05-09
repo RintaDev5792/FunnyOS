@@ -449,7 +449,6 @@ function drawLabelBackgrounds()
 			else
 				redrawFrame = true
 			end
-			print(cap)
 			
 			limg:draw(scrollX+currentLabelOffset - ditherMod,labelYMargin)
 		end
@@ -723,7 +722,9 @@ function drawRecentlyPlayed()
 					icon:draw(400-32-labelSpacing*2, y-16)
 				end
 			else
-				recentlyPlayed[i] = nil
+				table.remove(recentlyPlayed, i)
+				saveRecentlyPlayed()
+				--recentlyPlayed[i] = nil
 			end
 		end
 	end

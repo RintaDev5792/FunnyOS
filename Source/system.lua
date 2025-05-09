@@ -568,11 +568,6 @@ function getIcon(bundleID, labelName, imageName)
 		imageName = "icon"
 	end
 	
-	if iconsLoadedThisFrame >= iconsLoadPerFrameCap and gameInfo[bundleID] then
-		redrawFrame = true
-		return defaultListIcon, "CAP"
-	end
-	
 	
 	if iconsCache[bundleID] then
 		if iconsCache[bundleID][imageName] then
@@ -586,9 +581,6 @@ function getIcon(bundleID, labelName, imageName)
 end
 
 function loadIcon(bundleID, labelName, imageName)
-	
-	iconsLoadedThisFrame+=1
-	if iconsLoadedThisFrame > iconsLoadPerFrameCap and gameInfo[bundleID] then return end
 	local rowsNumber = 1
 	if labels[labelName] then
 		rowsNumber = 6 / labels[labelName].rows
@@ -649,18 +641,19 @@ function loadIcon(bundleID, labelName, imageName)
 	if gameInfo[bundleID].imagepath ~= nil then 
 		gameIcon = gfx.image.new(gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName) 
 		if gameIcon then
-			--print("LOADICON GameIcon succesfuly loaded for "..bundleID.." at path "..gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName)
+			print("LOADICON GameIcon succesfuly loaded for "..bundleID.." at path "..gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName)
+			print("NUMBER #"..tostring(number))
 		else
-			--print("LOADICON GameIcon FAILED to load for "..bundleID.." at path "..gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName)
+			print("LOADICON GameIcon FAILED to load for "..bundleID.." at path "..gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName)
 			if fle.exists(gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName..".pdi") then
-				--print("HOWEVER - the file exists")
+				print("HOWEVER - the file exists")
 				gameIconExists = true
 			else
-				--print("CONFIRMED - file is not there")
+				print("CONFIRMED - file is not there")
 			end
 		end
 	else
-		--print("LOADICON Imagepath is NIL for "..bundleID)
+		print("LOADICON Imagepath is NIL for "..bundleID)
 	end
 	
 	if listHasValue(season1, bundleID) and gameIcon == nil then

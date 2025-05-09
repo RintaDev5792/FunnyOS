@@ -63,8 +63,6 @@ cursorStates = {
 	SELECT_WIDGET = 11
 }
 
-iconsLoadedThisFrame = 0
-iconsLoadPerFrameCap = 32
 
 crankSinceLastNotch = 0
 crankNotchSizes = {180, 90,180,180,90,0,0,45,45,0,180}
@@ -227,7 +225,6 @@ controlCenterMenuItems = {
 	"Controls Help",
 	"Actions Menu",
 	"Recently Played",
-	"Badges Menu",
 	"FunnyOS Options",
 	"Screenshots",
 	"Package Installer",

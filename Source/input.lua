@@ -380,6 +380,9 @@ cursorStateInputHandlers = {
 			removeKeyTimer()
 		end,
 		
+		rightButtonUp = function()
+			cursorStateInputHandlers[cursorStates.CONTROL_CENTER_MENU].AButtonUp()
+		end,
 		AButtonUp = function()
 			if not didShortcut then				
 				sound03ActionTrimmed:play()
@@ -457,6 +460,9 @@ cursorStateInputHandlers = {
 	},
 	[cursorStates.CONTROL_CENTER_CONTENT ] = {
 		
+		leftButtonUp = function()
+			cursorStateInputHandlers[cursorStates.CONTROL_CENTER_CONTENT].BButtonUp()
+		end,
 		BButtonUp = function()
 			if not didShortcut then
 				sound03ActionTrimmed:play()
@@ -1059,6 +1065,9 @@ function incrementOptionsValue(selection)
 end
 
 function doActionsMenuAction(name) 
+	
+	redrawFrame = true
+	labelsCache = {}
 	if name == "Play Random Game" then
 		launchRandomGame()
 	elseif name == "Alphabet Sort Objects" then
