@@ -1,0 +1,22 @@
+{
+	"format": "particle",
+	"title": "Zel's Page",
+	"content": [
+		{
+			"type": "paragraph",
+			"text": "*Hello! I'm Zel, the developer of FunnyOS and BoxFight!*",
+			"style": {
+				"text-align": "center"
+			}
+		},
+		{
+			"type": "paragraph",
+			"text": "*I haven't got much on this site yet... but just you wait! Going to add some FunnyOS goodies :3*"
+		},
+		{
+			"type": "button",
+			"label": "Wait a few seconds",
+			"action": "/"
+		}
+	]
+}

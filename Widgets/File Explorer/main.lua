@@ -362,27 +362,56 @@ function widget:performContextMenuAction()
 	elseif selected == "Install as Launcher" then
 		copiedPath = currentPath..currentFiles[currentSelection]
 		copied = true
+		
+		local installToPath = "/System/Launchers/"
+		local foslpathpath = copiedPath:gsub(".fosl/",".foslpath"):sub(1,-1)
+		if not fle.exists(foslpathpath) then
+			foslpathpath = copiedPath:gsub(".fosl/",".foslpath.txt"):sub(1,-1)
+		end
+		if not fle.exists(foslpathpath) then
+			foslpathpath = copiedPath:gsub(".fosl/",".txt.foslpath"):sub(1,-1)
+		end
+		print(foslpathpath)
+		if fle.exists(foslpathpath) then
+			print("FOUND")
+			local foslpathfile = fle.open(foslpathpath)
+			if foslpathfile then
+				print("FILE GOT")
+				local path = foslpathfile:readline()
+				if path then
+					print("PATH GOT")
+					installToPath = path
+				end
+			end
+		else
+			print("NOPEE") 
+		end
+		if not installToPath then
+			installToPath = "/System/Launchers/"
+		end
+		print(installToPath)
+		print(copiedPath)
+		
 		widget:closeContextMenu()
-		playdate.frameTimer.performAfterDelay(1, function() widget:copy(copiedPath,"/System/Launchers/",true,true,function()
+		playdate.frameTimer.performAfterDelay(1, function() widget:copy(copiedPath,installToPath,true,true,function()
 			
 				--Update
-				
-				if fle.exists("/System/Launchers/"..currentFiles[currentSelection]) then
+				if fle.exists(installToPath..currentFiles[currentSelection]) then
 					--print("FOUND COPY")
-					if fle.exists("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
+					if fle.exists(installToPath..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
 						--print("FOUND PRE-EXISTING")
-						fle.delete("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"), true)
-						if fle.exists("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
+						fle.delete(installToPath..currentFiles[currentSelection]:gsub(".fosl",".pdx"), true)
+						if fle.exists(installToPath..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
 							--print("PRE EXIST REMAINS")
-							fle.delete("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"),true)
-							if fle.exists("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
+							fle.delete(installToPath..currentFiles[currentSelection]:gsub(".fosl",".pdx"),true)
+							if fle.exists(installToPath..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
 								--print("PRE EXIST STILL REMAINS")
 								createInfoPopup("Action Failed", "*The old launcher file at that location was unable to be deleted. The installation will not halt, but this file will remain as a hidden file.")
 								
 								local count = 0
 								local fname = "."..tostring(count)..currentFiles[currentSelection]:gsub(".fosl",".pdx")
 								local success = true
-								while fle.exists("/System/Launchers/"..fname) do
+								while fle.exists(installToPath..fname) do
 									count+=1
 									fname = "."..tostring(count)..currentFiles[currentSelection]:gsub(".fosl",".pdx")
 									if count > 99 then
@@ -397,7 +426,7 @@ function widget:performContextMenuAction()
 									return
 									end)
 								else
-									if fle.rename("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"), "/System/Launchers/"..fname) then
+									if fle.rename(installToPath..currentFiles[currentSelection]:gsub(".fosl",".pdx"), installToPath..fname) then
 										--print("HIDDEN RENAME SUCCESS")
 										createInfoPopup("Action Success", "*The file was successfully renamed to a hidden file.")
 									else
@@ -419,7 +448,7 @@ function widget:performContextMenuAction()
 					--rename fosl to pdx
 					--print("/System/Launchers/"..currentFiles[currentSelection])
 					--print("/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx"))
-					if playdate.file.rename("/System/Launchers/"..currentFiles[currentSelection],"/System/Launchers/"..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
+					if playdate.file.rename(installToPath..currentFiles[currentSelection],installToPath..currentFiles[currentSelection]:gsub(".fosl",".pdx")) then
 						createInfoPopup("Action Success", "*The .fosl installation has finished. The system will now restart in order to properly load the new software.", false, function()
 							sys.switchToLauncher()
 						end

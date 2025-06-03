@@ -19,6 +19,10 @@ heldObject = nil
 heldObjectOriginIndex = 1
 heldObjectOriginLabel = ""
 
+redrawFrame = true
+
+iconsLoadedThisFrame = 0
+
 targetFPS = 40
 
 delta = 1/40
@@ -107,6 +111,10 @@ controlCenterInfoSelection = 0
 controlCenterInfoMaxSelection = 0
 controlCenterInfoScroll = 0
 
+drawingLaunchAnim = false
+launchAnimProgress = 0
+bundleIDToLaunch = nil
+
 funnyOSMetadata = playdate.metadata
 
 controlCenterMenuSelection = 2
@@ -126,7 +134,7 @@ dumpFrame = false
 dumpCount = 0
 
 configVarDefaults = {
-	["configversion"] = 2.0,
+	["configversion"] = 2.1,
 	
 	--options
 	["musicon"] = true,
@@ -156,11 +164,13 @@ configVarDefaults = {
 	["showfps"] = false,
 	["crankacceleration"] = false,
 	["invertcrank"] = false,
+	["lettericons"] = false,
 }
 
 configVarOptions = {
 	--options
 	["musicon"] = {["name"] = "Enable Music", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["lettericons"] = {["name"] = "Letter Icons", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["bgon"] = {["name"] = "Enable BG Image", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["crankacceleration"] = {["name"] = "Crank Acceleration", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["bgon"] = {["name"] = "Enable BG Image", ["values"] = {true, false}, ["type"] = "BOOL"},
@@ -196,6 +206,7 @@ configVarOptionsOrder = {
 	"bgdither",
 	"labeldither",
 	"ccdither",
+	"lettericons",
 	"iconborders",
 	"invertborders",
 	"iconbgs",
@@ -394,9 +405,9 @@ function loadConfig()
 	local datastore = das.read(savePath.."funnyConfig")
 	if datastore then 
 		for k, v in pairs(datastore) do
-			if datastore["configversion"] ~= configVarDefaults["configversion"] then
-				break
-			end
+			--if datastore["configversion"] ~= configVarDefaults["configversion"] then
+			--	break
+			--end
 			configVars[k] = v	
 		end
 	end

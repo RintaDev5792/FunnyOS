@@ -480,7 +480,7 @@ cursorStateInputHandlers = {
 					incrementOptionsValue(controlCenterInfoSelection)
 				end
 				if selected == "Recently Played" then
-					sys.switchToGame(gameInfo[recentlyPlayed[controlCenterInfoSelection]].path)
+					openApp(gameInfo[recentlyPlayed[controlCenterInfoSelection]].bundleid, true)
 				end
 				if selected == "Actions Menu" then
 					doActionsMenuAction(actionsMenuItems[controlCenterInfoSelection])
@@ -738,7 +738,7 @@ function labelSelectMoveLeft(fast)
 		labels[currentLabel]["collapsed"] = false
 		cursorFrame = 1
 		redrawFrame = true
-	elseif cursorState == cursorStates.SELECT_LABEL and fast~=true then
+	elseif cursorState == cursorStates.SELECT_LABEL and fast~=true and #widgets > 0 then
 		changeCursorState(cursorStates.SELECT_WIDGET)
 	end
 	if heldObject then
@@ -1041,6 +1041,8 @@ function incrementOptionsValue(selection)
 		makeBgDitherImg()
 	elseif selected == "transwrapped" then
 		makeWrappedImgs()
+		iconsCache = {}
+	elseif selected == "lettericons" then
 		iconsCache = {}
 	elseif selected == "cornerradius" then
 		labelsCache = {}

@@ -13,7 +13,6 @@ gfx = playdate.graphics
 local incFrame = 0
 redrawIcons = true
 redrawLabels = true
-redrawFrame = true
 defaultRedrawFrame = false
 saveFrame = false
 
@@ -73,6 +72,11 @@ invertedFillDrawModes = {[true] = playdate.graphics.kDrawModeFillWhite, [false] 
 widgetScroll = 0
 
 function drawRoutine()
+	
+	if drawingLaunchAnim then
+		drawIconLaunchAnim()
+		return
+	end
 	iconsLoadedThisFrame = 0
 	local redraw = redrawFrame
 	redrawFrame = defaultRedrawFrame
@@ -126,7 +130,30 @@ function drawRoutine()
 	elseif cursorState == cursorStates.RENAME_LABEL then
 		drawLabelNameBox(currentLabel)	
 	end
+	
 	--playdate.drawFPS(383,0)
+end
+
+function drawIconLaunchAnim()
+	if not configVars.skipcard then
+		launchAnimProgress = 100
+	end
+	local x,y = calcIconPositionCentered(currentObject, currentLabel)
+	local size = objectSizes[labels[currentLabel].rows]
+	launchAnimProgress=launchAnimProgress+5
+	gfx.setColor(gfx.kColorBlack)
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+	w = (820)*launchAnimProgress/100
+	h = (500)*launchAnimProgress/100
+	local rx,ry = x-w/2,y-h/2
+	gfx.fillRoundRect(rx, ry, w, h,5)
+	
+	local icon, status = getIcon(bundleIDToLaunch, currentLabel)
+	if icon then icon:drawCentered(x,y) end
+	if launchAnimProgress >= 100 then
+		playdate.system.switchToGame(gameInfo[bundleIDToLaunch].path)
+		return
+	end
 end
 
 function generateWidgetMask()
@@ -246,7 +273,11 @@ function drawIconsForLabel(v,xoffset,yoffset)
 			y+= yoffset
 			if objectData then--and x > -objectSizes[labels[v].rows] and x < 450 then
 				local icon, status = getIcon(objectData.bundleid, v)
-				if icon then icon:drawCentered(x,y) end
+				if icon then 
+					icon:drawCentered(x,y) 
+				else
+					cap = true
+				end
 				if status == "CAP" then
 					cap = true
 				end

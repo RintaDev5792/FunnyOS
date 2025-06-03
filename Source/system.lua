@@ -119,11 +119,19 @@ function installPackage(zipPath,destinationPath)
 	end
 end
 
-function openApp(bundleId)
+function openApp(bundleId,quick)
 	if bundleId and gameInfo[bundleId] then
 		if gameInfo[bundleId].path then
-			playdate.system.switchToGame(gameInfo[bundleId].path)
-			return
+			if quick == true then
+				playdate.system.switchToGame(gameInfo[bundleId].path)
+				return
+			else
+				bundleIDToLaunch = bundleId
+				drawingLaunchAnim = true
+				launchAnimProgress = 0
+				playdate.inputHandlers.push(blockInputHandler)
+				return
+			end
 		end
 	end
 	sound04DenialTrimmed:play()
@@ -214,6 +222,7 @@ function launchGame(bundleID)
 				soundUnwrap:play()
 				playdate.inputHandlers.push(blockInputHandler)
 				playdate.timer.performAfterDelay(1000, function()
+					labelsCache = {}
 					iconsCache[labels[currentLabel].objects[currentObject].bundleid] = nil
 				end)
 				playdate.timer.performAfterDelay(3000,function()
@@ -234,7 +243,7 @@ function launchGame(bundleID)
 								end
 								sys.updateGameList()
 								addToRecentlyPlayed(bundleID)
-								sys.switchToGame(labels[currentLabel].objects[currentObject].path)
+								openApp(labels[currentLabel].objects[currentObject].bundleid)
 							end)
 						else
 							local game = getGameObject(bundleID)
@@ -243,7 +252,7 @@ function launchGame(bundleID)
 							end
 							sys.updateGameList()
 							addToRecentlyPlayed(bundleID)
-							sys.switchToGame(labels[currentLabel].objects[currentObject].path)
+							openApp(labels[currentLabel].objects[currentObject].bundleid)
 						end
 						
 					end)	
@@ -581,6 +590,7 @@ function getIcon(bundleID, labelName, imageName)
 end
 
 function loadIcon(bundleID, labelName, imageName)
+	iconsLoadedThisFrame += 1
 	local rowsNumber = 1
 	if labels[labelName] then
 		rowsNumber = 6 / labels[labelName].rows
@@ -638,33 +648,45 @@ function loadIcon(bundleID, labelName, imageName)
 	local gameIcon
 	local gameIconExists = false
 	local fresh = gameIsFreshlyInstalled(bundleID,false)
-	if gameInfo[bundleID].imagepath ~= nil then 
+	local customExists = fle.isdir(savePath.."Icons/"..bundleID.."/")
+	if customExists then
+		gameIcon = gfx.image.new(savePath.."Icons/"..bundleID.."/"..imageName)
+	end
+	
+	if gameInfo[bundleID].imagepath ~= nil and gameIcon == nil then 
 		gameIcon = gfx.image.new(gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName) 
-		if gameIcon then
-			print("LOADICON GameIcon succesfuly loaded for "..bundleID.." at path "..gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName)
-			print("NUMBER #"..tostring(number))
-		else
-			print("LOADICON GameIcon FAILED to load for "..bundleID.." at path "..gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName)
+		if not gameIcon then
 			if fle.exists(gameInfo[bundleID].path .. "/" .. gameInfo[bundleID].imagepath .. "/" .. imageName..".pdi") then
-				print("HOWEVER - the file exists")
 				gameIconExists = true
-			else
-				print("CONFIRMED - file is not there")
 			end
 		end
-	else
-		print("LOADICON Imagepath is NIL for "..bundleID)
 	end
 	
 	if listHasValue(season1, bundleID) and gameIcon == nil then
 		gameIcon = gfx.image.new("s1_icons/"..bundleID)
 	end
 	
+	if gameIconExists and not gameIcon then 
+		print("FAIL")
+		return nil 
+	end
+		
 	if gameIcon == nil then 
 		if gameIconExists then
 			loadIcon(bundleID, labelName, imageName)
 		else
-			gameIcon = defaultListIcon 
+			if configVars.lettericons then
+				gameIcon = gfx.image.new(32,32,gfx.kColorClear)
+				local letterImg = gfx.image.new(32,32,gfx.kColorClear)
+				gfx.pushContext(letterImg)
+					gfx.getLargeUIFont():drawTextAligned(gameInfo[bundleID].name:sub(1,1), 16, 1, kTextAlignment.center)
+				gfx.popContext()
+				gfx.pushContext(gameIcon)
+					letterImg:drawScaled(0,0,1)
+				gfx.popContext()
+			else
+				gameIcon = defaultListIcon 
+			end
 		end
 	end
 	
@@ -679,7 +701,7 @@ function loadIcon(bundleID, labelName, imageName)
 		gfx.setColor(invertedColors[configVars.invertborders])
 		gfx.setLineWidth(3 * rowsNumber)
 		if rowsNumber == 2 then
-			gfx.drawRoundRect(3, 3, objectSize - 6, objectSize - 6, 8)
+			gfx.drawRoundRect(3, 3, objectSize - 6, objectSize - 6, 7)
 		else
 			gfx.drawRoundRect(1, 1, objectSize - 2, objectSize - 2, 4)
 		end
@@ -690,6 +712,10 @@ function loadIcon(bundleID, labelName, imageName)
 	else
 		iconsCache[bundleID]["recentlyPlayed"] = iconImg
 	end
-	
+	if iconsLoadedThisFrame > 99 then 
+		print("Y")
+		coroutine.yield() 
+		redrawFrame = true
+	end
 	return iconImg
 end

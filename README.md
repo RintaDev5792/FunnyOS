@@ -66,6 +66,7 @@ If this at any point freezes or errors out during installation, especially multi
 - If a new PlaydateOS version has released or you do not have the Explorer widget, follow the install instructions again. If you are staying on the same PlaydateOS version and the same device, you do not have to re-download the .pdos and .pdkey.
 - If you are using the Explorer widget, simply rename the new release from a .pdx to .fosl after unzipping it. Then transfer the file anywhere on your playdate, and install it with the Explorer widget. 
 
+
 ## Setup  
 Before any of these actions can be completed, you must run the launcher on-device after installing.  
 
@@ -94,6 +95,9 @@ Lists every launcher in /System and /Launchers so you can switch to a different 
 A fully featured file explorer with copy,paste,rename,delete,new folder,preview, and launcher installation built in! Allows the user to preview specific file formats such as .pda and .pdi in the widget.  
   
 This widget enables the use of ".fosl" files. In order to install a launcher with the Explorer, rename a .pdx file to .fosl. Then locate the file in the Explorer on device, click right to enter the context menu, and select "install as launcher."  
+  
+By default, this installs to /System/Launchers/. However if you wish to install a launcher to a different path, please place it as the only line in a .txt file renamed to .foslpath.  
+For example, if you are installing "FunnyOS.fosl" to "/System/", create a .txt file, ensure it is entirely empty except for the first line which should read "/System/". Then rename it to "FunnyOS.foslpath". The foslpath MUST have the same name (except for file extension) as the fosl. The path placed in the file also must end with a forward slash.
 
 #### FunnyBadgeExplorer
 This is a WIP badge downloader so you can bedazzle your home screen without a computer! Sadly, it is currently non-functional.
@@ -129,9 +133,9 @@ You can add animations for the icon by making a folder called `icon-highlighted`
 See [here](https://sdk.play.date/2.5.0/Inside%20Playdate.html#pdxinfo) for instructions on `animation.txt`
 
 ## FAQ
-> Q: how does FunnyOS import badges that aren't perfectly square or 64x64?
+> Q: how does FunnyOS import badges that aren't perfectly square or 72x72?
 
-A: Everything is square. If something isn't exactly 64x64 or 72x72, it will be scaled to 64x64 (if the original is less than or equal to 68 pixels wide) or 72x72 otherwise. 72x72 tiles tile perfectly (and can be used to create larger images out of multiple of them), while 64x64 is the normal icon size.
+A: Badges in 64x64 mode will be imported as 72x72, while 32x32 will be imported as 36x36.
 
 > Q: how do I add badges?
 
