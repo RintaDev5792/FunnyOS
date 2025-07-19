@@ -264,6 +264,9 @@ function makeOptionsValueReadable(value,type)
 		local s = roundNumber((1-value)*100, 0)
 		s = tostring(s).."%"
 		return s
+	elseif type == "NUMBER" then
+		local s = tostring(value)
+		return s
 	elseif type == "PIXELS" then
 		return tostring(value).."px"	
 	end

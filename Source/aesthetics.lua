@@ -346,6 +346,7 @@ function drawObjectCursor()
 		end
 		if t then
 			t = "*"..t.."*"
+			t = t:gsub("'","*'*")
 			local tw,th = gfx.getTextSize(t)
 			local textMargins = 5
 			local textImg = gfx.image.new(tw+textMargins*2+configVars.linewidth*2,th+textMargins*2+configVars.linewidth*2,gfx.kColorClear)

@@ -164,6 +164,7 @@ configVarDefaults = {
 	["showfps"] = false,
 	["crankacceleration"] = false,
 	["invertcrank"] = false,
+	["cranksensitivity"] = 1,
 	["lettericons"] = false,
 }
 
@@ -198,6 +199,7 @@ configVarOptions = {
 	["sysinfoonboot"] =  {["name"] = "Get Sysinfo on Boot", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["showfps"] =  {["name"] = "Show FPS", ["values"] = {true, false}, ["type"] = "BOOL"},
 	["invertcrank"] =  {["name"] = "Reverse Crank", ["values"] = {true, false}, ["type"] = "BOOL"},
+	["cranksensitivity"] =  {["name"] = "Crank Sensitivity", ["values"] = {0.25,0.5,0.75,1.5,2,2.5,3,3.5,4,4.5,5}, ["type"] = "NUMBER"},
 }
 
 configVarOptionsOrder = {
@@ -222,6 +224,7 @@ configVarOptionsOrder = {
 	"cornerradius",
 	"linewidth",
 	"autocollapselabels",
+	"cranksensitivity",
 	"crankacceleration",
 	"invertcrank",
 	"skipcard",
@@ -262,6 +265,7 @@ function playdate.cranked(c,ac)
 	if configVars.crankacceleration then
 		change = ac
 	end
+	change = change * configVars.cranksensitivity
 	crankSinceLastNotch+=change
 	local crankNotchSize = crankNotchSizes[cursorState]
 	local times = 0
