@@ -341,6 +341,49 @@ function widget:copy(ogPath,newPath,dontRename,forceOverWrite,finishCallback)
 	copyProgress = 0
 end
 
+local function getInstallPath(copiedPath)
+	local installToPath = "/System/Launchers/"
+	local foslpathpath = copiedPath:gsub(".fosl/",".foslpath"):sub(1,-1)
+	if not fle.exists(foslpathpath) then
+		foslpathpath = copiedPath:gsub(".fosl/",".foslpath.txt"):sub(1,-1)
+	end
+	if not fle.exists(foslpathpath) then
+		foslpathpath = copiedPath:gsub(".fosl/",".txt.foslpath"):sub(1,-1)
+	end
+	if not fle.exists(foslpathpath) then
+		foslpathpath = copiedPath .. ".foslpath"
+	end
+	if not fle.exists(foslpathpath) then
+		local basename = copiedPath:match("([^/]+)/$")
+		foslpathpath = copiedPath .. basename:gsub(".fosl$",".foslpath")
+	end
+	print("foslpath:", foslpathpath)
+	if fle.exists(foslpathpath) then
+		print("FOUND")
+		local foslpathfile = fle.open(foslpathpath)
+		if foslpathfile then
+			print("FILE GOT")
+			local path = foslpathfile:readline()
+			if path then
+				print("PATH GOT")
+				installToPath = path
+			end
+		end
+	else
+		print("NOPE") 
+	end
+	if not installToPath then
+		installToPath = "/System/Launchers/"
+	end
+	
+	-- append "/" if missing
+	if installToPath:sub(-1) ~= "/" then
+		installToPath = installToPath .. "/"
+	end
+	
+	return installToPath
+end
+
 function widget:performContextMenuAction()
 	local selected = contextMenuItems[contextMenuSelection]
 	if selected == "Delete" then
@@ -359,48 +402,11 @@ function widget:performContextMenuAction()
 		copiedPath = currentPath..currentFiles[currentSelection]
 		copied = true
 		widget:closeContextMenu()
-	elseif selected == "Install as Launcher" then
+	elseif selected == "Install as Launcher" or selected == "Install" then
 		copiedPath = currentPath..currentFiles[currentSelection]
 		copied = true
 		
-		local installToPath = "/System/Launchers/"
-		local foslpathpath = copiedPath:gsub(".fosl/",".foslpath"):sub(1,-1)
-		if not fle.exists(foslpathpath) then
-			foslpathpath = copiedPath:gsub(".fosl/",".foslpath.txt"):sub(1,-1)
-		end
-		if not fle.exists(foslpathpath) then
-			foslpathpath = copiedPath:gsub(".fosl/",".txt.foslpath"):sub(1,-1)
-		end
-		if not fle.exists(foslpathpath) then
-			foslpathpath = copiedPath .. ".foslpath"
-		end
-		if not fle.exists(foslpathpath) then
-			local basename = copiedPath:match("([^/]+)/$")
-			foslpathpath = copiedPath .. basename:gsub(".fosl$",".foslpath")
-		end
-		print("foslpath:", foslpathpath)
-		if fle.exists(foslpathpath) then
-			print("FOUND")
-			local foslpathfile = fle.open(foslpathpath)
-			if foslpathfile then
-				print("FILE GOT")
-				local path = foslpathfile:readline()
-				if path then
-					print("PATH GOT")
-					installToPath = path
-				end
-			end
-		else
-			print("NOPE") 
-		end
-		if not installToPath then
-			installToPath = "/System/Launchers/"
-		end
-		
-		-- append "/" if missing
-		if installToPath:sub(-1) ~= "/" then
-			installToPath = installToPath .. "/"
-		end
+		installPath = getInstallPath(copiedPath)
 		
 		print(installToPath)
 		print(copiedPath)
@@ -513,13 +519,17 @@ function widget:openContextMenu()
 			
 		elseif suffix == ".fosl/" then
 			contextMenuItems = {
-			"Install as Launcher",
+			"Install",
 			"Copy",
 			"Paste",
 			"Rename",
 			"New Folder",
 			"Delete",
 			}
+			
+			if getInstallPath(currentPath .. selectedFile) == "/System/Launchers/" then
+				contextMenuItems[1] = "Install as Launcher"
+			end
 		else
 			contextMenuItems = {
 			"Copy",
