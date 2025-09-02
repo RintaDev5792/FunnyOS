@@ -371,7 +371,14 @@ function widget:performContextMenuAction()
 		if not fle.exists(foslpathpath) then
 			foslpathpath = copiedPath:gsub(".fosl/",".txt.foslpath"):sub(1,-1)
 		end
-		print(foslpathpath)
+		if not fle.exists(foslpathpath) then
+			foslpathpath = copiedPath .. ".foslpath"
+		end
+		if not fle.exists(foslpathpath) then
+			local basename = copiedPath:match("([^/]+)/$")
+			foslpathpath = copiedPath .. basename:gsub(".fosl$",".foslpath")
+		end
+		print("foslpath:", foslpathpath)
 		if fle.exists(foslpathpath) then
 			print("FOUND")
 			local foslpathfile = fle.open(foslpathpath)
@@ -384,11 +391,17 @@ function widget:performContextMenuAction()
 				end
 			end
 		else
-			print("NOPEE") 
+			print("NOPE") 
 		end
 		if not installToPath then
 			installToPath = "/System/Launchers/"
 		end
+		
+		-- append "/" if missing
+		if installToPath:sub(-1) ~= "/" then
+			installToPath = installToPath .. "/"
+		end
+		
 		print(installToPath)
 		print(copiedPath)
 		
