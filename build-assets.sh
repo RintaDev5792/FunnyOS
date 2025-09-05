@@ -9,7 +9,7 @@ build_widget() {
     echo "$widget_dir"
     pdc "$widget_dir" "Assets/Widgets/${widget_name}.pdx"
     if [ ! -f "Assets/Widgets/${widget_name}.pdx/installpath" ]; then
-        echo "/Shared/FunnyOS/Widgets/${widget_name}.pdx/" > "Assets/Widgets/${widget_name}.pdx/installpath"
+        echo "/Shared/FunnyOS2/Widgets/${widget_name}.pdx/" > "Assets/Widgets/${widget_name}.pdx/installpath"
     fi
 
     if [ -f "Assets/Widgets/${widget_name}.pdx.zip" ]; then
