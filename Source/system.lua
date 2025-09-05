@@ -131,6 +131,9 @@ function installPackage(zipPath)
 					return
 				end
 				installPath = installPath:match("([^\n]*)") -- strip any newline and after
+				if not installPath:sub(-1) == "/" then -- append trailing '/' if needed
+					installPath = installPath .. "/"
+				end
 				anyInstallPath = true
 				installPaths[getParentDirectory(fname)] = installPath
 			end
@@ -153,7 +156,7 @@ function installPackage(zipPath)
 						local installPath = installPaths[governor]
 						local relPath = fname:sub(#governor+2)
 						if #relPath > 0 then
-							local dstPath = installPath .. "/" .. relPath
+							local dstPath = installPath .. relPath
 							
 							-- mkdir
 							playdate.file.mkdir(getParentDirectory(dstPath))
