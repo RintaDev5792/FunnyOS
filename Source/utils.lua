@@ -271,3 +271,65 @@ function makeOptionsValueReadable(value,type)
 		return tostring(value).."px"	
 	end
 end
+
+-- splits path to e.g. {".", "dir1", "dir2", "filename.ext"}
+function splitPath(path)
+	local parts = {}
+	
+	if path:sub(1, 1) ~= "/" then
+		table.insert(parts, ".")
+	end
+	
+	for part in path:gmatch("[^/]+") do
+		table.insert(parts, part)
+	end
+	
+	return parts
+end
+
+function getBasename(path, stripExtension)
+	local parts = splitPath(path)
+	local baseName = parts[#parts] or ""
+
+	if stripExtension then
+		local lastDot = baseName:find("%.")
+		if lastDot then
+			baseName = baseName:sub(1, lastDot - 1)
+		end
+	end
+
+	return baseName
+end
+
+function getParentDirectory(path)
+    if not path or path == "" then
+        return ""
+    end
+    
+    local normalized = path:gsub("[/]+$", "")
+    
+    if normalized == "" then
+        return path
+    end
+    
+    local lastSeparator = math.max(normalized:find("[/][^/]*$") or 0)
+    
+    if lastSeparator > 0 then
+        local parent = normalized:sub(1, lastSeparator - 1)
+        
+        if parent == "" and normalized:sub(1, 1) == "/" then
+            return "/"
+        end
+        
+        return parent
+    else
+        return ""
+    end
+end
+
+function concatenatePaths(path1, path2)
+	if path2:sub(1, 1) == "/" then
+		error("Second path cannot be absolute")
+	end
+	return path1:gsub("[/]+$", "") .. "/" .. path2
+end

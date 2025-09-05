@@ -67,7 +67,6 @@ cursorStates = {
 	SELECT_WIDGET = 11
 }
 
-
 crankSinceLastNotch = 0
 crankNotchSizes = {180, 90,180,180,90,0,0,45,45,0,180}
 currentCrankNotchSize = 1
@@ -97,7 +96,6 @@ crankCallbacks = {
 		[false] = widgetSelectMoveUp
 	},
 }
-
 
 music = nil
 sound01SelectionTrimmed = playdate.sound.fileplayer.new("systemsfx/01-selection-trimmed")
