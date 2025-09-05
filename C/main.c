@@ -11,25 +11,28 @@
 #define DllExport
 #endif
 
+#ifdef TARGET_SIMULATOR
+#endif
+
 void zip_initLua(void);
 
-static int l_get_launch_args(lua_State* L)
+#ifdef TARGET_SIMULATOR
+static int l_get_env(lua_State* L)
 {
-    const char* args = NULL;
-    playdate->system->getLaunchArgs(&args);
-    if (args)
-    {
-        playdate->lua->pushString(args);
-        return 1;
-    }
-    return 0;
+    const char* env_arg = playdate->lua->getArgString(1);
+    char* e = getenv(env_arg);
+    playdate->lua->pushString(e);
+    return 1;
 }
+#endif
 
 static void initLua(void)
 {
+    #ifdef TARGET_SIMULATOR
     playdate->lua->addFunction(
-        l_get_launch_args, FOS_LUA_PACKAGE ".get_launch_args", NULL
+        l_get_env, FOS_LUA_PACKAGE ".getenv", NULL
     );
+    #endif
 }
 
 DllExport
