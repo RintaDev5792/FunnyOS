@@ -530,7 +530,6 @@ function playdate.update()
 		return
 	end
 	
-	
 	playdate.timer.updateTimers()
 	playdate.frameTimer.updateTimers()
 	
@@ -543,7 +542,6 @@ function playdate.update()
 		dumpFrame = false
 	end
 	delta = 1/playdate.display.getRefreshRate()--playdate.getFPS()
-	updateReap()
 	if configVars.showfps then
 		playdate.drawFPS(0,0)
 	end

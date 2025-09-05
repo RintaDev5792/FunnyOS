@@ -170,11 +170,13 @@ typedef struct ZipFile
 {
     mz_zip_archive_file_stat stat;
     mz_zip_archive* pZip;
+    LuaUDObject* pZipLUD;
 } ZipFile;
 
 int l_zip_get_file(lua_State* L)
 {
-    mz_zip_archive* pZip = playdate->lua->getArgObject(1, ZIP_TYPE, NULL);
+    LuaUDObject* lud = NULL;
+    mz_zip_archive* pZip = playdate->lua->getArgObject(1, ZIP_TYPE, &lud);
     if (!pZip) return 0;
     
     size_t file_index = playdate->lua->getArgInt(2) - 1;
@@ -186,6 +188,9 @@ int l_zip_get_file(lua_State* L)
     if (mz_zip_reader_file_stat(pZip, file_index, &zf->stat))
     {
         normalize_path_separator(zf->stat.m_filename);
+        // file reference retains the zip archive
+        zf->pZipLUD = lud;
+        playdate->lua->retainObject(zf->pZipLUD);
         playdate->lua->pushObject(zf, ZIP_FILE_TYPE, 1);
         return 1;
     }
@@ -220,7 +225,7 @@ int l_zip_get_archive_size(lua_State* L)
     return 1;
 }
 
-int l_zip_close(lua_State* L)
+int l_zip___gc(lua_State* L)
 {
     mz_zip_archive* pZip = playdate->lua->getArgObject(1, ZIP_TYPE, NULL);
     if (!pZip) return 0;
@@ -256,9 +261,8 @@ static lua_reg zip_reg[] = {
     {.name = "get_file_is_supported", .func = l_zip_get_file_is_supported},
     {.name = "get_file", .func = l_zip_get_file},
     {.name = "get_error", .func = l_zip_get_error},
-    {.name = "close", .func = l_zip_close},
     {.name = "__index", .func = l_zip___index},
-    {.name = "__gc", .func = l_zip_close},
+    {.name = "__gc", .func = l_zip___gc},
     {.name = NULL, .func = NULL}
 };
 
@@ -327,6 +331,7 @@ int l_zip_file___gc(lua_State* L)
     ZipFile* zf = playdate->lua->getArgObject(1, ZIP_FILE_TYPE, NULL);
     if (zf)
     {
+        playdate->lua->releaseObject(zf->pZipLUD);
         playdate->system->realloc(zf, 0);
     }
     return 0;

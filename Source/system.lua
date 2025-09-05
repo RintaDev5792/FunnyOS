@@ -34,71 +34,64 @@ season1 = {
 	"net.stfj.snak"
 }
 
-local reaping = false
-local reaper = nil
-
 local kPDGameStateFreshlyInstalled, kPDGameStateInstalled
 if playdate.system ~= nil then
 	kPDGameStateFreshlyInstalled = playdate.system.game.kPDGameStateFreshlyInstalled
 	kPDGameStateInstalled = playdate.system.game.kPDGameStateInstalled
 end
 
-local function drawReapProgress()
-	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	gfx.setColor(gfx.kColorWhite)	
-	local w,h = 400-labelSpacing*10, 240-labelSpacing*14
-	local oldFont = gfx.getFont(gfx.font.kVariantNormal)
-	gfx.setFont(gfx.getLargeUIFont())
-	local textWidth, textHeight = gfx.getTextSize("HI")
-	gfx.setFont(oldFont)
-	local x,y = (200-w/2)//1, (120-h/2)//1
-	gfx.fillRoundRect(x,y , w, h, configVars.cornerradius)
-	gfx.setColor(gfx.kColorBlack)
-	gfx.setLineWidth(configVars.linewidth)
-	gfx.drawRoundRect(x,y , w, h, configVars.cornerradius)
-	gfx.setPattern({170,170,170,170,170,170,170,170})
-	local img = gfx.image.new(w-labelSpacing*2,32,gfx.kColorWhite)
-	gfx.pushContext(img)
-	gfx.fillRoundRect(0,0, (w-labelSpacing*2), 32, configVars.cornerradius*100)
-	gfx.popContext()
-	local mimg = gfx.image.new(w-labelSpacing*2,32,gfx.kColorBlack)
-	gfx.pushContext(mimg)
-	gfx.setDitherPattern(0)
-	gfx.setColor(gfx.kColorWhite)
-	gfx.fillRect(0, 0, ((w-labelSpacing*2)*reaper:getPercentComplete()/100)//1, 32)
-	gfx.popContext(mimg)
-	img:setMaskImage(mimg)
-	img:draw(x+labelSpacing,y+h-labelSpacing-32 )
-	gfx.setDitherPattern(0)
-	gfx.drawRoundRect(x+labelSpacing,y+h-labelSpacing-32 , w-labelSpacing*2, 32, configVars.cornerradius*100)
-	gfx.getLargeUIFont():drawTextAligned("Installing...", 200, y+labelSpacing,kTextAlignment.center)
+function unzip(zippath, dstpath)
+	if not dstpath:endswith("/") then
+		dstpath = dstpath .. "/"
+	end
+	
+	if not fos or not fos.zip_open then
+		return false
+	end
+	
+	local z = fos.zip_open(zippath)
+	if not z then
+		return false
+	end
+	
+	result = true
+	
+	for i = 1,z:get_file_count() do
+		local zf = z:get_file(i)
+		if not zf.is_directory and zf.is_supported then
+			local filedstpath = dstpath .. zf.filename
+			playdate.file.mkdir(getParentDirectory(filedstpath))
+			result = zf:extract_to_file(filedstpath) and result
+			print("extracted file to " .. filedstpath)
+		end
+	end
+	
+	return result
 end
 
-function updateReap()
-	if reaping and reaper then
-		local done, err = reaper:update()
-		drawReapProgress()
-		if err then 
-			reaper = nil
-			reaping = false
-			createInfoPopup("Action Failed", "*An error was encountered while unzipping. Please verify the integrity of your files.\n\nError: "..tostring(err), false)
-			playdate.inputHandlers.pop()
-			return
+function zipIsPackage(zipPath)
+	if not fos or not fos.zip_open then
+		return false
+	end
+	
+	local z = fos.zip_open(zipPath)
+	if not z then
+		return false
+	end
+	
+	for i = 1,z:get_file_count() do
+		local basename = getBasename(z:get_file_name(i))
+		local isInstallPath = basename == "installpath" or basename == "installpath.txt" or basename == ".installpath"
+		if isInstallPath then
+			return true
 		end
-		if done then
-			reaper = nil
-			reaping = false
-			playdate.inputHandlers.pop()
-		createInfoPopup("Action Succeeded", "*The package has been successfully installed and the system will now restart the launcher.", false, function()
-				sys.switchToLauncher()
-			end
-			)
-		end
-	end	
+	end
+	
+	return false
 end
 
 function installPackage(zipPath)
-	if not fos.zip_open then
+	if not fos or not fos.zip_open then
 		createInfoPopup("Action Failed", "*This FunnyOS was not built with miniz support.", false)
 	end
 	local z = fos.zip_open(zipPath)

@@ -333,3 +333,7 @@ function concatenatePaths(path1, path2)
 	end
 	return path1:gsub("[/]+$", "") .. "/" .. path2
 end
+
+function string:endswith(suffix)
+    return self:sub(-#suffix) == suffix
+end
