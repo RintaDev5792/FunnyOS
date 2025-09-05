@@ -13,6 +13,25 @@
 
 void zip_initLua(void);
 
+static int l_get_launch_args(lua_State* L)
+{
+    const char* args = NULL;
+    playdate->system->getLaunchArgs(&args);
+    if (args)
+    {
+        playdate->lua->pushString(args);
+        return 1;
+    }
+    return 0;
+}
+
+static void initLua(void)
+{
+    playdate->lua->addFunction(
+        l_get_launch_args, FOS_LUA_PACKAGE ".get_launch_args", NULL
+    );
+}
+
 DllExport
 int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
 {
@@ -22,6 +41,7 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
     if (event == kEventInitLua)
     {
         zip_initLua();
+        initLua();
     }
     
     if (event == kEventTerminate)

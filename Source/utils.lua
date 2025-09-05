@@ -327,7 +327,7 @@ function getParentDirectory(path)
     end
 end
 
-function concatenatePaths(path1, path2)
+function joinPaths(path1, path2)
 	if path2:sub(1, 1) == "/" then
 		error("Second path cannot be absolute")
 	end
