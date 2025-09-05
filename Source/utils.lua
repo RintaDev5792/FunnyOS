@@ -337,3 +337,47 @@ end
 function string:endswith(suffix)
     return self:sub(-#suffix) == suffix
 end
+
+function string:startswith(prefix)
+	return self:sub(1, #prefix) == prefix
+end
+
+function toward(x, dst, rate)
+	rate = rate or 1
+	if x < dst - rate then
+		return x + rate
+	elseif x > dst + rate then
+		return x - rate
+	else
+		return dst
+	end
+end
+
+function splitUrl(url)
+	local scheme, host, path = url:match("^([^:]+://)([^/]+)(/.*)$")
+	return scheme, host, path
+end
+
+function getCanonicalPath(path)
+	local absolute = string.startswith(path, "/")
+	local parts = splitPath(path)
+	local stack = {}
+
+	for _, part in ipairs(parts) do
+		if part == "." then
+			-- do nothing
+		elseif part == ".." then
+			if #stack > 0 then
+				table.remove(stack)
+			end
+		else
+			table.insert(stack, part)
+		end
+	end
+
+	local s = table.concat(stack, "/")
+	if absolute then
+		s = "/" .. s
+	end
+	return s
+end

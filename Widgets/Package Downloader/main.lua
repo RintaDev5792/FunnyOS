@@ -13,6 +13,7 @@ if fos and fos.getenv then
 end
 print("Using package root: ", PACKAGE_ROOT)
 local PACKAGE_FILE = joinPaths(PACKAGE_ROOT, "packages.json")
+local PACKAGE_HOST = "raw.githubusercontent.com"
 
 -- path is filled out when loaded by system
 widget.metadata = {
@@ -24,15 +25,152 @@ widget.metadata = {
 widget.image = nil
 widget.package_hierarchy = nil
 widget.mode = MODE_PROMPT_REFRESH
+widget.mode_previous = widget.mode
 widget.t = 0
+widget.scroll = 0
 
--- Fill these out with your inputs
-function widget:AButtonUp()
-	-- TODO
+local itemHeight = 33
+local top = 35
+local bottom = top + itemHeight*4
+local folderImg = nil
+local pgkImg = nil
+local scroll_items = 4
+local scroll_offset = scroll_items/2
+local savePath = "/Shared/FunnyOS2/Download/"
+
+local function loadAssets()
+	if not folderImg then
+		folderImg = gfx.image.new(widget.metadata.path.."fol")
+		pkgImg = gfx.image.new(widget.metadata.path.."pkg")
+	end
+end
+
+local function downloadAndInstall(url)
+	local scheme, host, path
+	if url:sub(1, 1) == '.' then
+		scheme = "https"
+		host = PACKAGE_HOST
+		path = getCanonicalPath(PACKAGE_ROOT .. "/" .. url)
+	else
+		scheme, host, path = splitUrl(url)
+		if not scheme or not host or not path then
+			createInfoPopup("Download Failed", "*Failed to parse URL:\n" .. url, nil)
+			return
+		end
+	end
+	
+	local fname = getBasename(path)
+	print(scheme, host, path, fname)
+	playdate.file.mkdir(savePath)
+	
+	fname = savePath .. fname
+	local file, file_error = fos.file_open_write(fname)
+	
+	local use_ssl = true
+	if scheme == "http" then
+		use_ssl = false
+	elseif scheme == "https" then
+		use_ssl = true
+	else
+		createInfoPopup("Download Failed", "*Unrecognized URL scheme \"" .. scheme .. "\"", nil)
+		return
+	end
+	
+	widget.mode = MODE_LOADING
+	widget.http = playdate.network.http.new(host, 0, use_ssl, "to download a package")
+	if not widget.http then
+		widget.mode_previous = MODE_LISTING
+		widget.mode = MODE_SHOW_MESSAGE
+		widget.message = "Failed to open\n" .. scheme .. " connection"
+		return
+	end
+
+	if not file then
+		createInfoPopup(
+			"Download Failed", "*Could not open file for writing:\n" .. tostring(file_error),
+		nil)
+		return
+	end
+	
+	local http = widget.http
+	http:setConnectTimeout(40)
+	local function read_bytes()
+		if not widget.http then return end
+		while http:getBytesAvailable() > 0 do
+			print("bytes available: ", http:getBytesAvailable())
+			local s = http:read(1024)
+			if #s == 0 then
+				print("0 bytes read")
+				widget.http = nil
+				widget.mode_previous = MODE_LISTING
+				widget.mode = MODE_SHOW_MESSAGE
+				widget.message = "0 bytes read."
+				file:close()
+			elseif file:write(s) < 0 then
+				print("Failed to write to file")
+				widget.http = nil
+				widget.mode_previous = MODE_LISTING
+				widget.mode = MODE_SHOW_MESSAGE
+				widget.message = "Failed to write\nto file."
+				file:close()
+			else
+				file:flush()
+			end
+		end
+	end
+	http:setRequestCompleteCallback(
+		function()
+			if widget.http then
+				read_bytes()
+				widget.http = nil
+				file:close()
+				
+				-- at this point, we are now on to installing/unzipping the file
+				installPackage(fname)
+				playdate.file.delete(fname)
+				widget.mode = MODE_LISTING
+			else
+				print("Err: ", http:getError())
+			end
+		end
+	)
+	http:setConnectionClosedCallback(
+		function()
+			if widget.http then
+				widget.http = nil
+				file:close()
+				widget.mode = MODE_SHOW_MESSAGE
+				widget.mode_previous = MODE_LISTING
+				widget.message = "Download Failed."
+			end
+		end
+	)
+	http:setRequestCallback(read_bytes)
+	http:setHeadersReadCallback(function()
+		local status = http:getResponseStatus()
+		if widget.http and status ~= 200 and status ~= 0 then
+			widget.http = nil
+			widget.mode = MODE_LISTING
+			file:close()
+			createInfoPopup("Connection Failed", "*HTTP Status: " .. tostring(status), nil)
+		end
+	end)
+	print("GET " .. scheme .. "://" .. host .. path)
+	http:get(path)
+end
+
+function widget:upOneLevel()
+	widget.selected = widget.path[#widget.path]
+	widget.path[#widget.path] = nil
+	widget.scroll = widget.selected - scroll_offset
 end
 
 -- If a B button function isn't provided, this is the default action for it.
 function widget:BButtonUp()
+	if widget.mode == MODE_LISTING and #widget.path > 0 then
+		widget:upOneLevel()
+		return
+	end
 	-- Removes focus from the widget so others can be selected
 	-- Need this line somewhere if you use the B button.
 	widgetIsActive = false
@@ -58,9 +196,11 @@ local function get_package_list()
 				widget.db = json.decode(data)
 				if widget.db then
 					if widget.db.version == VERSION then
-						widget.dir = {}
+						widget.path = {}
 						widget.http = nil
 						widget.mode = MODE_LISTING
+						widget.scroll = 0
+						widget.selected = 1
 					else
 						widget.mode = MODE_SHOW_MESSAGE
 						widget.message = "Package database\nversion mismatch.\nPlease update manually."
@@ -123,7 +263,7 @@ function get_package_list_prepare()
 			]]
 			
 			if not widget.http then
-				widget.http = playdate.network.http.new("raw.githubusercontent.com", 0, true, "to list downloadable packages")
+				widget.http = playdate.network.http.new(PACKAGE_HOST, 0, true, "to list downloadable packages")
 				if not widget.http then
 					widget.mode = MODE_PROMPT_REFRESH
 				else
@@ -134,13 +274,35 @@ function get_package_list_prepare()
 	end)
 end
 
-function widget:AButtonDown()
+function widget:AButtonUp()
 	if widget.mode == MODE_SHOW_MESSAGE and widget.t > 15 then
-		widget.mode = MODE_PROMPT_REFRESH
+		widget.mode = widget.mode_previous
 	elseif widget.mode == MODE_PROMPT_REFRESH then
 		widget.t = 0
 		widget.mode = MODE_LOADING
 		widget.pending = get_package_list_prepare
+	elseif widget.mode == MODE_LISTING then
+		local list = widget:get_current_list()
+		if not list then return end
+		if widget.selected == 0 then
+			widget:upOneLevel()
+		else
+			local entry = list[widget.selected]
+			if entry.directory then
+				widget.path[#widget.path + 1] = widget.selected
+				widget.t = 0
+				widget.selected = 1
+				widget.scroll = 0
+			else
+				if not fos or not fos.zip_open then
+					createInfoPopup("Unable to Install", "*This version of FunnyOS was not built with zip file support.", true)
+				else
+					createInfoPopup("Really Install?", "*The latest version of package \"" .. entry.name .. "\" will be downloaded and installed.", true, function()
+						downloadAndInstall(entry.path)
+					end)
+				end
+			end
+		end
 	end
 end
 
@@ -149,11 +311,21 @@ function widget:BButtonDown()
 end
 
 function widget:upButtonDown()
-	
+	if widget.mode == MODE_LISTING then
+		if widget.selected > widget:get_listing_start_idx() then
+			widget.selected -= 1
+		end
+	end
 end
 
 function widget:downButtonDown()
-	
+	if widget.mode == MODE_LISTING then
+		local list = widget:get_current_list()
+		if not list then return end
+		if widget.selected < #list then
+			widget.selected += 1
+		end
+	end
 end
 
 function widget:leftButtonDown()
@@ -180,10 +352,106 @@ function widget:rightButtonUp()
 	
 end
 
+function widget:get_current_list()
+	local list = widget.db.listing
+	for i, key in ipairs(widget.path) do
+		list = list[key].contents
+	end
+	return list
+end
+
+function widget:get_listing_start_idx()
+	if #widget.path == 0 then
+		return 1
+	end
+	return 0
+end
+
+function widget:draw_listing()
+	local list = widget:get_current_list()
+	
+	if not list then
+		widget.t = 0
+		widget.mode = MODE_SHOW_MESSAGE
+		widget.mode_previous = MODE_PROMPT_REFRESH
+		widget.message = "Unable to\nlist packages"
+		return
+	end
+	
+	-- if start_idx is 0, '..'
+	local start_idx = widget:get_listing_start_idx()
+	
+	-- update scroll
+	widget.scroll = toward(
+		widget.scroll,
+		math.max(
+			math.min(widget.selected - scroll_offset, #list - scroll_items + 1),
+			start_idx
+		),
+		1/10.0 + math.max(0, (math.abs(widget.selected - widget.scroll + scroll_offset) - 2)/8.0)
+	)
+	
+	-- hard clamp
+	widget.scroll = math.max(
+		math.min(widget.scroll, #list - scroll_items + 1),
+		start_idx
+	)
+	
+	gfx.setColor(gfx.kColorBlack)
+	for i=start_idx,#list do
+		local icon = folderImg
+		local text = ".."
+		
+		if i > 0 then
+			local entry = list[i]
+			if entry.directory then
+				text = entry.directory .. "/"
+			else
+				icon = pkgImg
+				text = entry.name
+			end
+		end
+		
+		text = text:gsub("_","__")
+		text = text:gsub("*","**")
+		
+		local y = (i - widget.scroll)*itemHeight
+		gfx.setImageDrawMode(gfx.kDrawModeCopy)
+		if i == widget.selected and widgetIsActive then
+			gfx.fillRect(0, y, 200, itemHeight)
+			gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+		end
+		gfx.drawText("*"..text,40,y+9)
+		if i == widget.selected and widgetIsActive then
+			gfx.setImageDrawMode(gfx.kDrawModeCopy)
+		end
+		icon:draw(4, y)
+		gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
+	end
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+end
+
+function widget:getTitle()
+	if widgetIsActive and widget.mode == MODE_LISTING and #widget.path > 0 then
+		local list = widget.db.listing
+		local name = nil
+		for i = 1,#widget.path do
+			list = list[widget.path[#widget.path]]
+			name = list.directory
+			list = list.contents
+		end
+		if name then return name end
+	end
+	return widget.metadata.name
+end
+
 -- Refresh the widget image
 function widget:loadWidgetImage()
 	if not widget.image then
 		widget.image = playdate.graphics.image.new(200, 200)
+	end
+	if not widget.scrollArea then
+		widget.scrollArea = playdate.graphics.image.new(200, bottom - top)
 	end
 	playdate.graphics.pushContext(widget.image)
 		-- Draw widget content
@@ -193,7 +461,7 @@ function widget:loadWidgetImage()
 		playdate.graphics.fillRoundRect(0, 0, 200, 200, configVars.cornerradius)
 
 		playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeCopy)
-		gfx.drawTextAligned("*" .. widget.metadata.name .. "*",100, 7,kTextAlignment.center)
+		gfx.drawTextAligned("*" .. widget:getTitle() .. "*",100, 7,kTextAlignment.center)
 		
 		if widget.mode == MODE_PROMPT_REFRESH and widgetIsActive then
 			gfx.drawTextAligned("*Press (A) To Refresh*",100, 100,kTextAlignment.center)
@@ -208,6 +476,12 @@ function widget:loadWidgetImage()
 				s = "..."
 			end
 			gfx.drawTextAligned("*" .. s .. "*",100, 100, kTextAlignment.center)
+		elseif widget.mode == MODE_LISTING then
+			playdate.graphics.pushContext(widget.scrollArea)
+				playdate.graphics.clear(playdate.graphics.kColorClear)
+				widget:draw_listing()
+			playdate.graphics.popContext()
+			widget.scrollArea:draw(0, top)
 		end
 		
 		if widgetIsActive then
@@ -225,7 +499,6 @@ function widget:loadWidgetImage()
 			
 			gfx.setImageDrawMode(gfx.kDrawModeNXOR)
 			gfx.drawTextAligned(buttons.B.."    " ..buttons.A,100, 200-21,kTextAlignment.center)
-			
 		end
 	playdate.graphics.popContext()
 
@@ -243,6 +516,8 @@ end
 
 -- Called every frame, put main loop here
 function widget:update(isActive)
+	loadAssets()
+	
 	if widget.pending then
 		local pending = widget.pending
 		widget.pending = nil

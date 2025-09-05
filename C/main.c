@@ -11,29 +11,8 @@
 #define DllExport
 #endif
 
-#ifdef TARGET_SIMULATOR
-#endif
-
 void zip_initLua(void);
-
-#ifdef TARGET_SIMULATOR
-static int l_get_env(lua_State* L)
-{
-    const char* env_arg = playdate->lua->getArgString(1);
-    char* e = getenv(env_arg);
-    playdate->lua->pushString(e);
-    return 1;
-}
-#endif
-
-static void initLua(void)
-{
-    #ifdef TARGET_SIMULATOR
-    playdate->lua->addFunction(
-        l_get_env, FOS_LUA_PACKAGE ".getenv", NULL
-    );
-    #endif
-}
+void misc_initLua(void);
 
 DllExport
 int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
@@ -44,7 +23,7 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
     if (event == kEventInitLua)
     {
         zip_initLua();
-        initLua();
+        misc_initLua();
     }
     
     if (event == kEventTerminate)
