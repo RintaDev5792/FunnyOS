@@ -354,7 +354,7 @@ function toward(x, dst, rate)
 end
 
 function splitUrl(url)
-	local scheme, host, path = url:match("^([^:]+://)([^/]+)(/.*)$")
+	local scheme, host, path = url:match("^([^:]+)://([^/]+)(/.*)$")
 	return scheme, host, path
 end
 

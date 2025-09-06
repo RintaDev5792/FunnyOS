@@ -27,8 +27,8 @@
             "contents": [
                 {
                     "name": "CrankBoy (Game Boy Emulator)",
-                    "path": "https://github.com/CrankBoyHQ/crankboy-app/releases/download/v1.0.2/CrankBoy-Device.zip",
-                    "icon": "https://raw.githubusercontent.com/CrankBoyHQ/crankboy-app/refs/heads/development/Source/launcher/icon.png"
+                    "link": true,
+                    "path": "https://raw.githubusercontent.com/CrankBoyHQ/crankboy-app/refs/heads/development/assets/fos-package.json"
                 }
             ]
         }

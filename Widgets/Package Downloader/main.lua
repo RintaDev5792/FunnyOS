@@ -28,35 +28,58 @@ widget.mode = MODE_PROMPT_REFRESH
 widget.mode_previous = widget.mode
 widget.t = 0
 widget.scroll = 0
+widget.httplink = {}
 
 local itemHeight = 33
 local top = 35
 local bottom = top + itemHeight*4
 local folderImg = nil
 local pgkImg = nil
+local loadImg = nil
+local load2Img = nil
+local errImg = nil
 local scroll_items = 4
 local scroll_offset = scroll_items/2
 local savePath = "/Shared/FunnyOS2/Download/"
+
+local maxLinkLoading = 3
+
+function widget:getLinkLoadIndex()
+	for i=1,maxLinkLoading do
+		if not widget.httplink[i] then
+			return i
+		end
+	end
+	return nil
+end
 
 local function loadAssets()
 	if not folderImg then
 		folderImg = gfx.image.new(widget.metadata.path.."fol")
 		pkgImg = gfx.image.new(widget.metadata.path.."pkg")
+		errImg = gfx.image.new(widget.metadata.path.."err")
+		loadImg = gfx.image.new(widget.metadata.path.."load")
+		load2Img = gfx.image.new(widget.metadata.path.."load2")
 	end
 end
 
-local function downloadAndInstall(url)
+local function splitURLMaybeRelative(url, rel_scheme, rel_host, rel_root)
 	local scheme, host, path
 	if url:sub(1, 1) == '.' then
-		scheme = "https"
-		host = PACKAGE_HOST
-		path = getCanonicalPath(PACKAGE_ROOT .. "/" .. url)
+		scheme = rel_scheme or "https"
+		host = rel_host or PACKAGE_HOST
+		path = getCanonicalPath((rel_root or PACKAGE_ROOT) .. "/" .. url)
 	else
 		scheme, host, path = splitUrl(url)
-		if not scheme or not host or not path then
-			createInfoPopup("Download Failed", "*Failed to parse URL:\n" .. url, nil)
-			return
-		end
+	end
+	return scheme, host, path
+end
+
+local function downloadAndInstall(url, rel_scheme, rel_host, rel_root)
+	local scheme, host, path = splitURLMaybeRelative(url, rel_scheme, rel_host, rel_root)
+	if not scheme or not host or not path then
+		createInfoPopup("Download Failed", "*Failed to parse URL:\n" .. url, nil)
+		return
 	end
 	
 	local fname = getBasename(path)
@@ -288,7 +311,11 @@ function widget:AButtonUp()
 			widget:upOneLevel()
 		else
 			local entry = list[widget.selected]
-			if entry.directory then
+			if entry.error then
+				createInfoPopup("Error", "*" .. tostring(widget.error), true)
+			elseif entry.link then
+				-- do nothing
+			elseif entry.directory then
 				widget.path[#widget.path + 1] = widget.selected
 				widget.t = 0
 				widget.selected = 1
@@ -404,7 +431,13 @@ function widget:draw_listing()
 		
 		if i > 0 then
 			local entry = list[i]
-			if entry.directory then
+			if entry.error then
+				text = entry.name or entry.directory
+				icon = errImg
+			elseif entry.link then
+				text = entry.name or entry.directory
+				icon = (widget.t % 24 < 12) and loadImg or load2Img
+			elseif entry.directory then
 				text = entry.directory .. "/"
 			else
 				icon = pkgImg
@@ -514,6 +547,108 @@ function widget:getWidgetImage()
 	end
 end
 
+function widget:updateLoadLink()
+	local list = widget:get_current_list()
+	local linkLoadIndex = widget:getLinkLoadIndex()
+	if not linkLoadIndex then
+		return
+	end
+	for i, entry in ipairs(list) do
+		if not entry.http then
+			if entry.link and not entry.error then
+				local prevName = entry.name
+				local scheme, host, path = splitURLMaybeRelative(
+					entry.path,
+					
+					-- source_* indicate where we got this entry from. if nil, from base package.json
+					entry.source_scheme, entry.source_host, entry.source_path
+				)
+				entry.http = playdate.network.http.new(host, 0, scheme == "https", "to download package info")
+				if not entry.http then
+					entry.error = scheme .. " failure"
+					return
+				end
+				widget.httplink[linkLoadIndex] = entry.http
+				local http = entry.http
+				http:setConnectTimeout(30)
+				http:setRequestCompleteCallback(
+					function()
+						print("A")
+						local data = ""
+						while true do
+							local d = http:read()
+							if not d or #d == 0 then
+								break
+							end
+							data = data .. d
+						end
+						if data and entry.http then
+							local j = json.decode(data)
+							if not j then
+								entry.error = "error decoding json"
+							else
+								entry.link = nil
+								entry.path = nil
+								
+								-- integrate new source
+								for key, value in pairs(j) do
+									entry[key] = value
+								end
+								
+								-- mark down where we got it from
+								local function recursivelySetSource(entry, scheme, host, path)
+									entry.source_scheme = scheme
+									entry.source_host = host
+									entry.source_path = path
+									
+									if entry.contents then
+										for j, e in ipairs(entry.contents) do
+											recursivelySetSource(e, scheme, host, path)
+										end
+									end
+								end
+								
+								recursivelySetSource(entry, scheme, host, path)
+							end
+							entry.http = nil
+							widget.httplink[linkLoadIndex] = nil
+						else
+							entry.error = http:getError()
+							entry.http = nil
+							widget.httplink[linkLoadIndex] = nil
+						end
+					end
+				)
+				http:setConnectionClosedCallback(
+					function()
+						print("B")
+						if entry.http then
+							entry.error = scheme .. " server closed connection unexpectedly."
+							entry.http = nil
+							widget.httplink[linkLoadIndex] = nil
+						end
+					end
+				)
+				http:setRequestCallback(function()
+					print("C")
+				end)
+				http:setHeadersReadCallback(function()
+					print("D")
+					local status = http:getResponseStatus()
+					if entry.http and status ~= 200 and status ~= 0 then
+						entry.error = scheme .. " status " .. tostring(status)
+						entry.http = nil
+						widget.httplink[linkLoadIndex] = nil
+					end
+				end)
+				print("GET", PACKAGE_FILE)
+				http:get(PACKAGE_FILE)
+				break
+			end
+		end
+	end
+end
+
 -- Called every frame, put main loop here
 function widget:update(isActive)
 	loadAssets()
@@ -522,6 +657,10 @@ function widget:update(isActive)
 		local pending = widget.pending
 		widget.pending = nil
 		pending()
+	end
+	
+	if widget.mode == MODE_LISTING then
+		widget:updateLoadLink()
 	end
 	
 	if isActive then
