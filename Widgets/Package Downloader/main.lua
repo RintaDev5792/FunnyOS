@@ -75,7 +75,7 @@ local function splitURLMaybeRelative(url, rel_scheme, rel_host, rel_root)
 	return scheme, host, path
 end
 
-local function downloadAndInstall(url, rel_scheme, rel_host, rel_root)
+local function downloadAndInstall(url, installpaths, rel_scheme, rel_host, rel_root)
 	local scheme, host, path = splitURLMaybeRelative(url, rel_scheme, rel_host, rel_root)
 	if not scheme or not host or not path then
 		createInfoPopup("Download Failed", "*Failed to parse URL:\n" .. url, nil)
@@ -149,7 +149,7 @@ local function downloadAndInstall(url, rel_scheme, rel_host, rel_root)
 				file:close()
 				
 				-- at this point, we are now on to installing/unzipping the file
-				installPackage(fname)
+				installPackage(fname, installpaths)
 				playdate.file.delete(fname)
 				widget.mode = MODE_LISTING
 			else
@@ -171,6 +171,7 @@ local function downloadAndInstall(url, rel_scheme, rel_host, rel_root)
 	http:setRequestCallback(read_bytes)
 	http:setHeadersReadCallback(function()
 		local status = http:getResponseStatus()
+		print("status: ", status)
 		if widget.http and status ~= 200 and status ~= 0 then
 			widget.http = nil
 			widget.mode = MODE_LISTING
@@ -260,8 +261,10 @@ local function get_package_list()
 			createInfoPopup("Connection Failed", "*HTTP Status: " .. tostring(status), nil)
 		end
 	end)
-	print("GET", PACKAGE_FILE)
-	http:get(PACKAGE_FILE)
+	
+	local pf = PACKAGE_FILE .. "?nocache=" .. tostring(math.floor(math.random(0, 10000)))
+	print("GET", pf)
+	http:get(pf)
 end
 
 function get_package_list_prepare()
@@ -323,10 +326,12 @@ function widget:AButtonUp()
 			else
 				if not fos or not fos.zip_open then
 					createInfoPopup("Unable to Install", "*This version of FunnyOS was not built with zip file support.", true)
-				else
+				elseif entry.path then
 					createInfoPopup("Really Install?", "*The latest version of package \"" .. entry.name .. "\" will be downloaded and installed.", true, function()
-						downloadAndInstall(entry.path)
+						downloadAndInstall(entry.path, entry.installpath, entry.source_scheme, entry.source_host, entry.source_path)
 					end)
+				else
+					createInfoPopup("Unable to Install", "*No 'path' field specifying url exists.")
 				end
 			end
 		end
@@ -593,6 +598,7 @@ function widget:updateLoadLink()
 								-- integrate new source
 								for key, value in pairs(j) do
 									entry[key] = value
+									print("replace: ", key, value)
 								end
 								
 								-- mark down where we got it from
@@ -608,7 +614,7 @@ function widget:updateLoadLink()
 									end
 								end
 								
-								recursivelySetSource(entry, scheme, host, path)
+								recursivelySetSource(entry, scheme, host, getParentDirectory(path))
 							end
 							entry.http = nil
 							widget.httplink[linkLoadIndex] = nil
@@ -641,8 +647,13 @@ function widget:updateLoadLink()
 						widget.httplink[linkLoadIndex] = nil
 					end
 				end)
-				print("GET", PACKAGE_FILE)
-				http:get(PACKAGE_FILE)
+				local pf = path
+				if not pf:find("?") then
+					pf = pf .. "?nocache=" .. tostring(math.floor(math.random(0, 10000)))
+				end
+				
+				print("GET", pf)
+				http:get(pf)
 				break
 			end
 		end
