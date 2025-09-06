@@ -239,7 +239,7 @@ controlCenterMenuItems = {
 	"Recently Played",
 	"FunnyOS Options",
 	"Screenshots",
-	"Package Installer",
+	--"Package Installer", -- superceded by Package Downloader widget?
 	"System Info"
 }
 
