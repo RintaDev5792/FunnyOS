@@ -3,8 +3,6 @@ import("CoreLibs/keyboard")
 import("CoreLibs/timer")
 import("CoreLibs/object")
 import("utils")
-import("unzip")
-import("reap")
 
 defaultListIcon = playdate.graphics.image.new("images/list_icon_default")
 gameInfo, groups, sortedGameInfo = nil, nil, nil
@@ -36,87 +34,147 @@ season1 = {
 	"net.stfj.snak"
 }
 
-local reaping = false
-local reaper = nil
-
 local kPDGameStateFreshlyInstalled, kPDGameStateInstalled
 if playdate.system ~= nil then
 	kPDGameStateFreshlyInstalled = playdate.system.game.kPDGameStateFreshlyInstalled
 	kPDGameStateInstalled = playdate.system.game.kPDGameStateInstalled
 end
 
-function reapPackage(zipPath,destinationPath)
-	playdate.inputHandlers.push(blockInputHandler)
-	if destinationPath then fle.mkdir(destinationPath) end
-	if not fle.exists(zipPath) then createInfoPopup("Action Failed", "*Invalid file path, please try again.", false); return end
-	reaper = Reap(zipPath,destinationPath)
-	reaping = true
+function unzip(zippath, dstpath)
+	if not dstpath:endswith("/") then
+		dstpath = dstpath .. "/"
+	end
+	
+	if not fos or not fos.zip_open then
+		return false
+	end
+	
+	local z = fos.zip_open(zippath)
+	if not z then
+		return false
+	end
+	
+	result = true
+	
+	for i = 1,z:get_file_count() do
+		local zf = z:get_file(i)
+		if not zf.is_directory and zf.is_supported then
+			local filedstpath = dstpath .. zf.filename
+			playdate.file.mkdir(getParentDirectory(filedstpath))
+			result = zf:extract_to_file(filedstpath) and result
+			print("extracted file to " .. filedstpath)
+		end
+	end
+	
+	return result
 end
 
-local function drawReapProgress()
-	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	gfx.setColor(gfx.kColorWhite)	
-	local w,h = 400-labelSpacing*10, 240-labelSpacing*14
-	local oldFont = gfx.getFont(gfx.font.kVariantNormal)
-	gfx.setFont(gfx.getLargeUIFont())
-	local textWidth, textHeight = gfx.getTextSize("HI")
-	gfx.setFont(oldFont)
-	local x,y = (200-w/2)//1, (120-h/2)//1
-	gfx.fillRoundRect(x,y , w, h, configVars.cornerradius)
-	gfx.setColor(gfx.kColorBlack)
-	gfx.setLineWidth(configVars.linewidth)
-	gfx.drawRoundRect(x,y , w, h, configVars.cornerradius)
-	gfx.setPattern({170,170,170,170,170,170,170,170})
-	local img = gfx.image.new(w-labelSpacing*2,32,gfx.kColorWhite)
-	gfx.pushContext(img)
-	gfx.fillRoundRect(0,0, (w-labelSpacing*2), 32, configVars.cornerradius*100)
-	gfx.popContext()
-	local mimg = gfx.image.new(w-labelSpacing*2,32,gfx.kColorBlack)
-	gfx.pushContext(mimg)
-	gfx.setDitherPattern(0)
-	gfx.setColor(gfx.kColorWhite)
-	gfx.fillRect(0, 0, ((w-labelSpacing*2)*reaper:getPercentComplete()/100)//1, 32)
-	gfx.popContext(mimg)
-	img:setMaskImage(mimg)
-	img:draw(x+labelSpacing,y+h-labelSpacing-32 )
-	gfx.setDitherPattern(0)
-	gfx.drawRoundRect(x+labelSpacing,y+h-labelSpacing-32 , w-labelSpacing*2, 32, configVars.cornerradius*100)
-	gfx.getLargeUIFont():drawTextAligned("Installing...", 200, y+labelSpacing,kTextAlignment.center)
+function zipIsPackage(zipPath)
+	if not fos or not fos.zip_open then
+		return false
+	end
+	
+	local z = fos.zip_open(zipPath)
+	if not z then
+		return false
+	end
+	
+	for i = 1,z:get_file_count() do
+		local basename = getBasename(z:get_file_name(i))
+		local isInstallPath = basename == "installpath" or basename == "installpath.txt" or basename == ".installpath"
+		if isInstallPath then
+			return true
+		end
+	end
+	
+	return false
 end
 
-function updateReap()
-	if reaping and reaper then
-		local done, err = reaper:update()
-		drawReapProgress()
-		if err then 
-			reaper = nil
-			reaping = false
-			createInfoPopup("Action Failed", "*An error was encountered while unzipping. Please verify the integrity of your files.\n\nError: "..tostring(err), false)
-			playdate.inputHandlers.pop()
+function installPackage(zipPath)
+	if not fos or not fos.zip_open then
+		createInfoPopup("Action Failed", "*This FunnyOS was not built with miniz support.", false)
+	end
+	local z = fos.zip_open(zipPath)
+	if not z then
+		createInfoPopup("Action Failed", "*Failed to open package", false)
+		return
+	end
+	print("opened zip")
+	
+	local installPaths = {}
+	local anyInstallPath = false
+	
+	-- pass 1: determine install path of each dir
+	-- pass 2: extract files to destinations
+	for pass = 1,2 do
+		for i = 1,z:get_file_count() do
+			local fname = "./" .. z:get_file_name(i)
+			local basename = getBasename(fname)
+			local isInstallPath = basename == "installpath" or basename == "installpath.txt" or basename == ".installpath"
+			if pass == 1 and isInstallPath then
+				local zf = z:get_file(i)
+				if not zf or zf.is_directory or not zf.is_supported then
+					createInfoPopup("Action Failed", "*Unable to read installpath", false)
+					return
+				end
+				
+				local installPath = zf:extract_to_string()
+				if not installPath then
+					createInfoPopup("Action Failed", "*Unable to read installpath", false)
+					return
+				end
+				installPath = installPath:match("([^\n]*)") -- strip any newline and after
+				if not installPath:sub(-1) == "/" then -- append trailing '/' if needed
+					installPath = installPath .. "/"
+				end
+				anyInstallPath = true
+				installPaths[getParentDirectory(fname)] = installPath
+			end
+			
+			if pass == 2 and not isInstallPath then
+				local zf = z:get_file(i)
+				
+				if zf and not zf.is_directory then
+					if not zf.is_supported or zf.is_encrypted then
+						createInfoPopup("Action Failed", "*Unreadable file in package: " .. fname:sub(3), false)
+						return
+					end
+						
+					-- determine governing install path
+					local governor = fname
+					while #governor >= 3 and not installPaths[governor] do
+						governor = getParentDirectory(governor)
+					end
+					if installPaths[governor] then
+						local installPath = installPaths[governor]
+						local relPath = fname:sub(#governor+2)
+						if #relPath > 0 then
+							local dstPath = installPath .. relPath
+							
+							-- mkdir
+							playdate.file.mkdir(getParentDirectory(dstPath))
+							zf:extract_to_file(dstPath)
+							print("extracting", fname, "->", dstPath)
+						else
+							createInfoPopup("Action Failed", "*File destination path corrupted", false)
+							return
+						end
+					else
+						print("no governor for ", fname)
+					end
+				end
+			end
+		end
+		
+		if not anyInstallPath then
+			createInfoPopup("Action Failed", "*Package has no installpath", false)
 			return
 		end
-		if done then
-			reaper = nil
-			reaping = false
-			playdate.inputHandlers.pop()
-		createInfoPopup("Action Succeeded", "*The package has been successfully installed and the system will now restart the launcher.", false, function()
-				sys.switchToLauncher()
-			end
-			)
-		end
-	end	
-end
-
-function installPackage(zipPath,destinationPath)
-	if unzip(zipPath,destinationPath) then
-		createInfoPopup("Action Succeeded", "*The package has been successfully installed and the system will now restart the launcher.", false, function()
-			sys.switchToLauncher()
-		end
-		)
-	else
-		createInfoPopup("Action Failed", "*An error was encountered while unzipping. Please verify the integrity of your files.", false)
-		
 	end
+	
+	createInfoPopup("Action Succeeded", "*The package has been successfully installed and the system will now restart the launcher.", false, function()
+		sys.switchToLauncher()
+	end)
 end
 
 function openApp(bundleId,quick)

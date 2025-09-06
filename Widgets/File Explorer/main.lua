@@ -14,6 +14,7 @@ local extensionImgs = {
 	["pds"] = 0,
 	["fosl"] = 0,
 	["json"] = 0,
+	["zip"] = 0,
 }
 local currentPath = "/Shared/FunnyOS2/"
 local previousPaths = {}
@@ -341,6 +342,49 @@ function widget:copy(ogPath,newPath,dontRename,forceOverWrite,finishCallback)
 	copyProgress = 0
 end
 
+local function getInstallPath(copiedPath)
+	local installToPath = "/System/Launchers/"
+	local foslpathpath = copiedPath:gsub(".fosl/",".foslpath"):sub(1,-1)
+	if not fle.exists(foslpathpath) then
+		foslpathpath = copiedPath:gsub(".fosl/",".foslpath.txt"):sub(1,-1)
+	end
+	if not fle.exists(foslpathpath) then
+		foslpathpath = copiedPath:gsub(".fosl/",".txt.foslpath"):sub(1,-1)
+	end
+	if not fle.exists(foslpathpath) then
+		foslpathpath = copiedPath .. ".foslpath"
+	end
+	if not fle.exists(foslpathpath) then
+		local basename = copiedPath:match("([^/]+)/$")
+		foslpathpath = copiedPath .. basename:gsub(".fosl$",".foslpath")
+	end
+	print("foslpath:", foslpathpath)
+	if fle.exists(foslpathpath) then
+		print("FOUND")
+		local foslpathfile = fle.open(foslpathpath)
+		if foslpathfile then
+			print("FILE GOT")
+			local path = foslpathfile:readline()
+			if path then
+				print("PATH GOT")
+				installToPath = path
+			end
+		end
+	else
+		print("NOPE") 
+	end
+	if not installToPath then
+		installToPath = "/System/Launchers/"
+	end
+	
+	-- append "/" if missing
+	if installToPath:sub(-1) ~= "/" then
+		installToPath = installToPath .. "/"
+	end
+	
+	return installToPath
+end
+
 function widget:performContextMenuAction()
 	local selected = contextMenuItems[contextMenuSelection]
 	if selected == "Delete" then
@@ -359,36 +403,33 @@ function widget:performContextMenuAction()
 		copiedPath = currentPath..currentFiles[currentSelection]
 		copied = true
 		widget:closeContextMenu()
-	elseif selected == "Install as Launcher" then
+	elseif selected == "Extract" then
+		if not fos or not fos.zip_open then
+			createInfoPopup("Action Failed", "*FunnyOS was not compiled with zip support.")
+		else
+			local dst = currentPath .. getBasename(currentFiles[currentSelection], true) .. "/"
+			playdate.file.mkdir(dst)
+			if unzip(currentPath..currentFiles[currentSelection], dst) then
+				widget:goToFolder(dst)
+				createInfoPopup("Action Succeeded", "*Zip file contents extracted.")
+			else
+				createInfoPopup("Action Failed", "*Zip file contents did not correctly extract.")
+			end
+		end
+		widget:closeContextMenu()
+	elseif selected == "Install Package" then
+		if not fos or not fos.zip_open then
+			createInfoPopup("Action Failed", "*FunnyOS was not compiled with zip support.")
+		else
+			installPackage(currentPath..currentFiles[currentSelection])
+		end
+		widget:closeContextMenu()
+	elseif selected == "Install as Launcher" or selected == "Install" then
 		copiedPath = currentPath..currentFiles[currentSelection]
 		copied = true
 		
-		local installToPath = "/System/Launchers/"
-		local foslpathpath = copiedPath:gsub(".fosl/",".foslpath"):sub(1,-1)
-		if not fle.exists(foslpathpath) then
-			foslpathpath = copiedPath:gsub(".fosl/",".foslpath.txt"):sub(1,-1)
-		end
-		if not fle.exists(foslpathpath) then
-			foslpathpath = copiedPath:gsub(".fosl/",".txt.foslpath"):sub(1,-1)
-		end
-		print(foslpathpath)
-		if fle.exists(foslpathpath) then
-			print("FOUND")
-			local foslpathfile = fle.open(foslpathpath)
-			if foslpathfile then
-				print("FILE GOT")
-				local path = foslpathfile:readline()
-				if path then
-					print("PATH GOT")
-					installToPath = path
-				end
-			end
-		else
-			print("NOPEE") 
-		end
-		if not installToPath then
-			installToPath = "/System/Launchers/"
-		end
+		installPath = getInstallPath(copiedPath)
+		
 		print(installToPath)
 		print(copiedPath)
 		
@@ -500,13 +541,30 @@ function widget:openContextMenu()
 			
 		elseif suffix == ".fosl/" then
 			contextMenuItems = {
-			"Install as Launcher",
+			"Install",
 			"Copy",
 			"Paste",
 			"Rename",
 			"New Folder",
 			"Delete",
 			}
+			
+			if getInstallPath(currentPath .. selectedFile) == "/System/Launchers/" then
+				contextMenuItems[1] = "Install as Launcher"
+			end
+		elseif suffix == ".zip" then
+			contextMenuItems = {
+			"Extract",
+			"Copy",
+			--"Paste",
+			"Rename",
+			--"New Folder",
+			"Delete",
+			}
+
+			if zipIsPackage(currentPath .. selectedFile) then
+				table.insert(contextMenuItems, 1, "Install Package")
+			end
 		else
 			contextMenuItems = {
 			"Copy",
@@ -623,7 +681,6 @@ function widget:openFileContent(selectedFile)
 		if fileText then fileText = nil end
 		file = fle.open(currentPath..selectedFile)
 		fileText = file:read(65536)
-		file:close()
 		if fileText then
 			
 		else
@@ -805,6 +862,8 @@ function widget:drawFileIconAt(v,x,y)
 			extensionImgs["pft"]:draw(x,y+1)
 		elseif v:sub(#v-4,#v) == ".json" then
 			extensionImgs["json"]:draw(x,y+1)
+		elseif v:sub(#v-3,#v) == ".zip" then
+			extensionImgs["zip"]:draw(x,y+1)
 		else
 			documentImg:draw(x,y+1)
 		end

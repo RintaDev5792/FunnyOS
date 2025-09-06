@@ -1096,16 +1096,13 @@ function doPackageInstallerAction(name)
 	if name == "Check for Updates" then
 		createInfoPopup("Action Failed", "*This item has not been implemented yet as PlaydateOS 2.7 has not officially released.",false)
 	elseif name == "Install Package" then
-		if fle.exists(savePath.."Package/Package.zip") and fle.exists(savePath.."Package/Destination.txt") then
-			createInfoPopup("Confirm Action", "*Please confirm that you wish to install Package.zip to the path in Destination.txt. This will replace any files already at that path.",true,function()
-				local destTxt = fle.open(savePath.."Package/Destination.txt")
-				local destination = destTxt:readline()
-				--installPackage(savePath.."Package/Package.zip", destination)
-				reapPackage(savePath.."Package/Package.zip", destination)
+		if fle.exists(savePath.."Package/Package.zip") then
+			createInfoPopup("Confirm Action", "*Please confirm that you wish to install Package.zip.",true,function()
+				installPackage(savePath.."Package/Package.zip", destination)
 			end
 			)
 		else
-			createInfoPopup("Action Failed", "*Valid Package files not found. Please place a \"Package.zip\" file as well as a \"Destination.txt\" file with a destination path for your package in "..savePath.."Package/",false)
+			createInfoPopup("Action Failed", "*Valid Package files not found. Please place a \"Package.zip\" file which containts an \"installpath\" file with a destination path for your package in "..savePath.."Package/",false)
 		end
 	end	
 end
