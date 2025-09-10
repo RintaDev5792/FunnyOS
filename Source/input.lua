@@ -23,6 +23,7 @@ cursorStates = {
 	CONTROL_CENTER_CONTENT = 9, 
 	INFO_POPUP = 10,
 	SELECT_WIDGET = 11,
+	CONTROL_CENTER_PACKAGE_INSTALLER = 12,
 }
 
 blockInputHandler = {
@@ -398,10 +399,7 @@ cursorStateInputHandlers = {
 					controlCenterInfoSelection = 1
 					controlCenterInfoMaxSelection = #recentlyPlayed
 				elseif selected == "Package Installer" then
-					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
-					controlCenterInfoScroll = 0
-					controlCenterInfoSelection = 1
-					controlCenterInfoMaxSelection = #packageInstallerMenuItems
+					changeCursorState(cursorStates.CONTROL_CENTER_PACKAGE_INSTALLER)
 				elseif selected == "Actions Menu" then
 					changeCursorState(cursorStates.CONTROL_CENTER_CONTENT)
 					controlCenterInfoScroll = 0
@@ -671,6 +669,7 @@ cursorStateInputHandlers = {
 			removeKeyTimer(); scrollLeftFast = false
 		end
 	},
+	[cursorStates.CONTROL_CENTER_PACKAGE_INSTALLER ] = packageInstaller
 }
 
 function widgetSelectMoveDown()
