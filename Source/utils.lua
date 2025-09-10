@@ -399,7 +399,7 @@ function recursive_mkdir(path)
 	for i, part in ipairs(parts) do
 		p = p .. part .. "/"
 		if playdate.file.mkdir(p) ~= 0 then
-			return -1
+			--return -1
 		end
 	end
 	return 0

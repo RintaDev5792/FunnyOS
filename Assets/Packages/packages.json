@@ -36,7 +36,7 @@
                     "contents": [
                         {
                             "name": "None",
-                            "delete": "/Shared/FunnyOS2/bg.pdo"
+                            "delete": "/Shared/FunnyOS2/bg.pdi"
                         },
                         {
                             "name": "Default",
@@ -50,7 +50,7 @@
                     "contents": [
                         {
                             "name": "None",
-                            "delete": "/Shared/FunnyOS2/bg.pdo"
+                            "delete": "/Shared/FunnyOS2/bgm.pda"
                         },
                         {
                             "name": "Default",

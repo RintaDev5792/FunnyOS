@@ -35,6 +35,9 @@ local pgkImg = nil
 local loadImg = nil
 local load2Img = nil
 local errImg = nil
+local musImg = nil
+local docImg = nil
+local delImg = nil
 local scroll_items = 5
 local bottom = top + itemHeight*scroll_items
 local scroll_offset = scroll_items/2
@@ -60,6 +63,9 @@ local function loadAssets()
 		folderImg = gfx.image.new(packageInstaller.metadata.path.."fol")
 		pkgImg = gfx.image.new(packageInstaller.metadata.path.."pkg")
 		errImg = gfx.image.new(packageInstaller.metadata.path.."err")
+        musImg = gfx.image.new(packageInstaller.metadata.path.."mus")
+        delImg = gfx.image.new(packageInstaller.metadata.path.."del")
+        docImg = gfx.image.new(packageInstaller.metadata.path.."doc")
 		loadImg = gfx.image.new(packageInstaller.metadata.path.."load")
 		load2Img = gfx.image.new(packageInstaller.metadata.path.."load2")
 	end
@@ -80,7 +86,7 @@ end
 local function installFile(fname, installpath)
     installpath = installpath or (savePath .. getBasename(fname))
     if recursive_mkdir(getParentDirectory(installpath)) ~= 0 then
-        createInfoPopup("Action Failed", "*Filesystem error.", false)
+        createInfoPopup("Action Failed", "*Filesystem error: failed to mkdir " .. getParentDirectory(installpath), false)
         return
     end
     if not playdate.file.rename(fname, installpath) then
@@ -168,7 +174,7 @@ local function downloadAndInstall(url, installpaths, rel_scheme, rel_host, rel_r
 				packageInstaller.http = nil
 				file:close()
                 
-                if getExtension(fname):to_lower() == ".zip" then				
+                if string.lower(getExtension(fname)) == ".zip" then				
                     -- at this point, we are now on to installing/unzipping the file
                     installPackage(fname, installpaths)
                 else
@@ -231,7 +237,7 @@ local function get_package_list()
 	http:setConnectTimeout(30)
 	http:setRequestCompleteCallback(
         function()
-            print("A-", http, packageInstaller.http)
+            print("A")
 			local data = ""
 			while true do
 				local d = http:read()
@@ -241,7 +247,6 @@ local function get_package_list()
 				data = data .. d
 			end
 			if data and packageInstaller.http then
-                print("DATA RECEIVED: ", data)
 				packageInstaller.http = nil
 				packageInstaller.db = json.decode(data)
 				if packageInstaller.db then
@@ -355,7 +360,7 @@ function packageInstaller:AButtonUp()
                     createInfoPopup("File Deleted", "*The file has been successfully deleted and the system will now restart.", false, function()
                         sys.switchToLauncher()
                     end)
-				elseif entry.path and getExtension(entry.path):to_lower() == ".zip" and (not fos or not fos.zip_open) then
+				elseif entry.path and string.lower(getExtension(entry.path)) == ".zip" and (not fos or not fos.zip_open) then
 					createInfoPopup("Unable to Install", "*This version of FunnyOS was not built with zip file support.", true)
 				elseif entry.path then
 					createInfoPopup("Really Install?", "*The latest version of package \"" .. entry.name .. "\" will be downloaded and installed.", true, function()
@@ -470,14 +475,23 @@ function packageInstaller:draw_listing()
 			if entry.error then
 				text = entry.name or entry.directory
 				icon = errImg
+            elseif entry.delete then
+                text = entry.name
+                icon = delImg
 			elseif entry.link then
 				text = entry.name or entry.directory
 				icon = (packageInstaller.t % 24 < 12) and loadImg or load2Img
 			elseif entry.directory then
 				text = entry.directory .. "/"
 			else
-				icon = pkgImg
+				icon = docImg
 				text = entry.name
+                
+                if entry.path and getExtension(entry.path) == ".zip" then
+                    icon = pkgImg
+                elseif entry.path and getExtension(entry.path) == ".pda" then
+                    icon = musImg
+                end
 			end
 		end
 		
@@ -505,7 +519,10 @@ function packageInstaller:getTitle()
 		local list = packageInstaller.db.listing
 		local name = nil
 		for i = 1,#packageInstaller.path do
-			list = list[packageInstaller.path[#packageInstaller.path]]
+			list = list[packageInstaller.path[i]]
+            if not list then
+                return ""
+            end
 			name = list.directory
 			list = list.contents
 		end
