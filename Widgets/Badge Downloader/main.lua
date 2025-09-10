@@ -1,3 +1,7 @@
+if true then
+	return
+end
+
 local FunnyExplorer = {}
 local widget = FunnyExplorer
 local folderImg = nil

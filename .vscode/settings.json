@@ -18,5 +18,10 @@
   "terminal.integrated.defaultProfile.windows": "PowerShell",
   "playdate-debug.sourcePath": "Source",
   "playdate-debug.outputPath": "./",
-  "playdate-debug.productName": "Launcher"
+  "playdate-debug.productName": "Launcher",
+  "files.associations": {
+    "utility.h": "c",
+    "pd_api.h": "c",
+    "stdio.h": "c"
+  }
 }
