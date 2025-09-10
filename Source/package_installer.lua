@@ -77,6 +77,24 @@ local function splitURLMaybeRelative(url, rel_scheme, rel_host, rel_root)
 	return scheme, host, path
 end
 
+local function installFile(fname, installpath)
+    installpath = installpath or (savePath .. getBasename(fname))
+    if recursive_mkdir(getParentDirectory(installpath)) ~= 0 then
+        createInfoPopup("Action Failed", "*Filesystem error.", false)
+        return
+    end
+    if not playdate.file.rename(fname, installpath) then
+        createInfoPopup("Action Failed", "*Filesystem error.", false)
+        return
+    end
+    
+    createInfoPopup("Action Succeeded", "*The file has been successfully installed and the system will now restart.", false, function()
+		sys.switchToLauncher()
+	end)
+    
+    return 0
+end
+
 local function downloadAndInstall(url, installpaths, rel_scheme, rel_host, rel_root)
 	local scheme, host, path = splitURLMaybeRelative(url, rel_scheme, rel_host, rel_root)
 	if not scheme or not host or not path then
@@ -149,9 +167,13 @@ local function downloadAndInstall(url, installpaths, rel_scheme, rel_host, rel_r
 				read_bytes()
 				packageInstaller.http = nil
 				file:close()
-				
-				-- at this point, we are now on to installing/unzipping the file
-				installPackage(fname, installpaths)
+                
+                if getExtension(fname):to_lower() == ".zip" then				
+                    -- at this point, we are now on to installing/unzipping the file
+                    installPackage(fname, installpaths)
+                else
+                    installFile(fname, installpaths)
+                end
 				playdate.file.delete(fname)
 				packageInstaller.mode = MODE_LISTING
 			else
@@ -328,7 +350,12 @@ function packageInstaller:AButtonUp()
 				packageInstaller.selected = 1
 				packageInstaller.scroll = 0
 			else
-				if not fos or not fos.zip_open then
+                if entry.delete then
+                    playdate.file.delete(entry.delete, entry.recursive)
+                    createInfoPopup("File Deleted", "*The file has been successfully deleted and the system will now restart.", false, function()
+                        sys.switchToLauncher()
+                    end)
+				elseif entry.path and getExtension(entry.path):to_lower() == ".zip" and (not fos or not fos.zip_open) then
 					createInfoPopup("Unable to Install", "*This version of FunnyOS was not built with zip file support.", true)
 				elseif entry.path then
 					createInfoPopup("Really Install?", "*The latest version of package \"" .. entry.name .. "\" will be downloaded and installed.", true, function()

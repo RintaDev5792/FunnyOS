@@ -301,6 +301,16 @@ function getBasename(path, stripExtension)
 	return baseName
 end
 
+function getExtension(path)
+	local baseName = getBasename(path)
+	local lastDotIndex = baseName:find("%.[^%.]+$")
+	if lastDotIndex then
+		return baseName:sub(lastDotIndex)
+	else
+		return ""
+	end
+end
+
 function getParentDirectory(path)
     if not path or path == "" then
         return ""
@@ -380,4 +390,17 @@ function getCanonicalPath(path)
 		s = "/" .. s
 	end
 	return s
+end
+
+function recursive_mkdir(path)
+	local parts = splitPath(path)
+	local absolute = string.startswith(path, "/")
+	local p = absolute and "/" or "./"
+	for i, part in ipairs(parts) do
+		p = p .. part .. "/"
+		if playdate.file.mkdir(p) ~= 0 then
+			return -1
+		end
+	end
+	return 0
 end

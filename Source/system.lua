@@ -173,7 +173,7 @@ function installPackage(zipPath, _installpaths)
 							local dstPath = installPath .. relPath
 							
 							-- mkdir
-							playdate.file.mkdir(getParentDirectory(dstPath))
+							recursive_mkdir(getParentDirectory(dstPath))
 							zf:extract_to_file(dstPath)
 							print("extracting", fname, "->", dstPath)
 						else
