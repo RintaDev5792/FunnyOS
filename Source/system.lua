@@ -62,7 +62,7 @@ function unzip(zippath, dstpath)
 			local filedstpath = dstpath .. zf.filename
 			playdate.file.mkdir(getParentDirectory(filedstpath))
 			result = zf:extract_to_file(filedstpath) and result
-			print("extracted file to " .. filedstpath)
+			--print("extracted file to " .. filedstpath)
 		end
 	end
 	
@@ -99,7 +99,7 @@ function installPackage(zipPath)
 		createInfoPopup("Action Failed", "*Failed to open package", false)
 		return
 	end
-	print("opened zip")
+	--print("opened zip")
 	
 	local installPaths = {}
 	local anyInstallPath = false
@@ -154,13 +154,13 @@ function installPackage(zipPath)
 							-- mkdir
 							playdate.file.mkdir(getParentDirectory(dstPath))
 							zf:extract_to_file(dstPath)
-							print("extracting", fname, "->", dstPath)
+							--print("extracting", fname, "->", dstPath)
 						else
 							createInfoPopup("Action Failed", "*File destination path corrupted", false)
 							return
 						end
 					else
-						print("no governor for ", fname)
+						--print("no governor for ", fname)
 					end
 				end
 			end
@@ -284,7 +284,7 @@ function launchGame(bundleID)
 					iconsCache[labels[currentLabel].objects[currentObject].bundleid] = nil
 				end)
 				playdate.timer.performAfterDelay(3000,function()
-					sys.updateGameList()
+					--sys.updateGameList()
 					playdate.inputHandlers.pop()
 				end)
 			else
@@ -299,7 +299,7 @@ function launchGame(bundleID)
 								if game then
 									game:setSuppressContentWarning(true)
 								end
-								sys.updateGameList()
+								--sys.updateGameList()
 								addToRecentlyPlayed(bundleID)
 								openApp(labels[currentLabel].objects[currentObject].bundleid)
 							end)
@@ -308,7 +308,7 @@ function launchGame(bundleID)
 							if game then
 								game:setSuppressContentWarning(true)
 							end
-							sys.updateGameList()
+							--sys.updateGameList()
 							addToRecentlyPlayed(bundleID)
 							openApp(labels[currentLabel].objects[currentObject].bundleid)
 						end
@@ -401,16 +401,27 @@ function betterGetBundleID(game)
 	return line:sub(index,#line)
 end
 
+function getGroups()
+	playdate.system.loadGameList()
+	while #playdate.system.getInstalledGameList() < 1 do
+		coroutine.yield()
+	end
+	groups = playdate.system.getInstalledGameList()
+end
+
 function setupGameInfo()
-	printTable(playdate.system)
-	playdate.system.updateGameList()
+	--printTable(playdate.system)
 	gameInfo = {}
-	groups = sys.getInstalledGameList()
+	getGroups()
+	--print("-- groups --")
+	--printTable(groups)
 	for i,v in ipairs(groups) do
 		for j,v2 in ipairs(v) do
 			if gme.getPath(v2) then
 				local gamePath = gme.getPath(v2)
 				local props = playdate.system.getMetadata(gamePath .. "/pdxinfo")
+				--print("-- props --")
+				--printTable(props)
 				local bid = betterGetBundleID(v2)
 				if bid then
 					
@@ -443,6 +454,9 @@ function setupGameInfo()
 					props["suppresscontentwarning"] = v2:getSuppressContentWarning()
 					props["bundleid"] = bid
 					gameInfo[bid] = props
+					
+					--print("-- NEW props --")
+					--printTable(props)
 				end
 			else
 				return false
@@ -495,6 +509,8 @@ function setupGameInfo()
 			end
 			-- if the game isn't in your launcher and isnt a system app
 			if not found and bundleID ~= "com.panic.launcher" and bundleID ~= "com.shauninman.InputTest" and bundleID ~= "com.panic.setup" and bundleID ~= "com.panic.setupintro" then 
+				--print("-- objectData --")
+				--printTable(objectData)
 				-- look for an empty space to place it
 				placeObjectAtEmpty(objectData, k)
 			end
@@ -502,6 +518,8 @@ function setupGameInfo()
 	end
 	
 	for k,v in pairs(labels) do
+		--print("-- v objects --")
+		--printTable(v.objects)
 		if v.objects == {} then
 			labels[k] = nil	
 		end	
@@ -726,7 +744,7 @@ function loadIcon(bundleID, labelName, imageName)
 	end
 	
 	if gameIconExists and not gameIcon then 
-		print("FAIL")
+		--print("FAIL")
 		return nil 
 	end
 		
@@ -772,7 +790,7 @@ function loadIcon(bundleID, labelName, imageName)
 		iconsCache[bundleID]["recentlyPlayed"] = iconImg
 	end
 	if iconsLoadedThisFrame > 99 then 
-		print("Y")
+		--print("Y")
 		coroutine.yield() 
 		redrawFrame = true
 	end
