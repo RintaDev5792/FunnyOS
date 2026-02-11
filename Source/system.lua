@@ -402,7 +402,8 @@ function betterGetBundleID(game)
 end
 
 function setupGameInfo()
-	sys.updateGameList()
+	printTable(playdate.system)
+	playdate.system.updateGameList()
 	gameInfo = {}
 	groups = sys.getInstalledGameList()
 	for i,v in ipairs(groups) do

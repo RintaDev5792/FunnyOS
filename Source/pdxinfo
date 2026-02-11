@@ -1,4 +1,5 @@
-name=FunnyOS 2
-author=Zel_
+name=Launcher
+author=Panic
 bundleID=com.panic.launcher
-version=2.0-e
+pdxversion=30000
+buildtime=812672576

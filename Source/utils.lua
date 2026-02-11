@@ -3,6 +3,7 @@ import("CoreLibs/keyboard")
 import("CoreLibs/math")
 import("CoreLibs/object")
 import("CoreLibs/timer")
+import("system")
 
 das = playdate.datastore
 fle = playdate.file
