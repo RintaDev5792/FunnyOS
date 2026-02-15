@@ -90,7 +90,8 @@ function zipIsPackage(zipPath)
 	return false
 end
 
-function installPackage(zipPath)
+function installPackage(zipPath, _installpaths)
+	_installpaths = _installpaths or {}
 	if not fos or not fos.zip_open then
 		createInfoPopup("Action Failed", "*This FunnyOS was not built with miniz support.", false)
 	end
@@ -103,6 +104,26 @@ function installPackage(zipPath)
 	
 	local installPaths = {}
 	local anyInstallPath = false
+	
+	-- optional pre-defined installpaths
+	for i, obj in ipairs(_installpaths) do
+		if obj.src and obj.dst then
+			local src = obj.src
+			local dst = obj.dst
+			if not src:endswith("/") then
+				src = src .. "/"
+			end
+			if not dst:endswith("/") then
+				dst = dst .. "/"
+			end
+			if src:sub(1, 1) ~= '.' then
+				src = './' .. src
+			end
+			anyInstallPath = true
+			installPaths[src] = dst
+			installPaths[src:sub(1, -2)] = dst
+		end
+	end
 	
 	-- pass 1: determine install path of each dir
 	-- pass 2: extract files to destinations
@@ -152,7 +173,7 @@ function installPackage(zipPath)
 							local dstPath = installPath .. relPath
 							
 							-- mkdir
-							playdate.file.mkdir(getParentDirectory(dstPath))
+							recursive_mkdir(getParentDirectory(dstPath))
 							zf:extract_to_file(dstPath)
 							--print("extracting", fname, "->", dstPath)
 						else

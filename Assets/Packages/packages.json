@@ -1,0 +1,65 @@
+{
+    "version": 1,
+    "listing": [
+        {
+            "directory": "Widgets",
+            "contents": [
+                {
+                    "name": "File Explorer",
+                    "path": "../Widgets/FileExplorer.pdx.zip"
+                },
+                {
+                    "name": "FunnyLoader",
+                    "path": "../Widgets/FunnyLoader.pdx.zip"
+                },
+                {
+                    "name": "To-Do List",
+                    "path": "../Widgets/Todo.pdx.zip"
+                }
+            ]
+        },
+        {
+            "directory": "Apps",
+            "contents": [
+                {
+                    "name": "CrankBoy (Game Boy Emulator)",
+                    "link": true,
+                    "path": "https://raw.githubusercontent.com/CrankBoyHQ/crankboy-app/refs/heads/development/assets/fos-package.json"
+                }
+            ]
+        },
+        {
+            "directory": "Tweaks",
+            "contents": [
+                {
+                    "directory": "Wallpaper",
+                    "contents": [
+                        {
+                            "name": "None",
+                            "delete": "/Shared/FunnyOS2/bg.pdi"
+                        },
+                        {
+                            "name": "Default",
+                            "path": "../bg.pdi",
+                            "installpath": "/Shared/FunnyOS2/bg.pdi"
+                        }
+                    ]
+                },
+                {
+                    "directory": "Music",
+                    "contents": [
+                        {
+                            "name": "None",
+                            "delete": "/Shared/FunnyOS2/bgm.pda"
+                        },
+                        {
+                            "name": "Default",
+                            "path": "../bgm.pda",
+                            "installpath": "/Shared/FunnyOS2/bgm.pda"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

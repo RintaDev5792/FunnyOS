@@ -12,6 +12,7 @@
 #endif
 
 void zip_initLua(void);
+void misc_initLua(void);
 
 DllExport
 int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
@@ -22,6 +23,7 @@ int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)
     if (event == kEventInitLua)
     {
         zip_initLua();
+        misc_initLua();
     }
     
     if (event == kEventTerminate)

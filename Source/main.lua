@@ -3,10 +3,11 @@ import("CoreLibs/keyboard")
 import("CoreLibs/timer")
 import("CoreLibs/frameTimer")
 import("CoreLibs/object")
+import("utils")
+import("package_installer")
 import("aesthetics")
 import("system")
 import("input")
-import("utils")
 
 savePath = "/Shared/FunnyOS2/"
 
@@ -64,7 +65,8 @@ cursorStates = {
 	CONTROL_CENTER_MENU = 8, 
 	CONTROL_CENTER_CONTENT = 9, 
 	INFO_POPUP = 10,
-	SELECT_WIDGET = 11
+	SELECT_WIDGET = 11,
+	CONTROL_CENTER_PACKAGE_INSTALLER = 12,
 }
 
 crankSinceLastNotch = 0
@@ -94,6 +96,10 @@ crankCallbacks = {
 	[cursorStates.SELECT_WIDGET] = {
 		[true] = widgetSelectMoveDown,
 		[false] = widgetSelectMoveUp
+	},
+	[cursorStates.CONTROL_CENTER_PACKAGE_INSTALLER] = {
+		[true] = packageInstaller.downButtonDown,
+		[false] = packageInstaller.upButtonDown,
 	},
 }
 
@@ -250,13 +256,7 @@ actionsMenuItems = {
 	"Reset FunnyOS 2",
 }
 
-packageInstallerMenuItems = {
-	"Check for Updates",
-	"Install Package",
-}
-
 configVars = configVarDefaults
-
 
 function playdate.cranked(c,ac)
 	local change = c
