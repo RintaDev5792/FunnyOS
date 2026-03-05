@@ -2,4 +2,5 @@ name=Launcher
 author=Panic
 bundleID=com.panic.launcher
 pdxversion=30000
+version=3.0
 buildtime=812672576
