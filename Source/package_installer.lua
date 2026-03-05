@@ -320,11 +320,13 @@ local function get_package_list_prepare()
 			]]
 			
 			if not packageInstaller.http then
-				packageInstaller.http = playdate.network.http.new(PACKAGE_HOST, 0, true, "to list downloadable packages")
-				if not packageInstaller.http then
-					packageInstaller.mode = MODE_PROMPT_REFRESH
-				else
-					get_package_list()
+				packageInstaller.pending = function()
+					packageInstaller.http = playdate.network.http.new(PACKAGE_HOST, 0, true, "to list downloadable packages")
+					if not packageInstaller.http then
+						packageInstaller.mode = MODE_PROMPT_REFRESH
+					else
+						get_package_list()
+					end
 				end
 			end
 		end
