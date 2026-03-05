@@ -671,7 +671,7 @@ function drawControlCenterMenu()
 	elseif controlCenterMenuItem == "Actions Menu" then
 		drawActions()
 	elseif controlCenterMenuItem == "Package Installer" then
-		drawPackageInstallerMenu()
+		packageInstaller:update()
 	else
 		drawComingSoon()	
 	end

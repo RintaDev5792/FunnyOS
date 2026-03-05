@@ -24,7 +24,7 @@ local timerInitialDelay,timerRepeatDelay = 300,40
 local scrollRepeatTimer = nil
 
 -- Input handlers
-function widget:AButtonDown()
+function widget:AButtonUp()
     sys.switchToGame(launchers[launcherOrder[selectedLauncher]].path)
 end
 

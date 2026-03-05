@@ -302,6 +302,16 @@ function getBasename(path, stripExtension)
 	return baseName
 end
 
+function getExtension(path)
+	local baseName = getBasename(path)
+	local lastDotIndex = baseName:find("%.[^%.]+$")
+	if lastDotIndex then
+		return baseName:sub(lastDotIndex)
+	else
+		return ""
+	end
+end
+
 function getParentDirectory(path)
     if not path or path == "" then
         return ""
@@ -328,7 +338,7 @@ function getParentDirectory(path)
     end
 end
 
-function concatenatePaths(path1, path2)
+function joinPaths(path1, path2)
 	if path2:sub(1, 1) == "/" then
 		error("Second path cannot be absolute")
 	end
@@ -337,4 +347,61 @@ end
 
 function string:endswith(suffix)
     return self:sub(-#suffix) == suffix
+end
+
+function string:startswith(prefix)
+	return self:sub(1, #prefix) == prefix
+end
+
+function toward(x, dst, rate)
+	rate = rate or 1
+	if x < dst - rate then
+		return x + rate
+	elseif x > dst + rate then
+		return x - rate
+	else
+		return dst
+	end
+end
+
+function splitUrl(url)
+	local scheme, host, path = url:match("^([^:]+)://([^/]+)(/.*)$")
+	return scheme, host, path
+end
+
+function getCanonicalPath(path)
+	local absolute = string.startswith(path, "/")
+	local parts = splitPath(path)
+	local stack = {}
+
+	for _, part in ipairs(parts) do
+		if part == "." then
+			-- do nothing
+		elseif part == ".." then
+			if #stack > 0 then
+				table.remove(stack)
+			end
+		else
+			table.insert(stack, part)
+		end
+	end
+
+	local s = table.concat(stack, "/")
+	if absolute then
+		s = "/" .. s
+	end
+	return s
+end
+
+function recursive_mkdir(path)
+	local parts = splitPath(path)
+	local absolute = string.startswith(path, "/")
+	local p = absolute and "/" or "./"
+	for i, part in ipairs(parts) do
+		p = p .. part .. "/"
+		if playdate.file.mkdir(p) ~= 0 then
+			--return -1
+		end
+	end
+	return 0
 end
