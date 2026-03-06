@@ -67,6 +67,7 @@ local fileTypeImgs = {
 	[".pdx"] = gfx.image.new(packageInstaller.metadata.path.."pdx"),
 	[".pdz"] = gfx.image.new(packageInstaller.metadata.path.."pdz"),
 	[".fosl"] = gfx.image.new(packageInstaller.metadata.path.."fosl"),
+	["updateFOS"] = gfx.image.new(packageInstaller.metadata.path.."fosl"),
 	[".json"] = gfx.image.new(packageInstaller.metadata.path.."json"),
 	[".pds"] = gfx.image.new(packageInstaller.metadata.path.."pds"),
 	[".pdt"] = gfx.image.new(packageInstaller.metadata.path.."pdt"),
@@ -115,7 +116,7 @@ local function installFile(fname, installpath)
     return 0
 end
 
-local function downloadAndInstall(url, installpaths, rel_scheme, rel_host, rel_root)
+function downloadAndInstall(url, installpaths, rel_scheme, rel_host, rel_root)
 	local scheme, host, path = splitURLMaybeRelative(url, rel_scheme, rel_host, rel_root)
 	if not scheme or not host or not path then
 		createInfoPopup("Download Failed", "*Failed to parse URL:\n" .. url, nil)

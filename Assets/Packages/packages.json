@@ -1,6 +1,11 @@
 {
     "version": 1,
     "listing": [
+        
+        {
+            "name": "Check for Updates",
+            "type": "updateFOS"
+        },
         {
             "directory": "Widgets",
             "contents": [

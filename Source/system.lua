@@ -3,6 +3,7 @@ import("CoreLibs/keyboard")
 import("CoreLibs/timer")
 import("CoreLibs/object")
 import("utils")
+import("package_installer")
 
 defaultListIcon = playdate.graphics.image.new("images/list_icon_default")
 gameInfo, groups, sortedGameInfo = nil, nil, nil
@@ -819,4 +820,16 @@ function loadIcon(bundleID, labelName, imageName)
 		redrawFrame = true
 	end
 	return iconImg
+end
+
+function checkForUpdates()
+	local currentVersion = funnyOSMetadata.version
+	local download = false
+	if (currentVersion == nil) then
+		download = true
+	else 
+		--want https://raw.githubusercontent.com/RintaDev5792/FunnyOS/refs/heads/main/Source/pdxinfo
+		--to /Shared/FunnyOS2/Download/latest_pdxinfo
+		downloadAndInstall("Source/pdxinfo","/Shared/FunnyOS2/Download/latest_pdxinfo","https","raw.githubusercontent.com","RintaDev5792/FunnyOS/refs/heads/main/")
+	end
 end
