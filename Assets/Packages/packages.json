@@ -27,20 +27,7 @@
                 {
                     "name": "CrankBoy (Game Boy Emulator)",
                     "link": true,
-                    "path": "https://raw.githubusercontent.com/CrankBoyHQ/crankboy-app/refs/heads/development/assets/fos-package.json",
-                    "type": "pdx"
-                }
-            ]
-        },
-        {
-            "directory": "Launchers",
-            "contents": [
-                {
-                    "name": "FunnyOS Latest",
-                    "link": true,
-                    "path": "https://github.com/RintaDev5792/FunnyOS/releases/latest/download/FunnyOS.pdx.zip",
-                    "type": "fosl",
-                    "installpath": "/System"
+                    "path": "https://raw.githubusercontent.com/CrankBoyHQ/crankboy-app/refs/heads/development/assets/fos-package.json"
                 }
             ]
         },
@@ -71,8 +58,7 @@
                         {
                             "name": "Default",
                             "path": "../bgm.pda",
-                            "installpath": "/Shared/FunnyOS2/bgm.pda",
-                            "type": "music"
+                            "installpath": "/Shared/FunnyOS2/bgm.pda"
                         }
                     ]
                 }
