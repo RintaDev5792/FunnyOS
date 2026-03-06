@@ -72,6 +72,8 @@ local fileTypeImgs = {
 	[".pdt"] = gfx.image.new(packageInstaller.metadata.path.."pdt"),
 	["pdxinfo"] = gfx.image.new(packageInstaller.metadata.path.."pdxinfo"),
 	[".pft"] = gfx.image.new(packageInstaller.metadata.path.."pft"),
+	["widget"] = gfx.image.new(packageInstaller.metadata.path.."widget"),
+	["music"] = gfx.image.new(packageInstaller.metadata.path.."music"),
 }
 
 local function loadAssets()
@@ -502,8 +504,11 @@ function packageInstaller:draw_listing()
 			else
 				icon = docImg
 				text = entry.name
-                
-                if entry.path and listHasKey(fileTypeImgs,getExtension(entry.path)) then
+				--printTable(entry)
+				
+                if entry.type and listHasKey(fileTypeImgs,entry.type) then
+					icon = fileTypeImgs[entry.type]
+                elseif entry.path and listHasKey(fileTypeImgs,getExtension(entry.path)) then
                     icon = fileTypeImgs[getExtension(entry.path)]
                 end
 			end
