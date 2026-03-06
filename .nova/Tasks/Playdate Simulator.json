@@ -5,7 +5,7 @@
   },
   "extensionTemplate" : "simulator",
   "extensionValues" : {
-    "playdate.build-type" : "make",
+    "playdate.build-type" : "pdc",
     "playdate.debugRequest" : "attach",
     "playdate.output-path" : "..\/..\/PlaydateSDK\/Disk\/System",
     "playdate.product-name" : "Launcher"

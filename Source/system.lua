@@ -441,9 +441,14 @@ function setupGameInfo()
 			if gme.getPath(v2) then
 				local gamePath = gme.getPath(v2)
 				local props = playdate.system.getMetadata(gamePath .. "/pdxinfo")
-				--print("-- props --")
-				--printTable(props)
 				local bid = betterGetBundleID(v2)
+				if props == nil then
+					props = {
+						["bundleid"] = bid,
+						["path"] = gamePath,
+						["name"] = bid
+					}
+				end
 				if bid then
 					
 					local newprops = {}
@@ -476,8 +481,6 @@ function setupGameInfo()
 					props["bundleid"] = bid
 					gameInfo[bid] = props
 					
-					--print("-- NEW props --")
-					--printTable(props)
 				end
 			else
 				return false

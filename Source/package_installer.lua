@@ -1,3 +1,5 @@
+import("utils")
+
 local VERSION = 1
 
 packageInstaller = {}
@@ -58,12 +60,24 @@ function packageInstaller:getLinkLoadIndex()
 	return nil
 end
 
+local fileTypeImgs = {
+	[".zip"] = gfx.image.new(packageInstaller.metadata.path.."zip"),
+	[".pdi"] = gfx.image.new(packageInstaller.metadata.path.."pdi"),
+	[".pda"] = gfx.image.new(packageInstaller.metadata.path.."pda"),
+	[".pdx"] = gfx.image.new(packageInstaller.metadata.path.."pdx"),
+	[".pdz"] = gfx.image.new(packageInstaller.metadata.path.."pdz"),
+	[".fosl"] = gfx.image.new(packageInstaller.metadata.path.."fosl"),
+	[".json"] = gfx.image.new(packageInstaller.metadata.path.."json"),
+	[".pds"] = gfx.image.new(packageInstaller.metadata.path.."pds"),
+	[".pdt"] = gfx.image.new(packageInstaller.metadata.path.."pdt"),
+	["pdxinfo"] = gfx.image.new(packageInstaller.metadata.path.."pdxinfo"),
+	[".pft"] = gfx.image.new(packageInstaller.metadata.path.."pft"),
+}
+
 local function loadAssets()
 	if not folderImg then
 		folderImg = gfx.image.new(packageInstaller.metadata.path.."fol")
-		pkgImg = gfx.image.new(packageInstaller.metadata.path.."pkg")
 		errImg = gfx.image.new(packageInstaller.metadata.path.."err")
-        musImg = gfx.image.new(packageInstaller.metadata.path.."mus")
         delImg = gfx.image.new(packageInstaller.metadata.path.."del")
         docImg = gfx.image.new(packageInstaller.metadata.path.."doc")
 		loadImg = gfx.image.new(packageInstaller.metadata.path.."load")
@@ -489,10 +503,8 @@ function packageInstaller:draw_listing()
 				icon = docImg
 				text = entry.name
                 
-                if entry.path and getExtension(entry.path) == ".zip" then
-                    icon = pkgImg
-                elseif entry.path and getExtension(entry.path) == ".pda" then
-                    icon = musImg
+                if entry.path and listHasKey(fileTypeImgs,getExtension(entry.path)) then
+                    icon = fileTypeImgs[getExtension(entry.path)]
                 end
 			end
 		end
@@ -503,14 +515,18 @@ function packageInstaller:draw_listing()
 		local y = (i - packageInstaller.scroll)*itemHeight
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		if i == packageInstaller.selected and packageInstaller:isActive() then
-			gfx.fillRect(0, y, 200, itemHeight)
+			gfx.fillRect(0, y, 226, itemHeight)
 			gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
 		end
-		gfx.drawText("*"..text,40,y+9)
+		gfx.drawText("*"..text,40+13,y+9)
 		if i == packageInstaller.selected and packageInstaller:isActive() then
 			gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		end
-		icon:draw(4, y)
+		
+		if i == packageInstaller.selected and packageInstaller:isActive() then
+			gfx.setImageDrawMode(gfx.kDrawModeInverted)
+		end
+		icon:draw(4+13, y)
 		gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
 	end
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
@@ -536,17 +552,17 @@ end
 -- Refresh the packageInstaller image
 function packageInstaller:loadImage()
 	if not packageInstaller.image then
-		packageInstaller.image = playdate.graphics.image.new(200, 200)
+		packageInstaller.image = playdate.graphics.image.new(226, 200)
 	end
 	if not packageInstaller.scrollArea then
-		packageInstaller.scrollArea = playdate.graphics.image.new(200, bottom - top)
+		packageInstaller.scrollArea = playdate.graphics.image.new(226, bottom - top)
 	end
 	playdate.graphics.pushContext(packageInstaller.image)
 		-- Draw packageInstaller content
 		playdate.graphics.clear(playdate.graphics.kColorClear)
 
 		playdate.graphics.setColor(playdate.graphics.kColorWhite)
-		playdate.graphics.fillRoundRect(0, 0, 200, 200, configVars.cornerradius)
+		playdate.graphics.fillRoundRect(0, 0, 226, 200, configVars["cornerradius"]/2)
 
 		playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeCopy)
 		gfx.drawTextAligned("*" .. packageInstaller:getTitle() .. "*",100, 7,kTextAlignment.center)
@@ -715,7 +731,7 @@ function packageInstaller:update()
     
     if packageInstaller.image then
         playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeInverted)
-        packageInstaller.image:draw(180, 246-controlCenterProgress)
+        packageInstaller.image:draw(167, 246-controlCenterProgress)
         playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeCopy)
     end
 end
