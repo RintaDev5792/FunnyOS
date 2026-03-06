@@ -82,8 +82,6 @@ local function loadAssets()
 		errImg = gfx.image.new(packageInstaller.metadata.path.."err")
         delImg = gfx.image.new(packageInstaller.metadata.path.."del")
         docImg = gfx.image.new(packageInstaller.metadata.path.."doc")
-		loadImg = gfx.image.new(packageInstaller.metadata.path.."load")
-		load2Img = gfx.image.new(packageInstaller.metadata.path.."load2")
 	end
 end
 
@@ -493,22 +491,23 @@ function packageInstaller:draw_listing()
 			if entry.error then
 				text = entry.name or entry.directory
 				icon = errImg
+			elseif entry.type and listHasKey(fileTypeImgs,entry.type) then
+				icon = fileTypeImgs[entry.type]
+				print(entry.type)
             elseif entry.delete then
                 text = entry.name
                 icon = delImg
 			elseif entry.link then
 				text = entry.name or entry.directory
-				icon = (packageInstaller.t % 24 < 12) and loadImg or load2Img
+				local loadFrame = math.floor(packageInstaller.t/3) % 14 + 1 
+				icon = loadingAnim[loadFrame]
 			elseif entry.directory then
 				text = entry.directory .. "/"
 			else
 				icon = docImg
 				text = entry.name
-				--printTable(entry)
-				
-                if entry.type and listHasKey(fileTypeImgs,entry.type) then
-					icon = fileTypeImgs[entry.type]
-                elseif entry.path and listHasKey(fileTypeImgs,getExtension(entry.path)) then
+			
+                if entry.path and listHasKey(fileTypeImgs,getExtension(entry.path)) then
                     icon = fileTypeImgs[getExtension(entry.path)]
                 end
 			end
@@ -521,6 +520,7 @@ function packageInstaller:draw_listing()
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 		if i == packageInstaller.selected and packageInstaller:isActive() then
 			gfx.fillRect(0, y, 226, itemHeight)
+	
 			gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
 		end
 		gfx.drawText("*"..text,40+13,y+9)
@@ -570,21 +570,16 @@ function packageInstaller:loadImage()
 		playdate.graphics.fillRoundRect(0, 0, 226, 200, configVars["cornerradius"]/2)
 
 		playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeCopy)
-		gfx.drawTextAligned("*" .. packageInstaller:getTitle() .. "*",100, 7,kTextAlignment.center)
+		gfx.drawTextAligned("*" .. packageInstaller:getTitle() .. "*",113, 7,kTextAlignment.center)
 		
 		if packageInstaller.mode == MODE_PROMPT_REFRESH and packageInstaller:isActive() then
-			gfx.drawTextAligned("*Press (A) To Refresh*",100, 100,kTextAlignment.center)
+			gfx.drawTextAligned("*Press (A) To Refresh*",113, 100,kTextAlignment.center)
 		elseif packageInstaller.mode == MODE_SHOW_MESSAGE then
 			gfx.drawTextAligned(packageInstaller.message,100, 100,kTextAlignment.center)
 		elseif packageInstaller.mode == MODE_LOADING then
-			local s = "."
-			if packageInstaller.t % 32 > 8 then
-				s = ".."
-			end
-			if packageInstaller.t % 32 > 16 then
-				s = "..."
-			end
-			gfx.drawTextAligned("*" .. s .. "*",100, 100, kTextAlignment.center)
+			local loadFrame = math.floor(packageInstaller.t/3) % 14 + 1 
+			local loadFrameImg = loadingAnim[loadFrame]
+			loadFrameImg:drawCentered(113, 100)
 		elseif packageInstaller.mode == MODE_LISTING then
 			playdate.graphics.pushContext(packageInstaller.scrollArea)
 				playdate.graphics.clear(playdate.graphics.kColorClear)

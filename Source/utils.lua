@@ -306,6 +306,11 @@ function getExtension(path)
 	local baseName = getBasename(path)
 	local lastDotIndex = baseName:find("%.[^%.]+$")
 	if lastDotIndex then
+		if baseName:sub(lastDotIndex) == ".zip" then
+			if getExtension(path:gsub(".zip","")) ~= "" then
+				return getExtension(path:gsub(".zip",""))
+			end
+		end
 		return baseName:sub(lastDotIndex)
 	else
 		return ""

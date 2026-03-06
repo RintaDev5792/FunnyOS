@@ -54,6 +54,8 @@ local homeRows = 3
 
 local firstUpdate = true
 
+loadingAnim = gfx.imagetable.new("images/load")
+
 cursorStates = {
 	SELECT_LABEL = 1, 
 	SELECT_OBJECT = 2,
