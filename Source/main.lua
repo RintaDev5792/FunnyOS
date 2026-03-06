@@ -589,9 +589,15 @@ function main()
 	coroutine.yield()
 	changeCursorState(cursorStates.SELECT_LABEL)
 	loadWidgets()
+	print("widgets loaded")
+	coroutine.yield()
 	loadBadges()
+	print("badges loaded")
+	coroutine.yield()
 	if configVars.musicon then
 		loadMusic()
+		print("music loaded")
+		coroutine.yield()
 	end
 	
 	math.randomseed(playdate.getSecondsSinceEpoch())
@@ -601,6 +607,8 @@ function main()
 	coroutine.yield()
 	
 	setupGameInfo()
+	print("gameinfo loaded")
+	coroutine.yield()
 	if configVars.sysinfoonboot then
 		freeStorage = playdate.system.getFreeDiskSpace()
 		totalStorage = playdate.system.getTotalDiskSpace()		

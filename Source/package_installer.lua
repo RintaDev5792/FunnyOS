@@ -13,7 +13,7 @@ local PACKAGE_ROOT = "/RintaDev5792/FunnyOS/refs/heads/main/Assets/Packages"
 if fos and fos.getenv then
 	PACKAGE_ROOT = fos.getenv("FOS_PACKAGE_ROOT") or PACKAGE_ROOT
 end
-print("Using package root: ", PACKAGE_ROOT)
+--print("Using package root: ", PACKAGE_ROOT)
 local PACKAGE_FILE = joinPaths(PACKAGE_ROOT, "packages.json")
 local PACKAGE_HOST = "raw.githubusercontent.com"
 
@@ -73,7 +73,7 @@ local fileTypeImgs = {
 	["pdxinfo"] = gfx.image.new(packageInstaller.metadata.path.."pdxinfo"),
 	[".pft"] = gfx.image.new(packageInstaller.metadata.path.."pft"),
 	["widget"] = gfx.image.new(packageInstaller.metadata.path.."widget"),
-	["music"] = gfx.image.new(packageInstaller.metadata.path.."music"),
+	--["music"] = gfx.image.new(packageInstaller.metadata.path.."music"),
 }
 
 local function loadAssets()
@@ -123,7 +123,7 @@ local function downloadAndInstall(url, installpaths, rel_scheme, rel_host, rel_r
 	end
 	
 	local fname = getBasename(path)
-	print(scheme, host, path, fname)
+	--print(scheme, host, path, fname)
 	playdate.file.mkdir(savePath)
 	
 	fname = savePath .. fname
@@ -160,17 +160,17 @@ local function downloadAndInstall(url, installpaths, rel_scheme, rel_host, rel_r
 	local function read_bytes()
 		if not packageInstaller.http then return end
 		while http:getBytesAvailable() > 0 do
-			print("bytes available: ", http:getBytesAvailable())
+			--print("bytes available: ", http:getBytesAvailable())
 			local s = http:read(1024)
 			if #s == 0 then
-				print("0 bytes read")
+				--print("0 bytes read")
 				packageInstaller.http = nil
 				packageInstaller.mode_previous = MODE_LISTING
 				packageInstaller.mode = MODE_SHOW_MESSAGE
 				packageInstaller.message = "0 bytes read."
 				file:close()
 			elseif file:write(s) < 0 then
-				print("Failed to write to file")
+				--print("Failed to write to file")
 				packageInstaller.http = nil
 				packageInstaller.mode_previous = MODE_LISTING
 				packageInstaller.mode = MODE_SHOW_MESSAGE
@@ -197,7 +197,7 @@ local function downloadAndInstall(url, installpaths, rel_scheme, rel_host, rel_r
 				playdate.file.delete(fname)
 				packageInstaller.mode = MODE_LISTING
 			else
-				print("Err: ", http:getError())
+				--print("Err: ", http:getError())
 			end
 		end
 	)
@@ -215,7 +215,7 @@ local function downloadAndInstall(url, installpaths, rel_scheme, rel_host, rel_r
 	http:setRequestCallback(read_bytes)
 	http:setHeadersReadCallback(function()
 		local status = http:getResponseStatus()
-		print("status: ", status)
+		--print("status: ", status)
 		if packageInstaller.http and status ~= 200 and status ~= 0 then
 			packageInstaller.http = nil
 			packageInstaller.mode = MODE_LISTING
@@ -223,7 +223,7 @@ local function downloadAndInstall(url, installpaths, rel_scheme, rel_host, rel_r
 			createInfoPopup("Connection Failed", "*HTTP Status: " .. tostring(status), nil)
 		end
 	end)
-	print("GET " .. scheme .. "://" .. host .. path)
+	--print("GET " .. scheme .. "://" .. host .. path)
 	http:get(path)
 end
 
@@ -247,11 +247,11 @@ end
 
 local function get_package_list()
 	local http = packageInstaller.http
-    print("getting package list...")
+    --print("getting package list...")
 	http:setConnectTimeout(30)
 	http:setRequestCompleteCallback(
         function()
-            print("A")
+            --print("A")
 			local data = ""
 			while true do
 				local d = http:read()
@@ -281,13 +281,13 @@ local function get_package_list()
 					packageInstaller.message = "Invalid package\ndatabase received"
 				end
 			else
-				print("Err: ", http:getError())
+				--print("Err: ", http:getError())
 			end
 		end
 	)
 	http:setConnectionClosedCallback(
 		function()
-			print("B")
+			--print("B")
 			if packageInstaller.http then
 				packageInstaller.http = nil
 				packageInstaller.mode = MODE_PROMPT_REFRESH
@@ -295,10 +295,10 @@ local function get_package_list()
 		end
 	)
 	http:setRequestCallback(function()
-		print("C")
+		--print("C")
 	end)
 	http:setHeadersReadCallback(function()
-		print("D")
+		--print("D")
 		local status = http:getResponseStatus()
 		if packageInstaller.http and status ~= 200 and status ~= 0 then
 			packageInstaller.http = nil
@@ -308,7 +308,7 @@ local function get_package_list()
 	end)
 	
 	local pf = PACKAGE_FILE .. "?nocache=" .. tostring(math.floor(math.random(0, 10000)))
-	print("GET", pf)
+	--print("GET", pf)
 	http:get(pf)
 end
 
@@ -492,8 +492,8 @@ function packageInstaller:draw_listing()
 				text = entry.name or entry.directory
 				icon = errImg
 			elseif entry.type and listHasKey(fileTypeImgs,entry.type) then
+				text = entry.name
 				icon = fileTypeImgs[entry.type]
-				print(entry.type)
             elseif entry.delete then
                 text = entry.name
                 icon = delImg
@@ -573,7 +573,7 @@ function packageInstaller:loadImage()
 		gfx.drawTextAligned("*" .. packageInstaller:getTitle() .. "*",113, 7,kTextAlignment.center)
 		
 		if packageInstaller.mode == MODE_PROMPT_REFRESH and packageInstaller:isActive() then
-			gfx.drawTextAligned("*Press (A) To Refresh*",113, 100,kTextAlignment.center)
+			packageInstaller:AButtonUp()
 		elseif packageInstaller.mode == MODE_SHOW_MESSAGE then
 			gfx.drawTextAligned(packageInstaller.message,100, 100,kTextAlignment.center)
 		elseif packageInstaller.mode == MODE_LOADING then
@@ -627,7 +627,7 @@ function packageInstaller:updateLoadLink()
 				http:setConnectTimeout(30)
 				http:setRequestCompleteCallback(
 					function()
-						print("A")
+						--print("A")
 						local data = ""
 						while true do
 							local d = http:read()
@@ -647,7 +647,7 @@ function packageInstaller:updateLoadLink()
 								-- integrate new source
 								for key, value in pairs(j) do
 									entry[key] = value
-									print("replace: ", key, value)
+									--print("replace: ", key, value)
 								end
 								
 								-- mark down where we got it from
@@ -676,7 +676,7 @@ function packageInstaller:updateLoadLink()
 				)
 				http:setConnectionClosedCallback(
 					function()
-						print("B")
+						--print("B")
 						if entry.http then
 							entry.error = scheme .. " server closed connection unexpectedly."
 							entry.http = nil
@@ -685,10 +685,10 @@ function packageInstaller:updateLoadLink()
 					end
 				)
 				http:setRequestCallback(function()
-					print("C")
+					--print("C")
 				end)
 				http:setHeadersReadCallback(function()
-					print("D")
+					--print("D")
 					local status = http:getResponseStatus()
 					if entry.http and status ~= 200 and status ~= 0 then
 						entry.error = scheme .. " status " .. tostring(status)
@@ -701,7 +701,7 @@ function packageInstaller:updateLoadLink()
 					pf = pf .. "?nocache=" .. tostring(math.floor(math.random(0, 10000)))
 				end
 				
-				print("GET", pf)
+				--print("GET", pf)
 				http:get(pf)
 				break
 			end
@@ -739,6 +739,7 @@ end
 -- Called when FunnyOS boots up
 function packageInstaller:init()
 	packageInstaller:getpackageInstallerImage()	
+	packageInstaller:AButtonUp()
 end
 
 return packageInstaller
