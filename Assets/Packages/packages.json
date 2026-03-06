@@ -14,7 +14,8 @@
                 },
                 {
                     "name": "To-Do List",
-                    "path": "../Widgets/Todo.pdx.zip"
+                    "path": "../Widgets/Todo.pdx.zip",
+                    "type": "widget"
                 }
             ]
         },
