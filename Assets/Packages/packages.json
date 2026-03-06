@@ -6,18 +6,15 @@
             "contents": [
                 {
                     "name": "File Explorer",
-                    "path": "../Widgets/FileExplorer.pdx.zip",
-                    "type": "widget"
+                    "path": "../Widgets/FileExplorer.pdx.zip"
                 },
                 {
                     "name": "FunnyLoader",
-                    "path": "../Widgets/FunnyLoader.pdx.zip",
-                    "type": "widget"
+                    "path": "../Widgets/FunnyLoader.pdx.zip"
                 },
                 {
                     "name": "To-Do List",
-                    "path": "../Widgets/Todo.pdx.zip",
-                    "type": "widget"
+                    "path": "../Widgets/Todo.pdx.zip"
                 }
             ]
         },
